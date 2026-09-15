@@ -1,0 +1,2 @@
+import { signOut } from "@/app/actions";
+export default function AccessPending() { return <main className="grid min-h-dvh place-items-center p-6"><section className="card max-w-lg p-8"><h1 className="text-2xl font-bold">Access pending</h1><p className="mt-3 text-slate-600">Your account is signed in but has not been assigned Director access.</p><form action={signOut} className="mt-6"><button className="btn btn-secondary">Sign out</button></form></section></main>; }

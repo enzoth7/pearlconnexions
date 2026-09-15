@@ -1,0 +1,4 @@
+import { describe, expect, it, vi } from "vitest";
+import { effectiveStatus, type ActionRecord } from "./utils";
+const action = (value: Partial<ActionRecord>): ActionRecord => ({ id:"1",reference:"AA01",title:"Action",workstream_id:"1",workstream:null,priority:null,base_status:"Not Started",date_added:null,deadline:null,extended_deadline:null,completed_at:null,participants:[],...value });
+describe("effectiveStatus",()=>{it("prioritises completion",()=>expect(effectiveStatus(action({completed_at:"2026-01-01",deadline:"2025-01-01"}))).toBe("Completed"));it("marks passed deadlines overdue",()=>{vi.setSystemTime(new Date("2026-09-08T12:00:00Z"));expect(effectiveStatus(action({deadline:"2026-09-01"}))).toBe("Overdue");vi.useRealTimers();});it("marks future extensions",()=>{vi.setSystemTime(new Date("2026-09-08T12:00:00Z"));expect(effectiveStatus(action({deadline:"2026-09-01",extended_deadline:"2026-09-20"}))).toBe("Extended");vi.useRealTimers();});});

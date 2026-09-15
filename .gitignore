@@ -1,0 +1,33 @@
+﻿# Dependencies
+node_modules/
+node_modules.*
+**/node_modules/
+**/node_modules.*
+.pnpm-store/
+.pnpm/
+
+# Build outputs
+.next/
+**/.next/
+out/
+build/
+dist/
+**/dist/
+.temp/
+**/.temp/
+supabase/.temp/
+
+# Environment files
+.env
+.env*.local
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# System
+.DS_Store
+Thumbs.db

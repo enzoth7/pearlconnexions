@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f7fb;
+  --surface: #ffffff;
+  --foreground: #10203a;
+  --muted: #64748b;
+  --border: #dbe3ef;
+  --primary: #1e40af;
+  --primary-soft: #e8efff;
+  --accent: #b45309;
+  --danger: #b91c1c;
+  --success: #047857;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--background); }
+body { margin: 0; color: var(--foreground); background: var(--background); font-family: Arial, Helvetica, sans-serif; }
+button, input, select, textarea { font: inherit; }
+button, a { touch-action: manipulation; }
+:focus-visible { outline: 3px solid #3b82f6; outline-offset: 2px; }
+::selection { background: #bfdbfe; }
+
+.card { border: 1px solid var(--border); background: var(--surface); border-radius: 14px; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+.field { width: 100%; min-height: 44px; border: 1px solid #cbd5e1; border-radius: 9px; background: #fff; padding: 10px 12px; color: #0f172a; }
+.field:hover { border-color: #94a3b8; }
+.label { display: block; margin-bottom: 6px; color: #334155; font-size: 13px; font-weight: 700; }
+.btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 9px; padding: 0 16px; font-weight: 700; cursor: pointer; transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease; }
+.btn-primary { border: 1px solid #1e40af; background: #1e40af; color: #fff; }
+.btn-primary:hover { background: #1e3a8a; }
+.btn-secondary { border: 1px solid #cbd5e1; background: #fff; color: #1e293b; }
+.btn-secondary:hover { background: #f1f5f9; }
+.table-shell { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.table-shell table { width: 100%; border-collapse: collapse; }
+.table-shell th { color: #475569; font-size: 12px; font-weight: 800; letter-spacing: normal; text-transform: none; text-align: left; background: #f8fafc; }
+.table-shell th, .table-shell td { padding: 13px 16px; border-bottom: 1px solid #e8edf4; vertical-align: top; }
+.table-shell tbody tr:hover { background: #f8fbff; }
+table { width: 100%; border-collapse: collapse; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
