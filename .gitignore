@@ -9,6 +9,10 @@ node_modules.*
 # Build outputs
 .next/
 **/.next/
+.vinext/
+**/.vinext/
+.wrangler/
+**/wrangler/
 out/
 build/
 dist/
@@ -21,6 +25,7 @@ supabase/.temp/
 .env
 .env*.local
 *.local
+!.env.example
 
 # Logs
 npm-debug.log*
