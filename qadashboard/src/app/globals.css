@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: oklch(0.982 0.008 250);
+  --foreground: oklch(0.21 0.055 257);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.045 257);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.045 257);
+  --primary: oklch(0.38 0.17 260);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.025 250);
+  --secondary-foreground: oklch(0.31 0.06 260);
+  --muted: oklch(0.955 0.018 250);
+  --muted-foreground: oklch(0.43 0.05 257);
+  --accent: oklch(0.49 0.13 63);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.5 0.19 28);
+  --border: oklch(0.865 0.026 250);
+  --input: oklch(0.83 0.035 250);
+  --ring: oklch(0.55 0.16 260);
+  --chart-1: oklch(0.56 0.2 255);
+  --chart-2: oklch(0.62 0.18 155);
+  --chart-3: oklch(0.7 0.18 70);
+  --chart-4: oklch(0.61 0.2 300);
+  --chart-5: oklch(0.58 0.22 28);
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) * 0.75);
+  --radius-md: calc(var(--radius) * 0.875);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+}
+
+* { border-color: var(--border); }
+html { background: var(--background); }
+body { margin: 0; background: var(--background); color: var(--foreground); }
+button, a, select { touch-action: manipulation; cursor: pointer; }
+:focus-visible { outline: 3px solid color-mix(in oklch, var(--ring), transparent 30%); outline-offset: 2px; }
+::selection { background: oklch(0.88 0.07 255); }
+
+.data-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: 0 1px 3px rgba(15, 42, 78, 0.04); }
+.metric-input { min-height: 44px; }
+[data-slot="card-title"] { color: #15345f; font-weight: 800; letter-spacing: -0.01em; }
+[data-slot="select-trigger"] { background: #fff; border-color: #cbd7e6; }
+[data-slot="table-head"] { color: #1d3d6b; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
