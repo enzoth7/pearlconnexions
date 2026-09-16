@@ -344,7 +344,7 @@ export function ParticipantsManager({
         {!readOnly && !isAdding && (
           <button
             type="button"
-            className="inline-flex items-center gap-1 text-xs font-bold text-blue-800 hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#007A91] hover:text-[#0097B2] hover:underline cursor-pointer"
             onClick={() => setIsAdding(true)}
           >
             <Plus size={14} /> Add participant
@@ -400,7 +400,7 @@ function ParticipantItem({
           await formAction(formData);
           setIsEditing(false);
         }}
-        className="rounded-xl border border-blue-200 bg-blue-50/40 p-3.5 space-y-3"
+        className="rounded-xl border border-[#0097B2]/30 bg-[#E0F7FA]/30 p-3.5 space-y-3"
       >
         <input type="hidden" name="id" value={participant.id} />
         <input type="hidden" name="action_id" value={actionId} />
@@ -497,7 +497,7 @@ function ParticipantItem({
             <>
               <button
                 type="button"
-                className="p-1 text-slate-400 hover:text-blue-800 cursor-pointer"
+                className="p-1 text-slate-400 hover:text-[#007A91] cursor-pointer"
                 onClick={() => setIsEditing(true)}
                 aria-label={`Edit ${participant.manager.name}`}
               >
@@ -549,10 +549,10 @@ function AddParticipantForm({
         await formAction(formData);
         onClose();
       }}
-      className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3"
+      className="rounded-xl border border-[#0097B2]/30 bg-[#E0F7FA]/30 p-4 space-y-3"
     >
-      <div className="flex items-center justify-between pb-1 border-b border-blue-200/60">
-        <h3 className="text-xs font-bold text-blue-900">
+      <div className="flex items-center justify-between pb-1 border-b border-[#0097B2]/20">
+        <h3 className="text-xs font-bold text-[#007A91]">
           Add participant
         </h3>
         <button
@@ -695,13 +695,13 @@ function ReviewItem({
           await formAction(formData);
           setIsEditing(false);
         }}
-        className="rounded-xl border border-blue-200 bg-blue-50/30 p-4 space-y-4"
+        className="rounded-xl border border-[#0097B2]/30 bg-[#E0F7FA]/20 p-4 space-y-4"
       >
         <input type="hidden" name="id" value={update.id} />
         <input type="hidden" name="action_id" value={actionId} />
 
-        <div className="flex items-center justify-between border-b border-blue-200 pb-2">
-          <h3 className="text-sm font-bold text-blue-900">Edit review entry</h3>
+        <div className="flex items-center justify-between border-b border-[#0097B2]/20 pb-2">
+          <h3 className="text-sm font-bold text-[#007A91]">Edit review entry</h3>
           <button
             type="button"
             onClick={() => setIsEditing(false)}
@@ -771,7 +771,7 @@ function ReviewItem({
 
         <Result state={state} />
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-blue-200/60">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#0097B2]/20">
           <button
             type="button"
             className="btn btn-secondary text-xs h-9 px-3"
@@ -792,7 +792,7 @@ function ReviewItem({
   }
 
   return (
-    <article className="border-l-2 border-blue-200 pl-4 py-1">
+    <article className="border-l-2 border-[#0097B2] pl-4 py-1">
       <div className="flex items-center justify-between gap-2">
         {!readOnly && <div className="flex items-center gap-2">
           <p className="text-sm font-bold text-slate-900">{formatDate(update.review_date)}</p>
@@ -805,7 +805,7 @@ function ReviewItem({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="inline-flex items-center gap-1 text-xs font-bold text-blue-800 hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#007A91] hover:text-[#0097B2] hover:underline cursor-pointer"
             onClick={() => setIsEditing(true)}
           >
             <Edit2 size={12} /> Edit
@@ -910,7 +910,7 @@ export function SignOffCard({
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="text-xs font-bold text-blue-800 hover:underline cursor-pointer"
+            className="text-xs font-bold text-[#007A91] hover:text-[#0097B2] hover:underline cursor-pointer"
           >
             Change
           </button>

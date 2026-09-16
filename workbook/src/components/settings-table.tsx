@@ -47,7 +47,7 @@ export function SettingsTable({ managers }: { managers: ManagerWithProfile[] }) 
                   <tr key={m.id} className="hover:bg-slate-50/75 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-100 font-bold text-blue-900 text-sm">
+                        <div className="grid h-9 w-9 place-items-center rounded-full bg-[#E0F7FA] font-bold text-[#007A91] text-sm border border-[#0097B2]/20">
                           {m.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
@@ -298,7 +298,7 @@ function EditManagerModal({
         <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div>
-              <span className="font-mono text-xs font-bold text-blue-800">{manager.source_code}</span>
+              <span className="font-mono text-xs font-bold text-[#007A91]">{manager.source_code}</span>
               <h3 className="text-lg font-bold text-slate-900">Manage {manager.name}</h3>
             </div>
             <button

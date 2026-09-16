@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   flexRender,
   getCoreRowModel,
@@ -27,20 +28,50 @@ export function ActionsTable({
   managers,
   workstreams,
   initialManagerId = "",
+  initialStatus = "",
+  initialPriority = "",
+  initialResponsibility = "",
+  initialQuery = "",
   isDirector = true,
 }: {
   actions: ActionRecord[];
   managers: Manager[];
   workstreams: Workstream[];
   initialManagerId?: string;
+  initialStatus?: string;
+  initialPriority?: string;
+  initialResponsibility?: string;
+  initialQuery?: string;
   isDirector?: boolean;
 }) {
-  const [query, setQuery] = useState("");
-  const [manager, setManager] = useState(initialManagerId);
-  const [priority, setPriority] = useState("");
-  const [status, setStatus] = useState("");
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams?.get("status") ?? initialStatus ?? "";
+  const urlManager = searchParams?.get("manager") ?? initialManagerId ?? "";
+  const urlPriority = searchParams?.get("priority") ?? initialPriority ?? "";
+  const urlResponsibility = searchParams?.get("responsibility") ?? initialResponsibility ?? "";
+  const urlQuery = searchParams?.get("q") ?? initialQuery ?? "";
+
+  const cleanStatus = decodeURIComponent(urlStatus).replace(/\+/g, " ").trim();
+  const cleanManager = urlManager.trim();
+  const cleanPriority = decodeURIComponent(urlPriority).replace(/\+/g, " ").trim();
+  const cleanResponsibility = decodeURIComponent(urlResponsibility).replace(/\+/g, " ").trim();
+  const cleanQuery = decodeURIComponent(urlQuery).replace(/\+/g, " ").trim();
+
+  const [query, setQuery] = useState(cleanQuery);
+  const [manager, setManager] = useState(cleanManager);
+  const [priority, setPriority] = useState(cleanPriority);
+  const [status, setStatus] = useState(cleanStatus);
+  const [responsibility, setResponsibility] = useState(cleanResponsibility);
   const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
   const [isNewActionOpen, setIsNewActionOpen] = useState(false);
+
+  useEffect(() => {
+    setStatus(cleanStatus);
+    setManager(cleanManager);
+    setPriority(cleanPriority);
+    setResponsibility(cleanResponsibility);
+    setQuery(cleanQuery);
+  }, [cleanStatus, cleanManager, cleanPriority, cleanResponsibility, cleanQuery]);
 
   const filtered = useMemo(
     () =>
@@ -51,14 +82,21 @@ export function ActionsTable({
               .toLowerCase()
               .includes(query.toLowerCase())) &&
           (!manager || a.participants.some((p) => p.manager.id === manager)) &&
-          (!priority || (a.priority || "Unassigned") === priority) &&
-          (status === "All"
+          (!priority ||
+            (priority.toLowerCase() === "unassigned"
+              ? !a.priority || ["unassigned", "not assigned", ""].includes(a.priority.trim().toLowerCase())
+              : (a.priority || "").trim().toLowerCase() === priority.toLowerCase())) &&
+          (!responsibility ||
+            (responsibility.toLowerCase() === "support"
+              ? a.participants.some((p) => (!manager || p.manager.id === manager) && p.responsibility_type === "Support")
+              : a.participants.some((p) => (!manager || p.manager.id === manager) && p.responsibility_type !== "Support"))) &&
+          (status.toLowerCase() === "all"
             ? true
             : status
-            ? effectiveStatus(a) === status
+            ? effectiveStatus(a).trim().toLowerCase() === status.trim().toLowerCase()
             : effectiveStatus(a) !== "Completed")
       ),
-    [actions, query, manager, priority, status]
+    [actions, query, manager, priority, status, responsibility]
   );
 
   const columns = useMemo<ColumnDef<ActionRecord>[]>(
@@ -75,7 +113,7 @@ export function ActionsTable({
         ),
         cell: ({ row }) => (
           <Link
-            className="font-mono font-bold text-blue-800 hover:underline"
+            className="font-mono font-bold text-[#007A91] hover:text-[#0097B2] hover:underline"
             href={`/actions/${row.original.id}`}
           >
             {row.original.reference}
@@ -88,7 +126,7 @@ export function ActionsTable({
         cell: ({ row }) => (
           <div className="min-w-64">
             <Link
-              className="font-semibold hover:text-blue-800"
+              className="font-semibold hover:text-[#007A91]"
               href={`/actions/${row.original.id}`}
             >
               {row.original.title}
@@ -184,7 +222,7 @@ export function ActionsTable({
             {isDirector && (
               <button
                 type="button"
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-[#0097B2]/40 hover:bg-[#E0F7FA]/60 hover:text-[#007A91]"
                 title="Quick edit"
                 aria-label={`Quick edit ${row.original.reference}`}
                 onClick={() => setSelectedAction(row.original)}
@@ -193,7 +231,7 @@ export function ActionsTable({
               </button>
             )}
             <Link
-              className="inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-blue-800"
+              className="inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-slate-600 transition hover:bg-[#E0F7FA]/60 hover:text-[#007A91]"
               href={`/actions/${row.original.id}`}
               title="View full action details"
             >
@@ -247,18 +285,26 @@ export function ActionsTable({
         <select
           className="field"
           aria-label="Filter by priority"
-          value={priority}
+          value={
+            ["High", "Medium", "Low", "Unassigned"].find(
+              (x) => x.toLowerCase() === priority.toLowerCase()
+            ) || ""
+          }
           onChange={(e) => setPriority(e.target.value)}
         >
           <option value="">All priorities</option>
           {["High", "Medium", "Low", "Unassigned"].map((x) => (
-            <option key={x}>{x}</option>
+            <option key={x} value={x}>{x}</option>
           ))}
         </select>
         <select
           className="field"
           aria-label="Filter by status"
-          value={status}
+          value={
+            ["Not Started", "In Progress", "At Risk", "Overdue", "Extended", "Completed"].find(
+              (x) => x.toLowerCase() === status.toLowerCase()
+            ) || (status.toLowerCase() === "all" ? "All" : "")
+          }
           onChange={(e) => setStatus(e.target.value)}
         >
           <option value="">Active actions</option>
@@ -279,6 +325,90 @@ export function ActionsTable({
           </button>
         )}
       </div>
+
+      {(status || priority || manager || query || responsibility) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/80 px-4 py-2.5 text-xs">
+          <span className="font-bold text-slate-600">Active filters:</span>
+          {status && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E0F7FA] px-2.5 py-0.5 font-bold text-[#007A91] border border-[#0097B2]/30">
+              Status: {status}
+              <button
+                type="button"
+                onClick={() => setStatus("")}
+                className="hover:text-red-600 font-bold ml-0.5"
+                title="Remove status filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {priority && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 font-bold text-amber-900 border border-amber-200">
+              Priority: {priority}
+              <button
+                type="button"
+                onClick={() => setPriority("")}
+                className="hover:text-red-600 font-bold ml-0.5"
+                title="Remove priority filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {manager && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/70 px-2.5 py-0.5 font-bold text-slate-800 border border-slate-300">
+              Manager: {managers.find((m) => m.id === manager)?.name || manager}
+              <button
+                type="button"
+                onClick={() => setManager("")}
+                className="hover:text-red-600 font-bold ml-0.5"
+                title="Remove manager filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {responsibility && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-0.5 font-bold text-violet-800 border border-violet-200">
+              Role: {responsibility === "Lead" ? "Lead (Owned)" : "Support"}
+              <button
+                type="button"
+                onClick={() => setResponsibility("")}
+                className="hover:text-red-600 font-bold ml-0.5"
+                title="Remove role filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {query && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/70 px-2.5 py-0.5 font-bold text-slate-800 border border-slate-300">
+              Search: &ldquo;{query}&rdquo;
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="hover:text-red-600 font-bold ml-0.5"
+                title="Remove search query"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("");
+              setPriority("");
+              setManager("");
+              setResponsibility("");
+              setQuery("");
+            }}
+            className="ml-auto font-bold text-[#007A91] hover:text-[#0097B2] hover:underline"
+          >
+            Clear all filters
+          </button>
+        </div>
+      )}
 
       <div className="table-shell">
         <table>

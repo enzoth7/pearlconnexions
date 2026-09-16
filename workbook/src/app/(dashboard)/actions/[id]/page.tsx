@@ -31,7 +31,7 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
     <>
       <Link
         href="/actions"
-        className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue-800 hover:underline"
+        className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#007A91] hover:text-[#0097B2] hover:underline"
       >
         <ArrowLeft size={17} /> Back to register
       </Link>

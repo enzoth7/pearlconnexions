@@ -60,7 +60,7 @@ export function NewActionDialog({
         <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E0F7FA] text-[#007A91] border border-[#0097B2]/20">
                 <Plus size={20} />
               </div>
               <h2 id="new-action-title" className="text-lg font-bold text-slate-900">

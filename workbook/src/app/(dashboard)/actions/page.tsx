@@ -1,9 +1,16 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/app-shell";
 import { ActionsTable } from "@/components/actions-table";
 import { getActions, getManagers, getWorkstreams, requireAuth } from "@/lib/data";
 
 type ActionsPageProps = {
-  searchParams: Promise<{ manager?: string | string[] }>;
+  searchParams: Promise<{
+    manager?: string | string[];
+    status?: string | string[];
+    priority?: string | string[];
+    responsibility?: string | string[];
+    q?: string | string[];
+  }>;
 };
 
 export default async function ActionsPage({ searchParams }: ActionsPageProps) {
@@ -13,12 +20,25 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
     getManagers(),
     getWorkstreams(),
   ]);
-  const { manager: requestedManagerId } = await searchParams;
+  const rawParams = await searchParams;
+  const {
+    manager: requestedManagerId,
+    status: requestedStatus,
+    priority: requestedPriority,
+    responsibility: requestedResponsibility,
+    q: requestedQuery,
+  } = rawParams;
+
   const managerId = isManager
     ? authManagerId || ""
     : typeof requestedManagerId === "string" && managers.some((manager) => manager.id === requestedManagerId)
     ? requestedManagerId
     : "";
+
+  const initialStatus = typeof requestedStatus === "string" ? requestedStatus : "";
+  const initialPriority = typeof requestedPriority === "string" ? requestedPriority : "";
+  const initialResponsibility = typeof requestedResponsibility === "string" ? requestedResponsibility : "";
+  const initialQuery = typeof requestedQuery === "string" ? requestedQuery : "";
 
   return (
     <>
@@ -30,13 +50,20 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
             : "Search, filter and open any action to review its ownership and progress."
         }
       />
-      <ActionsTable
-        actions={actions}
-        managers={managers}
-        workstreams={workstreams}
-        initialManagerId={managerId}
-        isDirector={isDirector}
-      />
+      <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading register...</div>}>
+        <ActionsTable
+          key={`${managerId}-${initialStatus}-${initialPriority}-${initialResponsibility}-${initialQuery}`}
+          actions={actions}
+          managers={managers}
+          workstreams={workstreams}
+          initialManagerId={managerId}
+          initialStatus={initialStatus}
+          initialPriority={initialPriority}
+          initialResponsibility={initialResponsibility}
+          initialQuery={initialQuery}
+          isDirector={isDirector}
+        />
+      </Suspense>
     </>
   );
 }

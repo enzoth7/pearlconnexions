@@ -32,7 +32,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     (a) => !a.priority || ["not assigned", "unassigned", ""].includes(a.priority.trim().toLowerCase())
   ).length;
   const visibleManagers = selectedManager ? [selectedManager] : managers;
-  const managerData = visibleManagers.map(m => ({ name: m.name, actions: filteredActions.filter(a => a.participants.some(p => p.manager.id === m.id) && !a.signoffs?.length).length }));
+  const managerData = visibleManagers.map((m) => ({
+    id: m.id,
+    name: m.name,
+    actions: filteredActions.filter(
+      (a) => a.participants.some((p) => p.manager.id === m.id) && !a.signoffs?.length
+    ).length,
+  }));
   const statusSummary = ["Not Started", "In Progress", "At Risk", "Extended", "Completed", "Overdue"].map((label) => ({
     label,
     count: status.filter((value) => value === label).length,
@@ -45,20 +51,103 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const workload = activeParticipations.length;
   const priorityActions = filteredActions.filter(a => ["Overdue", "At Risk"].includes(effectiveStatus(a))).slice(0,6);
   const cards = [
-    ["Total actions", filteredActions.length, ListChecks, "text-blue-800 bg-blue-50"],
-    ["High", highPriority, AlertTriangle, "text-red-800 bg-red-50"],
-    ["Medium", mediumPriority, AlertCircle, "text-amber-800 bg-amber-50"],
-    ["Low", lowPriority, ArrowDownCircle, "text-emerald-800 bg-emerald-50"],
-    ["Not Assigned", notAssignedPriority, CircleSlash2, "text-slate-700 bg-slate-100"],
+    ["Total actions", filteredActions.length, ListChecks, "text-[#007A91] bg-[#E0F7FA]", "/actions?status=All"],
+    ["High", highPriority, AlertTriangle, "text-red-800 bg-red-50", "/actions?priority=High"],
+    ["Medium", mediumPriority, AlertCircle, "text-amber-800 bg-amber-50", "/actions?priority=Medium"],
+    ["Low", lowPriority, ArrowDownCircle, "text-emerald-800 bg-emerald-50", "/actions?priority=Low"],
+    ["Not Assigned", notAssignedPriority, CircleSlash2, "text-slate-700 bg-slate-100", "/actions?priority=Unassigned"],
   ] as const;
   const registerHref = selectedManager ? `/actions?manager=${selectedManager.id}` : "/actions";
   const scopeDescription = selectedManager
     ? `Workload, deadlines and delivery status for ${selectedManager.name}.`
     : "Organisation-wide workload, deadlines and delivery status.";
-  return <><PageHeader title="Leadership actions" description={scopeDescription} action={<div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">{!isManager && <ManagerOverviewFilter managers={managers} selectedManagerId={selectedManager?.id}/>}<Link href={registerHref} className="btn btn-primary whitespace-nowrap">Open register</Link></div>}/>
-    <section aria-label="Key metrics" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{cards.map(([label,value,Icon,tone]) => <article className="card p-4" key={label}><div className={`mb-4 grid h-9 w-9 place-items-center rounded-lg ${tone}`}><Icon size={18}/></div><p className="text-3xl font-bold tabular-nums text-slate-900">{value}</p><p className="mt-1 text-sm font-semibold text-slate-600">{label}</p></article>)}</section>
-    <div className="my-5"><DashboardCharts managers={managerData} statuses={statusSummary} workload={{ workload, owned, supported }} selectedManagerName={selectedManager?.name}/></div>
-    <section className="card p-5"><div className="flex items-center justify-between"><div><h2 className="font-bold">Needs attention</h2><p className="mt-1 text-sm text-slate-500">Overdue and at-risk actions{selectedManager ? ` for ${selectedManager.name}` : ""}</p></div><Link href={registerHref} className="text-sm font-bold text-blue-800 hover:underline">View all</Link></div>
-      {priorityActions.length ? <div className="mt-4 divide-y divide-slate-100">{priorityActions.map(a => <Link href={`/actions/${a.id}`} key={a.id} className="grid gap-2 py-4 hover:bg-slate-50 sm:grid-cols-[80px_1fr_130px_110px] sm:items-center"><span className="font-mono text-sm font-bold text-blue-800">{a.reference}</span><span className="text-sm font-semibold">{a.title}</span><StatusBadge action={a}/><span className="text-sm text-slate-500">{formatDate(a.extended_deadline || a.deadline)}</span></Link>)}</div> : <p className="mt-5 rounded-lg bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">No overdue or at-risk actions.</p>}
-    </section></>;
+  return (
+    <>
+      <PageHeader
+        title="Leadership actions"
+        description={scopeDescription}
+        action={
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
+            {!isManager && (
+              <ManagerOverviewFilter managers={managers} selectedManagerId={selectedManager?.id} />
+            )}
+            <Link href={registerHref} className="btn btn-primary whitespace-nowrap">
+              Open register
+            </Link>
+          </div>
+        }
+      />
+      <section aria-label="Key metrics" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {cards.map(([label, value, Icon, tone, path]) => {
+          const href = selectedManager ? `${path}&manager=${selectedManager.id}` : path;
+          return (
+            <Link
+              href={href}
+              key={label}
+              className="card group cursor-pointer p-4 transition hover:border-[#0097B2]/50 hover:shadow-md"
+              title={`View ${label} in Action Register`}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className={`grid h-9 w-9 place-items-center rounded-lg ${tone}`}>
+                  <Icon size={18} />
+                </div>
+                <span className="text-xs font-semibold text-slate-400 opacity-0 transition group-hover:opacity-100 group-hover:text-[#007A91]">
+                  Filter →
+                </span>
+              </div>
+              <p className="text-3xl font-bold tabular-nums text-slate-900">{value}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-600">{label}</p>
+            </Link>
+          );
+        })}
+      </section>
+      <div className="my-5">
+        <DashboardCharts
+          managers={managerData}
+          statuses={statusSummary}
+          workload={{ workload, owned, supported }}
+          selectedManagerName={selectedManager?.name}
+          selectedManagerId={selectedManager?.id}
+        />
+      </div>
+      <section className="card p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold">Needs attention</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Overdue and at-risk actions{selectedManager ? ` for ${selectedManager.name}` : ""}
+            </p>
+          </div>
+          <Link
+            href={registerHref}
+            className="text-sm font-bold text-[#007A91] hover:text-[#0097B2] hover:underline"
+          >
+            View all
+          </Link>
+        </div>
+        {priorityActions.length ? (
+          <div className="mt-4 divide-y divide-slate-100">
+            {priorityActions.map((a) => (
+              <Link
+                href={`/actions/${a.id}`}
+                key={a.id}
+                className="grid gap-2 py-4 hover:bg-slate-50 sm:grid-cols-[80px_1fr_130px_110px] sm:items-center"
+              >
+                <span className="font-mono text-sm font-bold text-[#007A91]">{a.reference}</span>
+                <span className="text-sm font-semibold">{a.title}</span>
+                <StatusBadge action={a} />
+                <span className="text-sm text-slate-500">
+                  {formatDate(a.extended_deadline || a.deadline)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 rounded-lg bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+            No overdue or at-risk actions.
+          </p>
+        )}
+      </section>
+    </>
+  );
 }

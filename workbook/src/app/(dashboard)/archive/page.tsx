@@ -42,7 +42,7 @@ export default async function ArchivePage() {
                 <tr key={a.id}>
                   <td>
                     <Link
-                      className="font-mono font-bold text-blue-800 hover:underline"
+                      className="font-mono font-bold text-[#007A91] hover:text-[#0097B2] hover:underline"
                       href={`/actions/${a.id}`}
                     >
                       {a.reference}

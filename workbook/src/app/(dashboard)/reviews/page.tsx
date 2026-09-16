@@ -53,7 +53,7 @@ export default async function ReviewsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-bold text-blue-800">
+                        <span className="font-mono text-sm font-bold text-[#007A91]">
                           {u.action.reference}
                         </span>
                         <span className="text-slate-300">•</span>
@@ -62,7 +62,7 @@ export default async function ReviewsPage() {
                         </span>
                       </div>
                       <Link
-                        className="block text-base font-bold text-slate-900 hover:text-blue-800 hover:underline"
+                        className="block text-base font-bold text-slate-900 hover:text-[#007A91] hover:underline"
                         href={`/actions/${u.action.id}`}
                       >
                         {u.action.title}
@@ -73,13 +73,13 @@ export default async function ReviewsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-900 border border-blue-200">
-                        <Calendar size={13} className="text-blue-600" />
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-[#E0F7FA] px-2.5 py-1 text-xs font-semibold text-[#007A91] border border-[#0097B2]/30">
+                        <Calendar size={13} className="text-[#0097B2]" />
                         Next review: {formatDate(u.next_review_at)}
                       </span>
                       <Link
                         href={`/actions/${u.action.id}`}
-                        className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                        className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-[#0097B2]/40 hover:bg-[#E0F7FA]/60 hover:text-[#007A91]"
                       >
                         <Eye size={13} /> View
                       </Link>

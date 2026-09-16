@@ -63,7 +63,7 @@ export function QuickEditDrawer({
           <div>
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
-                <span className="font-mono text-xs font-bold text-blue-800">
+                <span className="font-mono text-xs font-bold text-[#007A91]">
                   {action.reference}
                 </span>
                 <h2 id="quick-edit-title" className="text-lg font-bold text-slate-900">
