@@ -122,7 +122,7 @@ export async function getManagers(): Promise<Manager[]> {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("managers")
-    .select("id, name, role_title, email")
+    .select("id, name, role_title, email, source_code")
     .order("name");
 
   if (error) throw new Error(error.message);

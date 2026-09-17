@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { AlertCircle, AlertTriangle, ArrowDownCircle, CircleSlash2, ListChecks } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard-charts";
 import { PageHeader } from "@/components/app-shell";
@@ -6,6 +7,7 @@ import { ManagerOverviewFilter } from "@/components/manager-overview-filter";
 import { StatusBadge } from "@/components/status-badge";
 import { getActions, getManagers, requireAuth } from "@/lib/data";
 import { effectiveStatus, formatDate } from "@/lib/utils";
+import { getManagerColor, getManagerWorkbookTitle } from "@/lib/manager-colors";
 
 type DashboardPageProps = {
   searchParams: Promise<{ manager?: string | string[] }>;
@@ -61,10 +63,29 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const scopeDescription = selectedManager
     ? `Workload, deadlines and delivery status for ${selectedManager.name}.`
     : "Organisation-wide workload, deadlines and delivery status.";
+
+  const cookieStore = await cookies();
+  const rawColors = cookieStore.get("pc_manager_colors")?.value;
+  let customColors: Record<string, string> = {};
+  if (rawColors) {
+    try {
+      customColors = JSON.parse(decodeURIComponent(rawColors));
+    } catch {
+      // ignore
+    }
+  }
+
+  const title = getManagerWorkbookTitle(selectedManager);
+  const managerColor = selectedManager
+    ? getManagerColor(selectedManager.id, selectedManager.source_code, customColors)
+    : null;
+
   return (
     <>
       <PageHeader
-        title="Leadership actions"
+        title={title}
+        titleClassName={managerColor ? managerColor.titleClass : undefined}
+        titleStyle={managerColor ? { color: managerColor.hex } : undefined}
         description={scopeDescription}
         action={
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">

@@ -124,9 +124,6 @@ export function AppShell({
               <LogOut size={16} /> Sign out
             </button>
           </form>
-          <p className="mt-3 text-center text-[10px] text-slate-400/80 italic">
-            Pearl Connexions CIC
-          </p>
         </div>
       </aside>
       <main id="main" className="min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -136,6 +133,31 @@ export function AppShell({
   );
 }
 
-export function PageHeader({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
-  return <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl text-slate-900">{title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{description}</p></div>{action}</header>;
+export function PageHeader({
+  title,
+  description,
+  action,
+  titleClassName,
+  titleStyle,
+}: {
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+  titleClassName?: string;
+  titleStyle?: React.CSSProperties;
+}) {
+  return (
+    <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1
+          className={`text-2xl font-bold tracking-tight sm:text-3xl ${titleClassName || "text-slate-900"}`}
+          style={titleStyle}
+        >
+          {title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
+      </div>
+      {action}
+    </header>
+  );
 }

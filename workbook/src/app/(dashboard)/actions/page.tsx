@@ -1,7 +1,9 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { PageHeader } from "@/components/app-shell";
 import { ActionsTable } from "@/components/actions-table";
 import { getActions, getManagers, getWorkstreams, requireAuth } from "@/lib/data";
+import { getManagerColor, getManagerWorkbookTitle } from "@/lib/manager-colors";
 
 type ActionsPageProps = {
   searchParams: Promise<{
@@ -40,12 +42,38 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
   const initialResponsibility = typeof requestedResponsibility === "string" ? requestedResponsibility : "";
   const initialQuery = typeof requestedQuery === "string" ? requestedQuery : "";
 
+  const selectedManager = managerId ? managers.find((m) => m.id === managerId) : null;
+  const cookieStore = await cookies();
+  const rawColors = cookieStore.get("pc_manager_colors")?.value;
+  let customColors: Record<string, string> = {};
+  if (rawColors) {
+    try {
+      customColors = JSON.parse(decodeURIComponent(rawColors));
+    } catch {
+      // ignore
+    }
+  }
+
+  const managerColor = selectedManager
+    ? getManagerColor(selectedManager.id, selectedManager.source_code, customColors)
+    : null;
+
+  const title = selectedManager
+    ? getManagerWorkbookTitle(selectedManager)
+    : isManager
+    ? "My assigned actions"
+    : "All leadership actions";
+
   return (
     <>
       <PageHeader
-        title={isManager ? "My assigned actions" : "All leadership actions"}
+        title={title}
+        titleClassName={managerColor ? managerColor.titleClass : undefined}
+        titleStyle={managerColor ? { color: managerColor.hex } : undefined}
         description={
-          isManager
+          selectedManager
+            ? `Assigned leadership actions and deadlines for ${selectedManager.name}.`
+            : isManager
             ? "Your assigned leadership actions, deadlines and delivery progress."
             : "Search, filter and open any action to review its ownership and progress."
         }

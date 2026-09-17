@@ -380,13 +380,15 @@ export async function deleteAction(formData: FormData): Promise<{ ok: boolean; m
   }
 }
 
-export async function createManager(formData: FormData): Promise<{ ok: boolean; message?: string }> {
+export async function createManager(formData: FormData): Promise<{ ok: boolean; message?: string; managerId?: string }> {
   try {
     const { supabase } = await requireDirector();
     const name = z.string().trim().min(2).parse(formData.get("name"));
     const roleTitle = formData.get("role_title")?.toString().trim() || null;
     const email = formData.get("email")?.toString().trim() || null;
     const password = formData.get("password")?.toString().trim() || null;
+    const systemRole = formData.get("system_role")?.toString().trim() === "director" ? "director" : "manager";
+    const avatarColor = formData.get("avatar_color")?.toString().trim();
 
     const initials = name
       .split(" ")
@@ -423,7 +425,10 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
         email,
         password,
         email_confirm: true,
-        user_metadata: { display_name: name },
+        user_metadata: {
+          display_name: name,
+          ...(avatarColor ? { avatar_color: avatarColor } : {}),
+        },
       });
       if (authErr) {
         await supabase.from("managers").delete().eq("id", newManager.id);
@@ -432,7 +437,7 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
 
       const { error: profileErr } = await supabase
         .from("profiles")
-        .update({ role: "manager", manager_id: newManager.id, display_name: name })
+        .update({ role: systemRole, manager_id: newManager.id, display_name: name })
         .eq("id", authData.user.id);
 
       if (profileErr) {
@@ -444,7 +449,7 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
 
     revalidatePath("/settings");
     revalidatePath("/actions");
-    return { ok: true };
+    return { ok: true, managerId: newManager.id };
   } catch (err: unknown) {
     return { ok: false, message: err instanceof Error ? err.message : "Failed to create manager" };
   }
@@ -452,12 +457,14 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
 
 export async function updateManagerCredentials(formData: FormData): Promise<{ ok: boolean; message?: string }> {
   try {
-    const { supabase } = await requireDirector();
+    const { supabase, profile: currentProfile } = await requireDirector();
     const managerId = z.string().uuid().parse(formData.get("manager_id"));
     const email = formData.get("email")?.toString().trim();
     const password = formData.get("password")?.toString().trim();
     const roleTitle = formData.get("role_title")?.toString().trim();
     const name = formData.get("name")?.toString().trim();
+    const systemRole = formData.get("system_role")?.toString().trim();
+    const avatarColor = formData.get("avatar_color")?.toString().trim();
 
     const managerUpdate: Record<string, unknown> = {};
     if (name) managerUpdate.name = name;
@@ -476,7 +483,22 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
       .maybeSingle();
 
     if (linkedProfile) {
-      if (email || password) {
+      if (systemRole === "director" || systemRole === "manager" || name) {
+        if (linkedProfile.id === currentProfile.id && systemRole && systemRole !== "director") {
+          return { ok: false, message: "You cannot remove your own admin director role." };
+        }
+        const profileUpdate: Record<string, unknown> = {};
+        if (systemRole === "director" || systemRole === "manager") {
+          profileUpdate.role = systemRole;
+        }
+        if (name) profileUpdate.display_name = name;
+        if (Object.keys(profileUpdate).length > 0) {
+          const { error: profErr } = await supabase.from("profiles").update(profileUpdate).eq("id", linkedProfile.id);
+          if (profErr) return { ok: false, message: profErr.message };
+        }
+      }
+
+      if (email || password || avatarColor) {
         const admin = createAdminClient();
         if (!admin) {
           return {
@@ -485,10 +507,14 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
           };
         }
 
+        const metadataUpdate: Record<string, unknown> = {};
+        if (name) metadataUpdate.display_name = name;
+        if (avatarColor) metadataUpdate.avatar_color = avatarColor;
+
         const { error: authErr } = await admin.auth.admin.updateUserById(linkedProfile.id, {
           ...(email ? { email, email_confirm: true } : {}),
           ...(password ? { password } : {}),
-          ...(name ? { user_metadata: { display_name: name } } : {}),
+          ...(Object.keys(metadataUpdate).length > 0 ? { user_metadata: metadataUpdate } : {}),
         });
         if (authErr) return { ok: false, message: `Auth error: ${authErr.message}` };
       }
@@ -505,13 +531,17 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
         email,
         password,
         email_confirm: true,
-        user_metadata: { display_name: name || "Manager" },
+        user_metadata: {
+          display_name: name || "Manager",
+          ...(avatarColor ? { avatar_color: avatarColor } : {}),
+        },
       });
       if (authErr) return { ok: false, message: `Auth error: ${authErr.message}` };
 
+      const newRole = systemRole === "director" ? "director" : "manager";
       const { error: profileErr } = await supabase
         .from("profiles")
-        .update({ role: "manager", manager_id: managerId, display_name: name || "Manager" })
+        .update({ role: newRole, manager_id: managerId, display_name: name || "Manager" })
         .eq("id", authData.user.id);
 
       if (profileErr) {
@@ -529,8 +559,12 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
 
 export async function deleteManager(formData: FormData): Promise<{ ok: boolean; message?: string }> {
   try {
-    const { supabase } = await requireDirector();
+    const { supabase, profile: currentProfile } = await requireDirector();
     const managerId = z.string().uuid().parse(formData.get("manager_id"));
+
+    if (currentProfile.manager_id === managerId) {
+      return { ok: false, message: "You cannot delete your own logged-in director account." };
+    }
 
     await supabase.from("profiles").update({ manager_id: null, role: "pending" }).eq("manager_id", managerId);
     const { error } = await supabase.from("managers").delete().eq("id", managerId);

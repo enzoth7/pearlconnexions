@@ -37,6 +37,7 @@ export type Manager = {
   name: string;
   role_title: string | null;
   email?: string | null;
+  source_code?: string | null;
 };
 export type Participant = {
   id: string;
