@@ -1,12 +1,24 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
 import './globals.css';
-export const metadata:Metadata={title:'Pearl Connexions | Supported Homes for Young People',description:'Supported homes helping young people build stability, confidence and independence.'};
-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){
+
+export const metadata: Metadata = {
+  title: { default: 'Pearl Connexions', template: '%s | Pearl Connexions' },
+  description:
+    'Supported living, supported accommodation and children’s homes built around safety, connection and independence.',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>
+        <SiteHeader />
         {children}
+        <SiteFooter />
         <Analytics />
       </body>
     </html>
