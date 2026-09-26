@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/app/actions";
+import { ModuleSwitcher } from "@/components/module-switcher";
 import { NavLinks } from "@/components/nav-links";
 import { Button } from "@/components/ui/button";
 
@@ -20,10 +22,16 @@ export function AppShell({
       <header className="bg-[linear-gradient(120deg,#071b35_0%,#0d2c54_58%,#123863_100%)] text-white shadow-[0_8px_30px_rgba(8,30,60,0.16)]">
         <div className="mx-auto grid min-h-20 max-w-[1480px] grid-cols-[1fr_auto] items-center gap-x-3 px-4 sm:px-6 lg:grid-cols-[1fr_auto_1fr] lg:px-8">
           <div className="flex min-w-0 items-center gap-3 py-3">
-            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-white font-black text-[#0b2a52] shadow-sm" aria-hidden="true">P</div>
-            <div className="min-w-0">
-              <p className="truncate text-[11px] font-bold uppercase tracking-[0.14em] text-blue-200">Pearl Connexions</p>
-              <p className="truncate text-base font-bold tracking-tight sm:text-lg">Quality assurance</p>
+            <Image
+              src="/pearl-logo-white.png"
+              width={1963}
+              height={791}
+              alt="Pearl Connexions"
+              className="h-auto w-[108px] shrink-0 object-contain sm:w-[132px]"
+              preload
+            />
+            <div className="min-w-0 border-s border-white/20 ps-2 sm:ps-3">
+              <ModuleSwitcher role={role} />
             </div>
           </div>
           <div className="order-3 col-span-2 min-w-0 border-t border-white/10 lg:order-none lg:col-span-1 lg:border-0">

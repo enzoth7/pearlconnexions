@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ClipboardCheck, FileBarChart, Home, Settings, Users } from "lucide-react";
+import {
+  Building2,
+  ClipboardCheck,
+  FileBarChart,
+  Home,
+  Landmark,
+  Settings,
+  Users,
+  UsersRound,
+} from "lucide-react";
 import { cn } from "cn";
 
 const directorLinks = [
@@ -15,9 +24,24 @@ const directorLinks = [
 
 const leadLinks = [{ label: "My reports", href: "/portal", Icon: Home }];
 
+const financeLinks = [
+  { label: "Overview", href: "/director/finance", Icon: Landmark },
+];
+
+const hrLinks = [
+  { label: "Overview", href: "/director/hr", Icon: UsersRound },
+];
+
 export function NavLinks({ role }: { role: "director" | "house_lead" }) {
   const pathname = usePathname();
-  const links = role === "director" ? directorLinks : leadLinks;
+  const links =
+    role !== "director"
+      ? leadLinks
+      : pathname.startsWith("/director/finance")
+        ? financeLinks
+        : pathname.startsWith("/director/hr")
+          ? hrLinks
+          : directorLinks;
   return (
     <nav aria-label="Primary navigation" className="flex w-full gap-1 overflow-x-auto py-1 sm:justify-center lg:w-auto lg:overflow-visible lg:py-0">
       {links.map(({ label, href, Icon }) => {

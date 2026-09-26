@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Pearl Connexions QA", template: "%s | Pearl Connexions QA" },
-  description: "Private monthly quality assurance portal for Pearl Connexions.",
+  title: { default: "Pearl Connexions", template: "%s | Pearl Connexions" },
+  description:
+    "Private quality assurance, finance and HR portal for Pearl Connexions.",
   robots: { index: false, follow: false },
 };
 
@@ -32,4 +33,3 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     </html>
   );
 }
-
