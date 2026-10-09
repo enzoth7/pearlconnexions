@@ -16,9 +16,12 @@ import { StatusBadge } from "@/components/status-badge";
 import { QuickEditDrawer } from "@/components/quick-edit-drawer";
 import { NewActionDialog } from "@/components/new-action-dialog";
 import {
+  DEADLINE_WINDOW_LABELS,
   effectiveStatus,
   formatDate,
+  matchesDeadlineWindow,
   type ActionRecord,
+  type DeadlineWindow,
   type Manager,
   type Workstream,
 } from "@/lib/utils";
@@ -32,6 +35,7 @@ export function ActionsTable({
   initialPriority = "",
   initialResponsibility = "",
   initialQuery = "",
+  initialDeadlineWindow = "",
   isDirector = true,
 }: {
   actions: ActionRecord[];
@@ -42,6 +46,7 @@ export function ActionsTable({
   initialPriority?: string;
   initialResponsibility?: string;
   initialQuery?: string;
+  initialDeadlineWindow?: DeadlineWindow;
   isDirector?: boolean;
 }) {
   const searchParams = useSearchParams();
@@ -50,20 +55,26 @@ export function ActionsTable({
   const urlPriority = searchParams?.get("priority") ?? initialPriority ?? "";
   const urlResponsibility = searchParams?.get("responsibility") ?? initialResponsibility ?? "";
   const urlQuery = searchParams?.get("q") ?? initialQuery ?? "";
+  const urlDeadlineWindow = searchParams?.get("deadline") ?? initialDeadlineWindow ?? "";
 
   const cleanStatus = decodeURIComponent(urlStatus).replace(/\+/g, " ").trim();
   const cleanManager = urlManager.trim();
   const cleanPriority = decodeURIComponent(urlPriority).replace(/\+/g, " ").trim();
   const cleanResponsibility = decodeURIComponent(urlResponsibility).replace(/\+/g, " ").trim();
   const cleanQuery = decodeURIComponent(urlQuery).replace(/\+/g, " ").trim();
+  const cleanDeadlineWindow = Object.hasOwn(DEADLINE_WINDOW_LABELS, urlDeadlineWindow)
+    ? (urlDeadlineWindow as DeadlineWindow)
+    : "";
 
   const [query, setQuery] = useState(cleanQuery);
   const [manager, setManager] = useState(cleanManager);
   const [priority, setPriority] = useState(cleanPriority);
   const [status, setStatus] = useState(cleanStatus);
   const [responsibility, setResponsibility] = useState(cleanResponsibility);
+  const [deadlineWindow, setDeadlineWindow] = useState<DeadlineWindow>(cleanDeadlineWindow);
   const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
   const [isNewActionOpen, setIsNewActionOpen] = useState(false);
+  const todayInLondon = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
 
   useEffect(() => {
     setStatus(cleanStatus);
@@ -71,7 +82,8 @@ export function ActionsTable({
     setPriority(cleanPriority);
     setResponsibility(cleanResponsibility);
     setQuery(cleanQuery);
-  }, [cleanStatus, cleanManager, cleanPriority, cleanResponsibility, cleanQuery]);
+    setDeadlineWindow(cleanDeadlineWindow);
+  }, [cleanStatus, cleanManager, cleanPriority, cleanResponsibility, cleanQuery, cleanDeadlineWindow]);
 
   const filtered = useMemo(
     () =>
@@ -90,13 +102,14 @@ export function ActionsTable({
             (responsibility.toLowerCase() === "support"
               ? a.participants.some((p) => (!manager || p.manager.id === manager) && p.responsibility_type === "Support")
               : a.participants.some((p) => (!manager || p.manager.id === manager) && p.responsibility_type !== "Support"))) &&
+          matchesDeadlineWindow(a, deadlineWindow, todayInLondon) &&
           (status.toLowerCase() === "all"
             ? true
             : status
             ? effectiveStatus(a).trim().toLowerCase() === status.trim().toLowerCase()
             : effectiveStatus(a) !== "Completed")
       ),
-    [actions, query, manager, priority, status, responsibility]
+    [actions, query, manager, priority, status, responsibility, deadlineWindow, todayInLondon]
   );
 
   const columns = useMemo<ColumnDef<ActionRecord>[]>(
@@ -256,7 +269,7 @@ export function ActionsTable({
 
   return (
     <>
-      <div className="card mb-4 grid gap-3 p-4 md:grid-cols-[minmax(200px,1fr)_repeat(3,minmax(140px,1fr))_auto]">
+      <div className="card mb-4 grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[minmax(200px,1.2fr)_repeat(4,minmax(140px,1fr))_auto]">
         <label className="relative flex items-center">
           <span className="sr-only">Search actions</span>
           <input
@@ -315,6 +328,16 @@ export function ActionsTable({
             )
           )}
         </select>
+        <select
+          className="field"
+          aria-label="Filter by deadline period"
+          value={deadlineWindow}
+          onChange={(e) => setDeadlineWindow(e.target.value as DeadlineWindow)}
+        >
+          {(Object.entries(DEADLINE_WINDOW_LABELS) as [DeadlineWindow, string][]).map(([value, label]) => (
+            <option key={value || "all"} value={value}>{label}</option>
+          ))}
+        </select>
         {isDirector && (
           <button
             type="button"
@@ -326,7 +349,7 @@ export function ActionsTable({
         )}
       </div>
 
-      {(status || priority || manager || query || responsibility) && (
+      {(status || priority || manager || query || responsibility || deadlineWindow) && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 border border-slate-200/80 px-4 py-2.5 text-xs">
           <span className="font-bold text-slate-600">Active filters:</span>
           {status && (
@@ -381,6 +404,19 @@ export function ActionsTable({
               </button>
             </span>
           )}
+          {deadlineWindow && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 font-bold text-blue-800">
+              Deadline: {DEADLINE_WINDOW_LABELS[deadlineWindow]}
+              <button
+                type="button"
+                onClick={() => setDeadlineWindow("")}
+                className="ml-0.5 font-bold hover:text-red-600"
+                title="Remove deadline filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
           {query && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200/70 px-2.5 py-0.5 font-bold text-slate-800 border border-slate-300">
               Search: &ldquo;{query}&rdquo;
@@ -402,6 +438,7 @@ export function ActionsTable({
               setManager("");
               setResponsibility("");
               setQuery("");
+              setDeadlineWindow("");
             }}
             className="ml-auto font-bold text-[#007A91] hover:text-[#0097B2] hover:underline"
           >

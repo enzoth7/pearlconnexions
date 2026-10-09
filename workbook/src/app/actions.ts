@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireDirector } from "@/lib/data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { nextActionReference } from "@/lib/utils";
 
 const optionalDate = z.string().transform((v) => v || null).nullable();
 
@@ -23,11 +24,6 @@ const actionSchema = z.object({
 });
 
 const createActionSchema = z.object({
-  reference: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z]{2}[0-9]{2}$/, "Reference must be 2 letters followed by 2 digits (e.g. BD08)"),
   title: z.string().trim().min(5, "Title must be at least 5 characters").max(1000),
   workstream_id: z.string().uuid("Please select a workstream"),
   priority: z.enum(["High", "Medium", "Low", ""]).transform((v) => v || null),
@@ -50,27 +46,52 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
   }
   const { supabase } = await requireDirector();
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+  const [{ data: workstream, error: workstreamError }, { data: existingActions, error: referencesError }] =
+    await Promise.all([
+      supabase.from("workstreams").select("name").eq("id", parsed.data.workstream_id).single(),
+      supabase.from("actions").select("reference, workstream_id"),
+    ]);
 
-  const { data: newAction, error: actionError } = await supabase
-    .from("actions")
-    .insert({
-      reference: parsed.data.reference,
-      title: parsed.data.title,
-      workstream_id: parsed.data.workstream_id,
-      priority: parsed.data.priority,
-      base_status: "Not Started",
-      date_added: today,
-      deadline: parsed.data.deadline,
-    })
-    .select("id")
-    .single();
+  if (workstreamError || !workstream) return { message: workstreamError?.message || "Workstream not found." };
+  if (referencesError) return { message: referencesError.message };
 
-  if (actionError) {
-    if (actionError.code === "23505") {
-      return { message: `Reference ${parsed.data.reference} is already taken.` };
+  const allReferences = (existingActions ?? []).map((action) => action.reference);
+  const workstreamReferences = (existingActions ?? [])
+    .filter((action) => action.workstream_id === parsed.data.workstream_id)
+    .map((action) => action.reference);
+  let newAction: { id: string; reference: string } | null = null;
+  let generatedReference = "";
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      generatedReference = nextActionReference(workstream.name, workstreamReferences, allReferences);
+    } catch (error) {
+      return { message: error instanceof Error ? error.message : "Could not generate a reference." };
     }
-    return { message: actionError.message };
+
+    const { data, error } = await supabase
+      .from("actions")
+      .insert({
+        reference: generatedReference,
+        title: parsed.data.title,
+        workstream_id: parsed.data.workstream_id,
+        priority: parsed.data.priority,
+        base_status: "Not Started",
+        date_added: today,
+        deadline: parsed.data.deadline,
+      })
+      .select("id, reference")
+      .single();
+
+    if (!error && data) {
+      newAction = data;
+      break;
+    }
+    if (error?.code !== "23505") return { message: error?.message || "Could not create the action." };
+    allReferences.push(generatedReference);
   }
+
+  if (!newAction) return { message: "The reference was taken by another action. Please try again." };
 
   if (parsed.data.manager_id) {
     const respType = parsed.data.responsibility_type ?? "Owner";
@@ -101,7 +122,7 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
 
   revalidatePath("/");
   revalidatePath("/actions");
-  return { ok: true, message: "Action created successfully." };
+  return { ok: true, message: `Action ${newAction.reference} created successfully.` };
 }
 
 export async function updateAction(_: FormState, formData: FormData): Promise<FormState> {

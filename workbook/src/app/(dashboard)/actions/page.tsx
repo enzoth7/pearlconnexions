@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/app-shell";
 import { ActionsTable } from "@/components/actions-table";
 import { getActions, getManagers, getWorkstreams, requireAuth } from "@/lib/data";
 import { getManagerColor, getManagerWorkbookTitle } from "@/lib/manager-colors";
+import { DEADLINE_WINDOW_LABELS, type DeadlineWindow } from "@/lib/utils";
 
 type ActionsPageProps = {
   searchParams: Promise<{
@@ -12,6 +13,7 @@ type ActionsPageProps = {
     priority?: string | string[];
     responsibility?: string | string[];
     q?: string | string[];
+    deadline?: string | string[];
   }>;
 };
 
@@ -29,6 +31,7 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
     priority: requestedPriority,
     responsibility: requestedResponsibility,
     q: requestedQuery,
+    deadline: requestedDeadlineWindow,
   } = rawParams;
 
   const managerId = isManager
@@ -41,6 +44,10 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
   const initialPriority = typeof requestedPriority === "string" ? requestedPriority : "";
   const initialResponsibility = typeof requestedResponsibility === "string" ? requestedResponsibility : "";
   const initialQuery = typeof requestedQuery === "string" ? requestedQuery : "";
+  const initialDeadlineWindow =
+    typeof requestedDeadlineWindow === "string" && Object.hasOwn(DEADLINE_WINDOW_LABELS, requestedDeadlineWindow)
+      ? (requestedDeadlineWindow as DeadlineWindow)
+      : "";
 
   const selectedManager = managerId ? managers.find((m) => m.id === managerId) : null;
   const cookieStore = await cookies();
@@ -80,7 +87,7 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
       />
       <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading register...</div>}>
         <ActionsTable
-          key={`${managerId}-${initialStatus}-${initialPriority}-${initialResponsibility}-${initialQuery}`}
+          key={`${managerId}-${initialStatus}-${initialPriority}-${initialResponsibility}-${initialQuery}-${initialDeadlineWindow}`}
           actions={actions}
           managers={managers}
           workstreams={workstreams}
@@ -89,6 +96,7 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           initialPriority={initialPriority}
           initialResponsibility={initialResponsibility}
           initialQuery={initialQuery}
+          initialDeadlineWindow={initialDeadlineWindow}
           isDirector={isDirector}
         />
       </Suspense>

@@ -3,7 +3,7 @@
 import { useEffect, useActionState } from "react";
 import { X, Plus } from "lucide-react";
 import { createAction, type FormState } from "@/app/actions";
-import { RESPONSIBILITY_TYPES, type Manager, type Workstream } from "@/lib/utils";
+import { type Manager, type Workstream } from "@/lib/utils";
 
 const initial: FormState = {};
 
@@ -103,22 +103,6 @@ function NewActionForm({
     <form action={formAction} className="mt-5 space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="label" htmlFor="new-ref">
-            Reference
-          </label>
-          <input
-            className="field font-mono"
-            id="new-ref"
-            name="reference"
-            placeholder="e.g. BD08"
-            pattern="[A-Za-z]{2}[0-9]{2}"
-            required
-            maxLength={4}
-          />
-          <p className="mt-1 text-xs text-slate-500">2 letters + 2 digits</p>
-        </div>
-
-        <div>
           <label className="label" htmlFor="new-workstream">
             Workstream
           </label>
@@ -138,6 +122,10 @@ function NewActionForm({
               </option>
             ))}
           </select>
+        </div>
+        <div className="rounded-xl border border-[#0097B2]/20 bg-[#E0F7FA]/50 px-4 py-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#007A91]">Reference</p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">Generated automatically after creation</p>
         </div>
       </div>
 
