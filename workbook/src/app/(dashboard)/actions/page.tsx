@@ -18,7 +18,7 @@ type ActionsPageProps = {
 };
 
 export default async function ActionsPage({ searchParams }: ActionsPageProps) {
-  const { isDirector, isManager, managerId: authManagerId } = await requireAuth();
+  const { isDirector, isManager, managerId: authManagerId, canManageEmployees } = await requireAuth();
   const [actions, managers, workstreams] = await Promise.all([
     getActions(),
     getManagers(),
@@ -34,7 +34,8 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
     deadline: requestedDeadlineWindow,
   } = rawParams;
 
-  const managerId = isManager
+  const canFilterManagers = isDirector || canManageEmployees;
+  const managerId = isManager && !canManageEmployees
     ? authManagerId || ""
     : typeof requestedManagerId === "string" && managers.some((manager) => manager.id === requestedManagerId)
     ? requestedManagerId
@@ -68,7 +69,9 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
   const title = selectedManager
     ? getManagerWorkbookTitle(selectedManager)
     : isManager
-    ? "My assigned actions"
+    ? canManageEmployees
+      ? "My team actions"
+      : "My assigned actions"
     : "All leadership actions";
 
   return (
@@ -81,7 +84,9 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           selectedManager
             ? `Assigned leadership actions and deadlines for ${selectedManager.name}.`
             : isManager
-            ? "Your assigned leadership actions, deadlines and delivery progress."
+            ? canManageEmployees
+              ? "Actions, deadlines and delivery progress across your reporting line."
+              : "Your assigned leadership actions, deadlines and delivery progress."
             : "Search, filter and open any action to review its ownership and progress."
         }
       />
@@ -98,6 +103,7 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           initialQuery={initialQuery}
           initialDeadlineWindow={initialDeadlineWindow}
           isDirector={isDirector}
+          canFilterManagers={canFilterManagers}
         />
       </Suspense>
     </>

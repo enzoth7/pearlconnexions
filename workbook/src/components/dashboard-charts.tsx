@@ -198,8 +198,13 @@ export function DashboardCharts({
                 fill="#0097B2"
                 radius={[0, 5, 5, 0]}
                 className="cursor-pointer"
-                onClick={(entry: any) => {
-                  if (entry?.id) {
+                onClick={(entry: unknown) => {
+                  if (
+                    typeof entry === "object" &&
+                    entry !== null &&
+                    "id" in entry &&
+                    typeof entry.id === "string"
+                  ) {
                     router.push(`/actions?manager=${entry.id}`);
                   }
                 }}

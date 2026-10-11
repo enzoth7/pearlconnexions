@@ -22,6 +22,7 @@ import {
   type UpdateRecord,
   type Workstream,
 } from "@/lib/utils";
+import { ManagerMultiSelect } from "@/components/manager-multi-select";
 
 const initial: FormState = {};
 
@@ -51,7 +52,7 @@ export function ActionForm({
   readOnly?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(updateAction, initial);
-  const currentOwner = action.participants.find((p) => p.responsibility_type !== "Support");
+  const currentOwners = action.participants.filter((p) => p.responsibility_type !== "Support");
   const currentSupport = action.participants.find((p) => p.responsibility_type === "Support");
 
   if (readOnly) {
@@ -83,7 +84,9 @@ export function ActionForm({
           </div>
           <div>
             <dt className="text-slate-500">Lead manager</dt>
-            <dd className="mt-1 font-semibold text-slate-800">{currentOwner?.manager.name || "Unassigned"}</dd>
+            <dd className="mt-1 font-semibold text-slate-800">
+              {currentOwners.map((participant) => participant.manager.name).join(", ") || "Unassigned"}
+            </dd>
           </div>
           {currentSupport && (
             <div>
@@ -151,24 +154,11 @@ export function ActionForm({
           </div>
           {managers && managers.length > 0 && (
             <>
-              <div>
-                <label className="label" htmlFor="action-owner">
-                  Lead Manager (Owner)
-                </label>
-                <select
-                  className="field"
-                  id="action-owner"
-                  name="manager_id"
-                  defaultValue={currentOwner?.manager.id || ""}
-                >
-                  <option value="">Unassigned</option>
-                  {managers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <ManagerMultiSelect
+                managers={managers}
+                defaultValue={currentOwners.map((participant) => participant.manager.id)}
+                id="action-owners"
+              />
 
               <div>
                 <label className="label" htmlFor="action-support">

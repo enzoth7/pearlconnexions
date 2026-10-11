@@ -4,6 +4,7 @@ import { useEffect, useState, useActionState } from "react";
 import { X, Trash2 } from "lucide-react";
 import { updateAction, deleteAction, type FormState } from "@/app/actions";
 import type { ActionRecord, Manager, Workstream } from "@/lib/utils";
+import { ManagerMultiSelect } from "@/components/manager-multi-select";
 
 const initial: FormState = {};
 
@@ -107,7 +108,7 @@ function QuickEditForm({
 }) {
   const [state, formAction, pending] = useActionState(updateAction, initial);
   const [isDeleting, setIsDeleting] = useState(false);
-  const currentOwner = action.participants.find((p) => p.responsibility_type !== "Support");
+  const currentOwners = action.participants.filter((p) => p.responsibility_type !== "Support");
   const currentSupport = action.participants.find((p) => p.responsibility_type === "Support");
 
   const handleDelete = async () => {
@@ -170,25 +171,12 @@ function QuickEditForm({
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label" htmlFor="quick-owner">
-            Lead Manager (Owner)
-          </label>
-          <select
-            className="field"
-            id="quick-owner"
-            name="manager_id"
-            defaultValue={currentOwner?.manager.id || ""}
-          >
-            <option value="">Unassigned</option>
-            {managers.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="grid grid-cols-2 items-start gap-3">
+        <ManagerMultiSelect
+          managers={managers}
+          defaultValue={currentOwners.map((participant) => participant.manager.id)}
+          id="quick-owners"
+        />
 
         <div>
           <label className="label" htmlFor="quick-support">

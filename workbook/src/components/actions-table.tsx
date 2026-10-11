@@ -37,6 +37,7 @@ export function ActionsTable({
   initialQuery = "",
   initialDeadlineWindow = "",
   isDirector = true,
+  canFilterManagers = isDirector,
 }: {
   actions: ActionRecord[];
   managers: Manager[];
@@ -48,6 +49,7 @@ export function ActionsTable({
   initialQuery?: string;
   initialDeadlineWindow?: DeadlineWindow;
   isDirector?: boolean;
+  canFilterManagers?: boolean;
 }) {
   const searchParams = useSearchParams();
   const urlStatus = searchParams?.get("status") ?? initialStatus ?? "";
@@ -280,7 +282,7 @@ export function ActionsTable({
           />
           <Search className="pointer-events-none absolute right-3 text-slate-400" size={17} />
         </label>
-        {isDirector && (
+        {canFilterManagers && (
           <select
             className="field"
             aria-label="Filter by manager"

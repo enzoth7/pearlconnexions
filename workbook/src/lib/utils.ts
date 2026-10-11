@@ -129,6 +129,8 @@ export type Manager = {
   role_title: string | null;
   email?: string | null;
   source_code?: string | null;
+  parent_manager_id?: string | null;
+  can_manage_employees?: boolean;
 };
 export type Participant = {
   id: string;

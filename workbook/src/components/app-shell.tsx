@@ -3,13 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CheckCircle2, ClipboardCheck, LayoutDashboard, ListChecks, LogOut, Settings } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardCheck, LayoutDashboard, ListChecks, LogOut, Settings } from "lucide-react";
 import { signOut } from "@/app/actions";
 
 const baseLinks = [
   ["Overview", "/", LayoutDashboard],
+  ["Calendar", "/calendar", CalendarDays],
   ["Action register", "/actions", ListChecks],
-  ["Monthly review", "/reviews", ClipboardCheck],
+  ["Action review", "/reviews", ClipboardCheck],
   ["Completed Actions", "/archive", CheckCircle2],
 ] as const;
 
@@ -17,16 +18,20 @@ export function AppShell({
   children,
   name,
   role = "director",
+  canManageEmployees = false,
 }: {
   children: React.ReactNode;
   name: string;
   role?: string;
+  canManageEmployees?: boolean;
 }) {
   const pathname = usePathname();
   const isDirector = role === "director";
   const links = [
     ...baseLinks,
-    ...(isDirector ? ([["Settings", "/settings", Settings]] as const) : []),
+    ...(isDirector || canManageEmployees
+      ? ([[isDirector ? "Settings" : "My team", "/settings", Settings]] as const)
+      : []),
   ];
 
   const isActive = (href: string) => {

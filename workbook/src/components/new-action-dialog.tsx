@@ -4,6 +4,7 @@ import { useEffect, useActionState } from "react";
 import { X, Plus } from "lucide-react";
 import { createAction, type FormState } from "@/app/actions";
 import { type Manager, type Workstream } from "@/lib/utils";
+import { ManagerMultiSelect } from "@/components/manager-multi-select";
 
 const initial: FormState = {};
 
@@ -57,7 +58,7 @@ export function NewActionDialog({
         aria-hidden="true"
       />
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="relative w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E0F7FA] text-[#007A91] border border-[#0097B2]/20">
@@ -167,27 +168,22 @@ function NewActionForm({
       <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
         <h3 className="text-sm font-bold text-slate-800">Ownership &amp; Support</h3>
         <p className="mt-0.5 text-xs text-slate-500">
-          Assign the lead manager in charge and optionally another manager who provides support.
+          Assign one or more managers to lead the action, plus optional support.
         </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="new-manager">
-              Lead Manager (Owner)
-            </label>
-            <select className="field" id="new-manager" name="manager_id" defaultValue="">
-              <option value="">Unassigned</option>
-              {managers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="mt-3 grid items-start gap-3 sm:grid-cols-2">
+          <ManagerMultiSelect
+            managers={managers}
+            id="new-managers"
+            menuClassName="sm:w-[32rem]"
+          />
 
           <div>
             <label className="label" htmlFor="new-support-manager">
               Support Manager
             </label>
+            <p className="mb-2 text-xs text-slate-500">
+              Select an optional manager to provide support.
+            </p>
             <select className="field" id="new-support-manager" name="support_manager_id" defaultValue="">
               <option value="">None</option>
               {managers.map((m) => (

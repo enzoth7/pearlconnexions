@@ -4,7 +4,6 @@ import {
   requireDirector,
   getActions,
   getActionById,
-  getManagers,
   getManagersWithProfiles,
 } from "./data";
 import { redirect } from "next/navigation";
@@ -20,6 +19,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+function asSupabase(value: unknown) {
+  return value as Awaited<ReturnType<typeof createClient>>;
+}
+
 describe("data layer auth and role functions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,7 +34,7 @@ describe("data layer auth and role functions", () => {
         getClaims: vi.fn().mockResolvedValue({ data: null }),
       },
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     await expect(requireAuth()).rejects.toThrow("REDIRECT:/login");
     expect(redirect).toHaveBeenCalledWith("/login");
@@ -52,7 +55,7 @@ describe("data layer auth and role functions", () => {
         }),
       }),
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     await expect(requireAuth()).rejects.toThrow("REDIRECT:/access-pending");
   });
@@ -72,7 +75,7 @@ describe("data layer auth and role functions", () => {
         }),
       }),
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     const ctx = await requireAuth();
     expect(ctx.isDirector).toBe(true);
@@ -85,34 +88,36 @@ describe("data layer auth and role functions", () => {
       auth: {
         getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: "mgr-user-1" } } }),
       },
-      from: vi.fn().mockReturnValue({
+      from: vi.fn((table: string) => ({
         select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: { id: "mgr-user-1", display_name: "Manager User", role: "manager", manager_id: "mgr-1" },
-            }),
-          }),
+          eq: vi.fn().mockReturnValue(
+            table === "profiles"
+              ? {
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: "mgr-user-1", display_name: "Manager User", role: "manager", manager_id: "mgr-1" },
+                  }),
+                }
+              : {
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: { can_manage_employees: false },
+                  }),
+                }
+          ),
         }),
-      }),
+      })),
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     await expect(requireDirector()).rejects.toThrow("REDIRECT:/access-pending");
   });
 
-  it("getActions automatically scopes to manager's actions", async () => {
+  it("getActions returns the rows already scoped by manager RLS", async () => {
     const actionsData = [
       {
         id: "act-1",
         reference: "BD01",
         title: "Action 1",
         participants: [{ manager: { id: "mgr-1" } }],
-      },
-      {
-        id: "act-2",
-        reference: "BD02",
-        title: "Action 2",
-        participants: [{ manager: { id: "mgr-2" } }],
       },
     ];
 
@@ -132,6 +137,15 @@ describe("data layer auth and role functions", () => {
             }),
           };
         }
+        if (table === "managers") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { can_manage_employees: true } }),
+              }),
+            }),
+          };
+        }
         return {
           select: vi.fn().mockReturnValue({
             order: vi.fn().mockResolvedValue({ data: actionsData, error: null }),
@@ -139,14 +153,14 @@ describe("data layer auth and role functions", () => {
         };
       }),
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     const actions = await getActions();
     expect(actions).toHaveLength(1);
     expect(actions[0].id).toBe("act-1");
   });
 
-  it("getActionById verifies manager participation", async () => {
+  it("getActionById returns null when RLS hides an action from a manager", async () => {
     const mockSupabase = {
       auth: {
         getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: "mgr-user-1" } } }),
@@ -163,14 +177,20 @@ describe("data layer auth and role functions", () => {
             }),
           };
         }
+        if (table === "managers") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { can_manage_employees: true } }),
+              }),
+            }),
+          };
+        }
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               maybeSingle: vi.fn().mockResolvedValue({
-                data: {
-                  id: "act-99",
-                  participants: [{ manager: { id: "mgr-other" } }],
-                },
+                data: null,
                 error: null,
               }),
             }),
@@ -178,7 +198,7 @@ describe("data layer auth and role functions", () => {
         };
       }),
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     const action = await getActionById("act-99");
     expect(action).toBeNull();
@@ -209,7 +229,8 @@ describe("data layer auth and role functions", () => {
                       data: { id: "dir-1", display_name: "Joel", role: "director", manager_id: null },
                     }),
                   }),
-                  then: (resolve: any) => resolve({ data: profilesList, error: null }),
+                  then: (resolve: (value: { data: typeof profilesList; error: null }) => unknown) =>
+                    resolve({ data: profilesList, error: null }),
                 };
               }
               return {
@@ -232,17 +253,83 @@ describe("data layer auth and role functions", () => {
         return {};
       }),
     };
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     const result = await getManagersWithProfiles();
-    expect(result).toHaveLength(2);
-    expect(result[0].name).toBe("Alice");
-    expect(result[0].profile).toEqual({
+    expect(result.teamHierarchyReady).toBe(true);
+    expect(result.managers).toHaveLength(2);
+    expect(result.managers[0].name).toBe("Alice");
+    expect(result.managers[0].profile).toEqual({
       id: "prof-1",
       display_name: "Alice Profile",
       role: "manager",
     });
-    expect(result[1].name).toBe("Bob");
-    expect(result[1].profile).toBeNull();
+    expect(result.managers[1].name).toBe("Bob");
+    expect(result.managers[1].profile).toBeNull();
+  });
+
+  it("getManagersWithProfiles falls back safely while the hierarchy migration is pending", async () => {
+    const managersList = [
+      { id: "mgr-1", name: "Alice", role_title: "Head of Care", email: "alice@example.com", source_code: "AL" },
+    ];
+    const profilesList = [
+      { id: "prof-1", display_name: "Alice Profile", role: "manager", manager_id: "mgr-1" },
+    ];
+
+    const mockSupabase = {
+      auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: "dir-1" } } }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            select: vi.fn((cols: string) => {
+              if (cols === "id, display_name, role, manager_id") {
+                return {
+                  eq: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({
+                      data: { id: "dir-1", display_name: "Joel", role: "director", manager_id: null },
+                    }),
+                  }),
+                  then: (resolve: (value: { data: typeof profilesList; error: null }) => unknown) =>
+                    resolve({ data: profilesList, error: null }),
+                };
+              }
+              return {};
+            }),
+          };
+        }
+        if (table === "managers") {
+          return {
+            select: vi.fn((cols: string) => ({
+              order: vi.fn().mockResolvedValue(
+                cols.includes("parent_manager_id")
+                  ? {
+                      data: null,
+                      error: {
+                        code: "42703",
+                        message: "column managers.parent_manager_id does not exist",
+                      },
+                    }
+                  : { data: managersList, error: null }
+              ),
+            })),
+          };
+        }
+        return {};
+      }),
+    };
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
+
+    const result = await getManagersWithProfiles();
+
+    expect(result.teamHierarchyReady).toBe(false);
+    expect(result.managers).toEqual([
+      expect.objectContaining({
+        id: "mgr-1",
+        parent_manager_id: null,
+        can_manage_employees: false,
+      }),
+    ]);
   });
 });

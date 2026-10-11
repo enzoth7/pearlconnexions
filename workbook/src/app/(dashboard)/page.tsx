@@ -14,14 +14,16 @@ type DashboardPageProps = {
 };
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const { isManager, managerId: authManagerId } = await requireAuth();
+  const { isDirector, isManager, managerId: authManagerId, canManageEmployees } = await requireAuth();
   const [actions, managers] = await Promise.all([getActions(), getManagers()]);
   const { manager: requestedManagerId } = await searchParams;
-  const managerId = isManager
+  const requestedVisibleManagerId =
+    typeof requestedManagerId === "string" && managers.some((manager) => manager.id === requestedManagerId)
+      ? requestedManagerId
+      : undefined;
+  const managerId = isManager && !canManageEmployees
     ? authManagerId || undefined
-    : typeof requestedManagerId === "string"
-    ? requestedManagerId
-    : undefined;
+    : requestedVisibleManagerId;
   const selectedManager = managers.find((manager) => manager.id === managerId);
   const filteredActions = selectedManager
     ? actions.filter((action) => action.participants.some((participant) => participant.manager.id === selectedManager.id))
@@ -62,6 +64,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const registerHref = selectedManager ? `/actions?manager=${selectedManager.id}` : "/actions";
   const scopeDescription = selectedManager
     ? `Workload, deadlines and delivery status for ${selectedManager.name}.`
+    : isManager
+    ? "Workload, deadlines and delivery status across your reporting line."
     : "Organisation-wide workload, deadlines and delivery status.";
 
   const cookieStore = await cookies();
@@ -75,7 +79,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     }
   }
 
-  const title = getManagerWorkbookTitle(selectedManager);
+  const title = selectedManager
+    ? getManagerWorkbookTitle(selectedManager)
+    : isManager && canManageEmployees
+    ? "My team overview"
+    : getManagerWorkbookTitle(selectedManager);
   const managerColor = selectedManager
     ? getManagerColor(selectedManager.id, selectedManager.source_code, customColors)
     : null;
@@ -89,7 +97,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         description={scopeDescription}
         action={
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
-            {!isManager && (
+            {(isDirector || canManageEmployees) && (
               <ManagerOverviewFilter managers={managers} selectedManagerId={selectedManager?.id} />
             )}
             <Link href={registerHref} className="btn btn-primary whitespace-nowrap">

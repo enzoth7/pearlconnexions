@@ -1,33 +1,41 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { Check, KeyRound, Mail, ShieldCheck, Trash2, User, UserCheck, UserPlus, UserX, X } from "lucide-react";
-import { createManager, updateManagerCredentials, deleteManager } from "@/app/actions";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { AlertTriangle, Check, CornerDownRight, KeyRound, Mail, ShieldCheck, Trash2, User, UserCheck, UserPlus, UsersRound, UserX, X } from "lucide-react";
+import { createManager, updateManagerCredentials, deleteManager, setManagerEmployeePermission } from "@/app/actions";
 import type { ManagerWithProfile } from "@/lib/data";
 import {
   AVATAR_PALETTE,
   getInitials,
   getManagerColorKey,
-  type AvatarColorOption,
 } from "@/lib/manager-colors";
 
 export function SettingsTable({
   managers,
   currentProfileId,
   currentManagerId,
+  isDirector,
+  canManageEmployees,
+  teamHierarchyReady,
 }: {
   managers: ManagerWithProfile[];
   currentProfileId?: string;
   currentManagerId?: string | null;
+  isDirector: boolean;
+  canManageEmployees: boolean;
+  teamHierarchyReady: boolean;
 }) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingManager, setEditingManager] = useState<ManagerWithProfile | null>(null);
   const [managerColors, setManagerColors] = useState<Record<string, string>>({});
+  const orderedManagers = useMemo(() => flattenManagerTree(managers), [managers]);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem("pearl_manager_avatar_colors");
       if (stored) {
+        // Hydrate the client-only preference after the initial server render.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setManagerColors(JSON.parse(stored));
         document.cookie = `pc_manager_colors=${encodeURIComponent(stored)}; path=/; max-age=31536000; SameSite=Lax`;
       }
@@ -52,20 +60,35 @@ export function SettingsTable({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Leadership Team & User Logins</h2>
-          <p className="text-sm text-slate-500">
-            Configure access for managers. Managers will only see actions and reviews assigned to them.
-          </p>
+      {!teamHierarchyReady && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={18} />
+          <div>
+            <p className="font-bold">Team hierarchy update pending</p>
+            <p className="mt-0.5 text-amber-800">
+              Existing managers remain available. Reporting lines and employee-management permissions will activate after the database migration is applied.
+            </p>
+          </div>
         </div>
+      )}
+      <div className={`flex flex-col gap-4 sm:flex-row sm:items-center ${isDirector ? "sm:justify-end" : "sm:justify-between"}`}>
+        {!isDirector && (
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">My Employees & User Logins</h2>
+            <p className="text-sm text-slate-500">
+              {canManageEmployees
+                ? "Add employees and manage the people who report directly to you."
+                : "View your reporting line."}
+            </p>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setIsAddOpen(true)}
           className="btn btn-primary inline-flex items-center gap-2 cursor-pointer"
         >
           <UserPlus size={16} />
-          Add Manager
+          {isDirector ? "Add Manager" : "Add Employee"}
         </button>
       </div>
 
@@ -78,12 +101,13 @@ export function SettingsTable({
                 <th className="px-6 py-3.5">Role / Workbook</th>
                 <th className="px-6 py-3.5">System Role</th>
                 <th className="px-6 py-3.5">Email / Login</th>
+                <th className="px-6 py-3.5">Can manage employees?</th>
                 <th className="px-6 py-3.5">Access Status</th>
                 <th className="px-6 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {managers.map((m) => {
+              {orderedManagers.map(({ manager: m, depth }) => {
                 const hasAccount = Boolean(m.profile_id);
                 const isSelf = Boolean(
                   (currentManagerId && m.id === currentManagerId) ||
@@ -93,11 +117,22 @@ export function SettingsTable({
                 const initials = getInitials(m.name, m.source_code);
                 const colorKey = getManagerColorKey(m.id, m.source_code, managerColors);
                 const color = AVATAR_PALETTE[colorKey] || AVATAR_PALETTE.teal;
+                const canEdit = isDirector || m.parent_manager_id === currentManagerId;
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50/75 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                      <div
+                        className="flex items-center gap-3"
+                        style={{ paddingLeft: `${Math.min(depth, 4) * 28}px` }}
+                      >
+                        {depth > 0 && (
+                          <CornerDownRight
+                            aria-label="Employee"
+                            className="shrink-0 text-[#0097B2]"
+                            size={17}
+                          />
+                        )}
                         <div
                           className={`grid h-9 w-9 place-items-center rounded-full font-bold text-sm border shadow-2xs transition-colors ${color.bgClass} ${color.textClass} ${color.borderClass}`}
                           title={`Avatar: ${color.name} (${initials})`}
@@ -150,6 +185,19 @@ export function SettingsTable({
                       )}
                     </td>
                     <td className="px-6 py-4">
+                      {isAdmin ? (
+                        <span className="text-xs font-semibold text-slate-400">Director access</span>
+                      ) : isDirector ? (
+                        <EmployeePermissionToggle manager={m} schemaReady={teamHierarchyReady} />
+                      ) : m.can_manage_employees ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-[#007A91]">
+                          <UsersRound size={13} /> Yes
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-400">No</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
                       {hasAccount ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
                           <UserCheck size={12} />
@@ -169,19 +217,25 @@ export function SettingsTable({
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setEditingManager(m)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
-                        >
-                          <KeyRound size={13} />
-                          {hasAccount ? "Edit / Password" : "Set login"}
-                        </button>
-                        <DeleteManagerButton
-                          managerId={m.id}
-                          managerName={m.name}
-                          isCurrentDirector={isSelf}
-                        />
+                        {canEdit ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setEditingManager(m)}
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+                            >
+                              <KeyRound size={13} />
+                              {hasAccount ? "Edit / Password" : "Set login"}
+                            </button>
+                            <DeleteManagerButton
+                              managerId={m.id}
+                              managerName={m.name}
+                              isProtected={isSelf}
+                            />
+                          </>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-400">—</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -195,6 +249,9 @@ export function SettingsTable({
       {/* Add Manager Modal */}
       {isAddOpen && (
         <AddManagerModal
+          managers={managers}
+          isDirector={isDirector}
+          teamHierarchyReady={teamHierarchyReady}
           onClose={() => setIsAddOpen(false)}
           onCreated={(newId, colorKey) => {
             if (newId && colorKey) handleSaveColor(newId, colorKey);
@@ -206,6 +263,9 @@ export function SettingsTable({
       {editingManager && (
         <EditManagerModal
           manager={editingManager}
+          managers={managers}
+          isDirector={isDirector}
+          teamHierarchyReady={teamHierarchyReady}
           currentColorKey={getManagerColorKey(editingManager.id, editingManager.source_code, managerColors)}
           onSaveColor={(colorKey) => handleSaveColor(editingManager.id, colorKey)}
           isSelf={Boolean(
@@ -219,22 +279,111 @@ export function SettingsTable({
   );
 }
 
+function flattenManagerTree(managers: ManagerWithProfile[]) {
+  const knownIds = new Set(managers.map((manager) => manager.id));
+  const childrenByParent = new Map<string, ManagerWithProfile[]>();
+  const roots: ManagerWithProfile[] = [];
+
+  for (const manager of managers) {
+    if (manager.parent_manager_id && knownIds.has(manager.parent_manager_id)) {
+      const children = childrenByParent.get(manager.parent_manager_id) ?? [];
+      children.push(manager);
+      childrenByParent.set(manager.parent_manager_id, children);
+    } else {
+      roots.push(manager);
+    }
+  }
+
+  const sortManagers = (items: ManagerWithProfile[]) =>
+    items.sort((a, b) => {
+      const aDirector = a.profile?.role === "director" || a.role_title?.toLowerCase() === "director";
+      const bDirector = b.profile?.role === "director" || b.role_title?.toLowerCase() === "director";
+      return Number(bDirector) - Number(aDirector) || a.name.localeCompare(b.name);
+    });
+
+  const flattened: Array<{ manager: ManagerWithProfile; depth: number }> = [];
+  const visited = new Set<string>();
+  const visit = (manager: ManagerWithProfile, depth: number) => {
+    if (visited.has(manager.id)) return;
+    visited.add(manager.id);
+    flattened.push({ manager, depth });
+    for (const child of sortManagers(childrenByParent.get(manager.id) ?? [])) {
+      visit(child, depth + 1);
+    }
+  };
+
+  for (const root of sortManagers(roots)) visit(root, 0);
+  for (const manager of sortManagers(managers.filter((item) => !visited.has(item.id)))) {
+    visit(manager, 0);
+  }
+
+  return flattened;
+}
+
+function EmployeePermissionToggle({
+  manager,
+  schemaReady,
+}: {
+  manager: ManagerWithProfile;
+  schemaReady: boolean;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const enabled = Boolean(manager.can_manage_employees);
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-label={`${enabled ? "Disable" : "Enable"} employee management for ${manager.name}`}
+      disabled={isPending || !schemaReady}
+      onClick={() => {
+        startTransition(async () => {
+          const formData = new FormData();
+          formData.set("manager_id", manager.id);
+          formData.set("enabled", String(!enabled));
+          const result = await setManagerEmployeePermission(formData);
+          if (!result.ok) alert(result.message || "Could not update employee access.");
+        });
+      }}
+      title={!schemaReady ? "Available after the team hierarchy migration" : undefined}
+      className={`inline-flex min-h-11 min-w-[88px] items-center justify-start gap-2.5 rounded-full border px-3 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+        enabled
+          ? "border-cyan-200 bg-cyan-50 text-[#007A91]"
+          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#0097B2]" : "bg-slate-300"}`}
+      >
+        <span
+          className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-[left,right] ${
+            enabled ? "right-0.5" : "left-0.5"
+          }`}
+        />
+      </span>
+      <span className="min-w-6 text-left">{enabled ? "Yes" : "No"}</span>
+    </button>
+  );
+}
+
 function DeleteManagerButton({
   managerId,
   managerName,
-  isCurrentDirector,
+  isProtected,
 }: {
   managerId: string;
   managerName: string;
-  isCurrentDirector?: boolean;
+  isProtected?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
 
-  if (isCurrentDirector) {
+  if (isProtected) {
     return (
       <span
         className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-xs text-slate-300 cursor-not-allowed"
-        title="Cannot delete your own active logged-in account"
+        title="You cannot delete your own active account"
       >
         <Trash2 size={13} />
       </span>
@@ -271,9 +420,15 @@ function DeleteManagerButton({
 }
 
 function AddManagerModal({
+  managers,
+  isDirector,
+  teamHierarchyReady,
   onClose,
   onCreated,
 }: {
+  managers: ManagerWithProfile[];
+  isDirector: boolean;
+  teamHierarchyReady: boolean;
   onClose: () => void;
   onCreated?: (newId: string, colorKey: string) => void;
 }) {
@@ -311,7 +466,9 @@ function AddManagerModal({
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-            <h3 className="text-lg font-bold text-slate-900">Add New Manager</h3>
+            <h3 className="text-lg font-bold text-slate-900">
+              {isDirector ? "Add New Manager" : "Add New Employee"}
+            </h3>
             <button
               type="button"
               onClick={onClose}
@@ -336,7 +493,7 @@ function AddManagerModal({
                 id="new-mgr-name"
                 name="name"
                 className="field"
-                placeholder="e.g. Mike Wright"
+                placeholder={isDirector ? "e.g. Mike Wright" : "e.g. Alex Morgan"}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -395,20 +552,45 @@ function AddManagerModal({
               />
             </div>
 
-            <div>
-              <label className="label" htmlFor="new-mgr-sys-role">
-                System Role (Permissions)
-              </label>
-              <select
-                id="new-mgr-sys-role"
-                name="system_role"
-                className="field"
-                defaultValue="manager"
-              >
-                <option value="manager">Normal — Only assigned actions & reviews</option>
-                <option value="director">Admin — Full access (All workbooks & settings)</option>
-              </select>
-            </div>
+            {isDirector && (
+              <>
+                {teamHierarchyReady && (
+                  <div>
+                    <label className="label" htmlFor="new-mgr-parent">
+                      Reports to
+                    </label>
+                    <select id="new-mgr-parent" name="parent_manager_id" className="field" defaultValue="">
+                      <option value="">No manager — leadership level</option>
+                      {managers
+                        .filter((manager) => manager.profile?.role !== "director")
+                        .map((manager) => (
+                          <option key={manager.id} value={manager.id}>
+                            {manager.name}
+                          </option>
+                        ))}
+                    </select>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Selecting a manager places this person underneath them in the team view.
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="label" htmlFor="new-mgr-sys-role">
+                    System Role (Permissions)
+                  </label>
+                  <select
+                    id="new-mgr-sys-role"
+                    name="system_role"
+                    className="field"
+                    defaultValue="manager"
+                  >
+                    <option value="manager">Normal — Assigned and team actions only</option>
+                    <option value="director">Admin — Full access (All workbooks & settings)</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="label" htmlFor="new-mgr-email">
@@ -445,7 +627,7 @@ function AddManagerModal({
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary" disabled={isPending}>
-                {isPending ? "Adding…" : "Add Manager"}
+                {isPending ? "Adding…" : isDirector ? "Add Manager" : "Add Employee"}
               </button>
             </div>
           </form>
@@ -457,12 +639,18 @@ function AddManagerModal({
 
 function EditManagerModal({
   manager,
+  managers,
+  isDirector,
+  teamHierarchyReady,
   currentColorKey,
   onSaveColor,
   isSelf,
   onClose,
 }: {
   manager: ManagerWithProfile;
+  managers: ManagerWithProfile[];
+  isDirector: boolean;
+  teamHierarchyReady: boolean;
   currentColorKey: string;
   onSaveColor: (colorKey: string) => void;
   isSelf?: boolean;
@@ -591,30 +779,59 @@ function EditManagerModal({
               />
             </div>
 
-            <div>
-              <label className="label" htmlFor="edit-mgr-sys-role">
-                System Role (Permissions)
-              </label>
-              <select
-                id="edit-mgr-sys-role"
-                name="system_role"
-                className="field"
-                defaultValue={isDirectorRole ? "director" : "manager"}
-                disabled={isSelf}
-              >
-                <option value="manager">Normal — Only assigned actions & reviews</option>
-                <option value="director">Admin — Full access (All workbooks & settings)</option>
-              </select>
-              {isSelf ? (
-                <p className="mt-1 text-xs text-amber-600">
-                  You cannot change your own admin director role while logged in.
-                </p>
-              ) : (
-                <p className="mt-1 text-xs text-slate-400">
-                  Admins have full access to all workbooks and settings.
-                </p>
-              )}
-            </div>
+            {isDirector && (
+              <>
+                {teamHierarchyReady && <div>
+                  <label className="label" htmlFor="edit-mgr-parent">
+                    Reports to
+                  </label>
+                  <select
+                    id="edit-mgr-parent"
+                    name="parent_manager_id"
+                    className="field"
+                    defaultValue={manager.parent_manager_id || ""}
+                    disabled={isDirectorRole}
+                  >
+                    <option value="">No manager — leadership level</option>
+                    {managers
+                      .filter((option) => option.id !== manager.id && option.profile?.role !== "director")
+                      .map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.name}
+                        </option>
+                      ))}
+                  </select>
+                  {isDirectorRole && (
+                    <p className="mt-1 text-xs text-slate-400">Directors remain at the top level.</p>
+                  )}
+                </div>}
+
+                <div>
+                  <label className="label" htmlFor="edit-mgr-sys-role">
+                    System Role (Permissions)
+                  </label>
+                  <select
+                    id="edit-mgr-sys-role"
+                    name="system_role"
+                    className="field"
+                    defaultValue={isDirectorRole ? "director" : "manager"}
+                    disabled={isSelf}
+                  >
+                    <option value="manager">Normal — Assigned and team actions only</option>
+                    <option value="director">Admin — Full access (All workbooks & settings)</option>
+                  </select>
+                  {isSelf ? (
+                    <p className="mt-1 text-xs text-amber-600">
+                      You cannot change your own admin director role while logged in.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-xs text-slate-400">
+                      Admins have full access to all workbooks and settings.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
             <div>
               <label className="label" htmlFor="edit-mgr-email">
