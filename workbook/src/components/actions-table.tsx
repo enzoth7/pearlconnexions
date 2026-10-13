@@ -165,7 +165,7 @@ export function ActionsTable({
             .map((p) => p.manager.name);
           return (
             <span className="text-sm font-semibold text-slate-800">
-              {owners.length ? owners.join(", ") : (row.original.participants[0]?.manager.name || "—")}
+              {owners.length ? owners.join(", ") : "Unassigned"}
             </span>
           );
         },

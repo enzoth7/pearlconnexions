@@ -112,7 +112,7 @@ export default async function ReviewsPage({
                 .map((p) => p.manager.name);
               const ownerText = owners.length
                 ? owners.join(", ")
-                : u.action.participants[0]?.manager.name || "Unassigned";
+                : "Unassigned";
 
               const priority = u.action.priority || "Unassigned";
               const priorityTone =

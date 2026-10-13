@@ -31,7 +31,6 @@ export default async function ArchivePage() {
             {actions.map((a) => {
               const owner =
                 a.participants.find((p) => p.responsibility_type !== "Support")?.manager.name ||
-                a.participants[0]?.manager.name ||
                 "—";
               const signer =
                 a.signoffs?.[0]?.signed_off_by_name ||

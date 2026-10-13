@@ -869,7 +869,6 @@ export function SignOffCard({
 
   const leadOwner =
     action.participants.find((p) => p.responsibility_type !== "Support")?.manager.name ||
-    action.participants[0]?.manager.name ||
     "Lead Manager";
 
   const options =
