@@ -78,18 +78,20 @@ export function SettingsTable({
             <p className="text-sm text-slate-500">
               {canManageEmployees
                 ? "Add employees and manage the people who report directly to you."
-                : "View your reporting line."}
+                : "Manage your login and the employees who report to you."}
             </p>
           </div>
         )}
-        <button
-          type="button"
-          onClick={() => setIsAddOpen(true)}
-          className="btn btn-primary inline-flex items-center gap-2 cursor-pointer"
-        >
-          <UserPlus size={16} />
-          {isDirector ? "Add Manager" : "Add Employee"}
-        </button>
+        {(isDirector || canManageEmployees) && (
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="btn btn-primary inline-flex items-center gap-2 cursor-pointer"
+          >
+            <UserPlus size={16} />
+            {isDirector ? "Add Manager" : "Add Employee"}
+          </button>
+        )}
       </div>
 
       <div className="card overflow-hidden">
@@ -117,7 +119,7 @@ export function SettingsTable({
                 const initials = getInitials(m.name, m.source_code);
                 const colorKey = getManagerColorKey(m.id, m.source_code, managerColors);
                 const color = AVATAR_PALETTE[colorKey] || AVATAR_PALETTE.teal;
-                const canEdit = isDirector || m.parent_manager_id === currentManagerId;
+                const canEdit = isDirector || isSelf || m.parent_manager_id === currentManagerId;
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50/75 transition-colors">
@@ -167,10 +169,10 @@ export function SettingsTable({
                       ) : (
                         <span
                           className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200"
-                          title="Normal (Manager) — Only assigned actions and reviews"
+                          title="Manager editor — Can manage their actions and their reporting line"
                         >
                           <User size={13} className="text-slate-500" />
-                          Normal
+                          Editor
                         </span>
                       )}
                     </td>
@@ -585,7 +587,7 @@ function AddManagerModal({
                     className="field"
                     defaultValue="manager"
                   >
-                    <option value="manager">Normal — Assigned and team actions only</option>
+                    <option value="manager">Editor — Own and team actions</option>
                     <option value="director">Admin — Full access (All workbooks & settings)</option>
                   </select>
                 </div>

@@ -88,12 +88,16 @@ export async function requireDirector() {
   return { supabase: auth.supabase, profile: auth.profile };
 }
 
-export async function requireTeamAdmin() {
+export async function requireEditor() {
   const auth = await requireAuth();
-  if (!auth.isDirector && !(auth.isManager && auth.canManageEmployees && auth.managerId)) {
+  if (!auth.isDirector && !(auth.isManager && auth.managerId)) {
     redirect("/");
   }
   return auth;
+}
+
+export async function requireTeamAdmin() {
+  return requireEditor();
 }
 
 export async function getActions(managerIdFilter?: string): Promise<ActionRecord[]> {

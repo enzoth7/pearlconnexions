@@ -36,8 +36,9 @@ export function ActionsTable({
   initialResponsibility = "",
   initialQuery = "",
   initialDeadlineWindow = "",
-  isDirector = true,
-  canFilterManagers = isDirector,
+  canEditActions = true,
+  editableActionIds,
+  canFilterManagers = canEditActions,
 }: {
   actions: ActionRecord[];
   managers: Manager[];
@@ -48,7 +49,8 @@ export function ActionsTable({
   initialResponsibility?: string;
   initialQuery?: string;
   initialDeadlineWindow?: DeadlineWindow;
-  isDirector?: boolean;
+  canEditActions?: boolean;
+  editableActionIds?: string[];
   canFilterManagers?: boolean;
 }) {
   const searchParams = useSearchParams();
@@ -76,6 +78,10 @@ export function ActionsTable({
   const [deadlineWindow, setDeadlineWindow] = useState<DeadlineWindow>(cleanDeadlineWindow);
   const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
   const [isNewActionOpen, setIsNewActionOpen] = useState(false);
+  const editableActionIdSet = useMemo(
+    () => new Set(editableActionIds ?? actions.map((action) => action.id)),
+    [actions, editableActionIds]
+  );
   const todayInLondon = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
 
   useEffect(() => {
@@ -234,7 +240,7 @@ export function ActionsTable({
         header: "Actions",
         cell: ({ row }) => (
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            {isDirector && (
+            {canEditActions && editableActionIdSet.has(row.original.id) && (
               <button
                 type="button"
                 className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-[#0097B2]/40 hover:bg-[#E0F7FA]/60 hover:text-[#007A91]"
@@ -256,7 +262,7 @@ export function ActionsTable({
         ),
       },
     ],
-    [isDirector]
+    [canEditActions, editableActionIdSet]
   );
 
   // TanStack Table intentionally returns non-memoizable functions; React Compiler skips this hook.
@@ -340,7 +346,7 @@ export function ActionsTable({
             <option key={value || "all"} value={value}>{label}</option>
           ))}
         </select>
-        {isDirector && (
+        {canEditActions && (
           <button
             type="button"
             className="btn btn-primary whitespace-nowrap"
@@ -482,7 +488,7 @@ export function ActionsTable({
         Showing {filtered.length} of {actions.length} actions
       </p>
 
-      {isDirector && (
+      {canEditActions && (
         <>
           <QuickEditDrawer
             action={selectedAction}

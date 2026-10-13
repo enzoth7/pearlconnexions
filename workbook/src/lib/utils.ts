@@ -153,6 +153,7 @@ export type UpdateRecord = {
 };
 export type ActionRecord = {
   id: string;
+  created_by?: string | null;
   reference: string;
   title: string;
   workstream_id: string;

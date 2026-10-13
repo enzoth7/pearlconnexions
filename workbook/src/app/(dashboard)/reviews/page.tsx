@@ -30,7 +30,7 @@ export default async function ReviewsPage({
 }: {
   searchParams: Promise<ReviewSearchParams>;
 }) {
-  const { isManager, canManageEmployees } = await requireAuth();
+  const { isManager } = await requireAuth();
   const params = await searchParams;
   const query = firstValue(params.q).trim();
   const managerId = firstValue(params.manager);
@@ -92,9 +92,7 @@ export default async function ReviewsPage({
         title="Action review"
         description={
           isManager
-            ? canManageEmployees
-              ? "Review comments, barriers and upcoming dates across your reporting line."
-              : "Review comments, barriers and upcoming dates for your assigned actions."
+            ? "Review comments, barriers and upcoming dates across your reporting line."
             : "Review comments, barriers and upcoming dates across all active actions."
         }
       />

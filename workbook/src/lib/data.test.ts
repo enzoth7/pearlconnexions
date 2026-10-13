@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   requireAuth,
   requireDirector,
+  requireEditor,
+  requireTeamAdmin,
   getActions,
   getActionById,
   getManagersWithProfiles,
@@ -109,6 +111,62 @@ describe("data layer auth and role functions", () => {
     vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
 
     await expect(requireDirector()).rejects.toThrow("REDIRECT:/access-pending");
+  });
+
+  it("requireEditor allows a linked manager even without employee-creation permission", async () => {
+    const mockSupabase = {
+      auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: "mgr-user-1" } } }),
+      },
+      from: vi.fn((table: string) => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue(
+            table === "profiles"
+              ? {
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: "mgr-user-1", display_name: "Manager User", role: "manager", manager_id: "mgr-1" },
+                  }),
+                }
+              : {
+                  maybeSingle: vi.fn().mockResolvedValue({ data: { can_manage_employees: false } }),
+                }
+          ),
+        }),
+      })),
+    };
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
+
+    const editor = await requireEditor();
+    expect(editor.isManager).toBe(true);
+    expect(editor.managerId).toBe("mgr-1");
+    expect(editor.canManageEmployees).toBe(false);
+  });
+
+  it("requireTeamAdmin gives every linked manager access to their team settings", async () => {
+    const mockSupabase = {
+      auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: "mgr-user-1" } } }),
+      },
+      from: vi.fn((table: string) => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue(
+            table === "profiles"
+              ? {
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: "mgr-user-1", display_name: "Manager User", role: "manager", manager_id: "mgr-1" },
+                  }),
+                }
+              : {
+                  maybeSingle: vi.fn().mockResolvedValue({ data: { can_manage_employees: false } }),
+                }
+          ),
+        }),
+      })),
+    };
+    vi.mocked(createClient).mockResolvedValue(asSupabase(mockSupabase));
+
+    const teamAdmin = await requireTeamAdmin();
+    expect(teamAdmin.managerId).toBe("mgr-1");
   });
 
   it("getActions returns the rows already scoped by manager RLS", async () => {

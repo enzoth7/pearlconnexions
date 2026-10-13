@@ -20,7 +20,7 @@ export default async function SettingsPage() {
         description={
           isDirector
             ? "Manage reporting lines, login access and which managers can build their own teams."
-            : "Add employees to your team and manage their access. You can see progress only for your reporting line."
+            : "Manage your own login and the actions, progress and access of employees in your reporting line."
         }
       />
       <SettingsTable

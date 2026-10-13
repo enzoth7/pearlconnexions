@@ -18,7 +18,7 @@ type ActionsPageProps = {
 };
 
 export default async function ActionsPage({ searchParams }: ActionsPageProps) {
-  const { isDirector, isManager, managerId: authManagerId, canManageEmployees } = await requireAuth();
+  const { isDirector, isManager, profile } = await requireAuth();
   const [actions, managers, workstreams] = await Promise.all([
     getActions(),
     getManagers(),
@@ -34,10 +34,8 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
     deadline: requestedDeadlineWindow,
   } = rawParams;
 
-  const canFilterManagers = isDirector || canManageEmployees;
-  const managerId = isManager && !canManageEmployees
-    ? authManagerId || ""
-    : typeof requestedManagerId === "string" && managers.some((manager) => manager.id === requestedManagerId)
+  const canFilterManagers = isDirector || isManager;
+  const managerId = typeof requestedManagerId === "string" && managers.some((manager) => manager.id === requestedManagerId)
     ? requestedManagerId
     : "";
 
@@ -65,13 +63,25 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
   const managerColor = selectedManager
     ? getManagerColor(selectedManager.id, selectedManager.source_code, customColors)
     : null;
+  const editableManagerIds = new Set(managers.map((manager) => manager.id));
+  const editableActionIds = isDirector
+    ? actions.map((action) => action.id)
+    : actions
+        .filter(
+          (action) =>
+            action.created_by === profile.id ||
+            action.participants.some(
+              (participant) =>
+                participant.responsibility_type !== "Support" &&
+                editableManagerIds.has(participant.manager.id)
+            )
+        )
+        .map((action) => action.id);
 
   const title = selectedManager
     ? getManagerWorkbookTitle(selectedManager)
     : isManager
-    ? canManageEmployees
-      ? "My team actions"
-      : "My assigned actions"
+    ? "My team actions"
     : "All leadership actions";
 
   return (
@@ -84,9 +94,7 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           selectedManager
             ? `Assigned leadership actions and deadlines for ${selectedManager.name}.`
             : isManager
-            ? canManageEmployees
-              ? "Actions, deadlines and delivery progress across your reporting line."
-              : "Your assigned leadership actions, deadlines and delivery progress."
+            ? "Actions, deadlines and delivery progress across your reporting line."
             : "Search, filter and open any action to review its ownership and progress."
         }
       />
@@ -102,7 +110,8 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           initialResponsibility={initialResponsibility}
           initialQuery={initialQuery}
           initialDeadlineWindow={initialDeadlineWindow}
-          isDirector={isDirector}
+          canEditActions={isDirector || isManager}
+          editableActionIds={editableActionIds}
           canFilterManagers={canFilterManagers}
         />
       </Suspense>

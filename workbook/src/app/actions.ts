@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { isMissingTeamHierarchyColumn, requireDirector, requireTeamAdmin } from "@/lib/data";
+import { isMissingTeamHierarchyColumn, requireDirector, requireEditor, requireTeamAdmin } from "@/lib/data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { nextActionReference } from "@/lib/utils";
@@ -51,7 +51,8 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
   if (!parsed.success) {
     return { message: "Check the highlighted fields.", errors: z.flattenError(parsed.error).fieldErrors };
   }
-  const { supabase } = await requireDirector();
+  const auth = await requireEditor();
+  const { supabase } = auth;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
   const [{ data: workstream, error: workstreamError }, { data: existingActions, error: referencesError }] =
     await Promise.all([
@@ -100,7 +101,13 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
 
   if (!newAction) return { message: "The reference was taken by another action. Please try again." };
 
-  const ownerIds = [...new Set(parsed.data.owner_manager_ids)];
+  const ownerIds = [...new Set(
+    parsed.data.owner_manager_ids.length
+      ? parsed.data.owner_manager_ids
+      : auth.managerId
+      ? [auth.managerId]
+      : []
+  )];
   const ownerType = ownerIds.length > 1 ? "Joint owner" : (parsed.data.responsibility_type ?? "Owner");
   const ownerText = parsed.data.responsibility_text?.trim() || (ownerIds.length > 1 ? "Jointly lead delivery" : "Lead delivery");
   const participants = ownerIds.map((managerId, index) => ({
@@ -139,12 +146,18 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
 export async function updateAction(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = actionSchema.safeParse(actionFormValues(formData));
   if (!parsed.success) return { message: "Check the highlighted fields.", errors: z.flattenError(parsed.error).fieldErrors };
-  const { supabase } = await requireDirector();
+  const { supabase } = await requireEditor();
   const { id, owner_manager_ids, support_manager_id, ...values } = parsed.data;
   const payload: Record<string, unknown> = { ...values };
   if (!payload.workstream_id) delete payload.workstream_id;
-  const { error } = await supabase.from("actions").update(payload).eq("id", id);
+  const { data: updatedAction, error } = await supabase
+    .from("actions")
+    .update(payload)
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
   if (error) return { message: error.message };
+  if (!updatedAction) return { message: "You do not have permission to edit this action." };
 
   if (formData.has("owner_managers_present") || formData.has("support_manager_id")) {
     const { data: existingParts, error: participantsError } = await supabase
@@ -233,24 +246,27 @@ export async function saveParticipant(_: FormState, formData: FormData): Promise
   if (!parsed.success) {
     return { message: "Check the participant fields.", errors: z.flattenError(parsed.error).fieldErrors };
   }
-  const { supabase } = await requireDirector();
+  const { supabase } = await requireEditor();
   const { id, action_id, manager_id, responsibility_type, responsibility_text } = parsed.data;
 
   if (id) {
-    const { error } = await supabase
+    const { data: updatedParticipant, error } = await supabase
       .from("action_participants")
       .update({
         manager_id,
         responsibility_type,
         responsibility_text,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
     if (error) {
       if (error.code === "23505") {
         return { message: "This manager is already assigned to this action." };
       }
       return { message: error.message };
     }
+    if (!updatedParticipant) return { message: "You do not have permission to edit this participant." };
   } else {
     const { error } = await supabase.from("action_participants").insert({
       action_id,
@@ -277,9 +293,15 @@ export async function saveParticipant(_: FormState, formData: FormData): Promise
 export async function removeParticipant(formData: FormData): Promise<void> {
   const id = z.string().uuid().parse(formData.get("id"));
   const actionId = formData.get("action_id") ? z.string().uuid().parse(formData.get("action_id")) : null;
-  const { supabase } = await requireDirector();
-  const { error } = await supabase.from("action_participants").delete().eq("id", id);
+  const { supabase } = await requireEditor();
+  const { data: deletedParticipant, error } = await supabase
+    .from("action_participants")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (!deletedParticipant) throw new Error("You do not have permission to remove this participant.");
   revalidatePath("/");
   revalidatePath("/actions");
   if (actionId) revalidatePath(`/actions/${actionId}`);
@@ -301,7 +323,7 @@ const updateSchema = z.object({
 export async function addUpdate(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { message: "Add a review date and check the form.", errors: z.flattenError(parsed.error).fieldErrors };
-  const { supabase } = await requireDirector();
+  const { supabase } = await requireEditor();
   const payload = Object.fromEntries(Object.entries(parsed.data).map(([k, v]) => [k, v === "" ? null : v]));
   const { error } = await supabase.from("action_updates").insert(payload);
   if (error) return { message: error.message };
@@ -326,11 +348,17 @@ const updateReviewSchema = z.object({
 export async function updateReview(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = updateReviewSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { message: "Add a review date and check the form.", errors: z.flattenError(parsed.error).fieldErrors };
-  const { supabase } = await requireDirector();
+  const { supabase } = await requireEditor();
   const { id, action_id, ...values } = parsed.data;
   const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v === "" ? null : v]));
-  const { error } = await supabase.from("action_updates").update(payload).eq("id", id);
+  const { data: updatedReview, error } = await supabase
+    .from("action_updates")
+    .update(payload)
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
   if (error) return { message: error.message };
+  if (!updatedReview) return { message: "You do not have permission to edit this review." };
   revalidatePath("/");
   revalidatePath("/reviews");
   revalidatePath(`/actions/${action_id}`);
@@ -340,9 +368,15 @@ export async function updateReview(_: FormState, formData: FormData): Promise<Fo
 export async function deleteReview(formData: FormData): Promise<void> {
   const id = z.string().uuid().parse(formData.get("id"));
   const actionId = formData.get("action_id") ? z.string().uuid().parse(formData.get("action_id")) : null;
-  const { supabase } = await requireDirector();
-  const { error } = await supabase.from("action_updates").delete().eq("id", id);
+  const { supabase } = await requireEditor();
+  const { data: deletedReview, error } = await supabase
+    .from("action_updates")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (!deletedReview) throw new Error("You do not have permission to delete this review.");
   revalidatePath("/");
   revalidatePath("/reviews");
   if (actionId) revalidatePath(`/actions/${actionId}`);
@@ -353,54 +387,25 @@ export async function signOffAction(_: FormState, formData: FormData): Promise<F
     const id = z.string().uuid().parse(formData.get("action_id"));
     const signerName = formData.get("signed_off_by_name")?.toString().trim();
     const customCompletedAt = formData.get("completed_at")?.toString().trim();
-    const { supabase, profile } = await requireDirector();
+    const { supabase, profile } = await requireEditor();
     const finalSigner = signerName || profile.display_name || "Joel Samuel";
 
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
     const completedDate = customCompletedAt || today;
-    await supabase.from("actions").update({ completed_at: completedDate }).eq("id", id);
+    const { error: rpcErr } = await supabase.rpc("sign_off_action", {
+      action_uuid: id,
+      signer_name: finalSigner,
+    });
+    if (rpcErr) return { ok: false, message: rpcErr.message };
 
-    const { data: existingSignoff } = await supabase
-      .from("action_signoffs")
+    const { data: completedAction, error: completedError } = await supabase
+      .from("actions")
+      .update({ completed_at: completedDate })
+      .eq("id", id)
       .select("id")
-      .eq("action_id", id)
       .maybeSingle();
-
-    if (existingSignoff) {
-      const { error: rpcErr } = await supabase.rpc("sign_off_action", {
-        action_uuid: id,
-        signer_name: finalSigner,
-      });
-
-      if (rpcErr) {
-        const { error: updateErr } = await supabase
-          .from("action_signoffs")
-          .update({
-            signed_off_by_name: finalSigner,
-            signed_off_at: new Date().toISOString(),
-          })
-          .eq("action_id", id);
-
-        if (updateErr) {
-          return { ok: false, message: updateErr.message || rpcErr.message };
-        }
-      }
-    } else {
-      const { error: rpcErr } = await supabase.rpc("sign_off_action", {
-        action_uuid: id,
-        signer_name: finalSigner,
-      });
-
-      if (rpcErr) {
-        const { error: insertErr } = await supabase.from("action_signoffs").insert({
-          action_id: id,
-          signed_off_by_name: finalSigner,
-        });
-        if (insertErr) {
-          return { ok: false, message: insertErr.message || rpcErr.message };
-        }
-      }
-    }
+    if (completedError) return { ok: false, message: completedError.message };
+    if (!completedAction) return { ok: false, message: "You do not have permission to complete this action." };
 
     revalidatePath("/");
     revalidatePath("/actions");
@@ -416,10 +421,18 @@ export async function signOffAction(_: FormState, formData: FormData): Promise<F
 export async function deleteAction(formData: FormData): Promise<{ ok: boolean; message?: string }> {
   try {
     const id = z.string().uuid().parse(formData.get("id"));
-    const { supabase } = await requireDirector();
-    const { error } = await supabase.from("actions").delete().eq("id", id);
+    const { supabase } = await requireEditor();
+    const { data: deletedAction, error } = await supabase
+      .from("actions")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
     if (error) {
       return { ok: false, message: error.message };
+    }
+    if (!deletedAction) {
+      return { ok: false, message: "You do not have permission to delete this action." };
     }
     revalidatePath("/");
     revalidatePath("/actions");
@@ -436,6 +449,9 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
   try {
     const auth = await requireTeamAdmin();
     const { supabase } = auth;
+    if (!auth.isDirector && !auth.canManageEmployees) {
+      return { ok: false, message: "You do not have permission to add employees." };
+    }
     const admin = createAdminClient();
     if (!admin) {
       return {
@@ -577,12 +593,14 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
       return { ok: false, message: targetError?.message || "This team member is not available." };
     }
 
-    if (
-      !auth.isDirector &&
-      (!hierarchyReady ||
-        (targetManager as { parent_manager_id?: string | null }).parent_manager_id !== auth.managerId)
-    ) {
-      return { ok: false, message: "You can only manage employees who report directly to you." };
+    const isSelf = managerId === auth.managerId || currentProfile.manager_id === managerId;
+    if (!auth.isDirector && !isSelf) {
+      if (
+        !hierarchyReady ||
+        (targetManager as { parent_manager_id?: string | null }).parent_manager_id !== auth.managerId
+      ) {
+        return { ok: false, message: "You can only manage your own login or employees who report directly to you." };
+      }
     }
 
     if (auth.isDirector && requestedParentId === managerId) {
@@ -600,7 +618,11 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
     }
 
     if (Object.keys(managerUpdate).length > 0) {
-      const { error: mgrErr } = await supabase.from("managers").update(managerUpdate).eq("id", managerId);
+      const managerClient = auth.isDirector ? supabase : createAdminClient();
+      if (!managerClient) {
+        return { ok: false, message: "Manager login is not configured. Add SUPABASE_SECRET_KEY to the server environment." };
+      }
+      const { error: mgrErr } = await managerClient.from("managers").update(managerUpdate).eq("id", managerId);
       if (mgrErr) return { ok: false, message: mgrErr.message };
     }
 

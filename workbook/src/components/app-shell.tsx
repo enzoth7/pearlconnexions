@@ -18,18 +18,16 @@ export function AppShell({
   children,
   name,
   role = "director",
-  canManageEmployees = false,
 }: {
   children: React.ReactNode;
   name: string;
   role?: string;
-  canManageEmployees?: boolean;
 }) {
   const pathname = usePathname();
   const isDirector = role === "director";
   const links = [
     ...baseLinks,
-    ...(isDirector || canManageEmployees
+    ...(isDirector || role === "manager"
       ? ([[isDirector ? "Settings" : "My team", "/settings", Settings]] as const)
       : []),
   ];

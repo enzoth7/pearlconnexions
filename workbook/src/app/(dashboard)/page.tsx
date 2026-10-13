@@ -14,16 +14,14 @@ type DashboardPageProps = {
 };
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const { isDirector, isManager, managerId: authManagerId, canManageEmployees } = await requireAuth();
+  const { isDirector, isManager } = await requireAuth();
   const [actions, managers] = await Promise.all([getActions(), getManagers()]);
   const { manager: requestedManagerId } = await searchParams;
   const requestedVisibleManagerId =
     typeof requestedManagerId === "string" && managers.some((manager) => manager.id === requestedManagerId)
       ? requestedManagerId
       : undefined;
-  const managerId = isManager && !canManageEmployees
-    ? authManagerId || undefined
-    : requestedVisibleManagerId;
+  const managerId = requestedVisibleManagerId;
   const selectedManager = managers.find((manager) => manager.id === managerId);
   const filteredActions = selectedManager
     ? actions.filter((action) => action.participants.some((participant) => participant.manager.id === selectedManager.id))
@@ -81,7 +79,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const title = selectedManager
     ? getManagerWorkbookTitle(selectedManager)
-    : isManager && canManageEmployees
+    : isManager
     ? "My team overview"
     : getManagerWorkbookTitle(selectedManager);
   const managerColor = selectedManager
@@ -97,7 +95,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         description={scopeDescription}
         action={
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
-            {(isDirector || canManageEmployees) && (
+            {(isDirector || isManager) && (
               <ManagerOverviewFilter managers={managers} selectedManagerId={selectedManager?.id} />
             )}
             <Link href={registerHref} className="btn btn-primary whitespace-nowrap">
