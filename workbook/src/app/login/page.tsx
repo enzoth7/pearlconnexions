@@ -1,7 +1,16 @@
 import Image from "next/image";
 import { LoginForm } from "@/components/login-form";
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    password?: string;
+    error?: string;
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+
   return (
     <main className="grid min-h-dvh place-items-center bg-[#f8fafc] px-4 py-10">
       <section className="card w-full max-w-md p-7 sm:p-9 shadow-lg border border-slate-200">
@@ -20,7 +29,10 @@ export default function LoginPage() {
             Sign in to your account
           </h1>
         </div>
-        <LoginForm />
+        <LoginForm
+          passwordUpdated={params.password === "updated"}
+          recoveryError={params.error === "recovery"}
+        />
         <p className="mt-6 text-center text-xs text-slate-500">
           Private access. Accounts are invitation only.
         </p>

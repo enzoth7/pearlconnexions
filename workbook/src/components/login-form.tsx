@@ -1,11 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LoaderCircle, LockKeyhole } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export function LoginForm() {
+type LoginFormProps = {
+  passwordUpdated?: boolean;
+  recoveryError?: boolean;
+};
+
+export function LoginForm({ passwordUpdated = false, recoveryError = false }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +35,16 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-5">
+      {passwordUpdated && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
+          Password updated. You can now sign in with your new password.
+        </p>
+      )}
+      {recoveryError && (
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">
+          This recovery link is invalid or has expired. Request a new one below.
+        </p>
+      )}
       <div>
         <label className="label" htmlFor="email">
           Email address
@@ -45,9 +61,14 @@ export function LoginForm() {
         />
       </div>
       <div>
-        <label className="label" htmlFor="password">
-          Password
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label className="label" htmlFor="password">
+            Password
+          </label>
+          <Link href="/forgot-password" className="text-xs font-bold text-[#007A91] hover:underline">
+            Forgot password?
+          </Link>
+        </div>
         <div className="relative">
           <input
             className="field pr-12"
