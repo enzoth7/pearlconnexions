@@ -166,13 +166,21 @@ export function isOwnedByManager(action: ActionRecord, managerId: string) {
   );
 }
 
-export function ActionCalendar({ actions, today }: { actions: ActionRecord[]; today: string }) {
+export function ActionCalendar({
+  actions,
+  today,
+  fixedManager,
+}: {
+  actions: ActionRecord[];
+  today: string;
+  fixedManager?: { id: string; label: string };
+}) {
   const todayDate = new Date(`${today}T12:00:00Z`);
   const [visibleMonth, setVisibleMonth] = useState(() => ({
     year: todayDate.getUTCFullYear(),
     month: todayDate.getUTCMonth(),
   }));
-  const [selectedManagerId, setSelectedManagerId] = useState("");
+  const [selectedManagerId, setSelectedManagerId] = useState(fixedManager?.id ?? "");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const managers = useMemo(() => {
@@ -293,21 +301,30 @@ export function ActionCalendar({ actions, today }: { actions: ActionRecord[]; to
           </div>
 
           <div className="flex flex-wrap items-end gap-2">
-            <label className="min-w-48 flex-1 sm:flex-none">
-              <span className="mb-1 block text-xs font-bold text-slate-600">Manager</span>
-              <select
-                value={selectedManagerId}
-                onChange={(event) => setSelectedManagerId(event.target.value)}
-                className="field h-11 min-w-48 py-0"
-              >
-                <option value="">All managers</option>
-                {managers.map((manager) => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.code} · {manager.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {fixedManager ? (
+              <div className="min-w-48 flex-1 sm:flex-none">
+                <span className="mb-1 block text-xs font-bold text-slate-600">Manager</span>
+                <div className="field flex h-11 min-w-48 items-center bg-slate-50 py-0 font-semibold text-slate-800">
+                  {fixedManager.label}
+                </div>
+              </div>
+            ) : (
+              <label className="min-w-48 flex-1 sm:flex-none">
+                <span className="mb-1 block text-xs font-bold text-slate-600">Manager</span>
+                <select
+                  value={selectedManagerId}
+                  onChange={(event) => setSelectedManagerId(event.target.value)}
+                  className="field h-11 min-w-48 py-0"
+                >
+                  <option value="">All managers</option>
+                  {managers.map((manager) => (
+                    <option key={manager.id} value={manager.id}>
+                      {manager.code} · {manager.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="flex items-center gap-2" aria-label="Calendar navigation">
             <button
               type="button"
