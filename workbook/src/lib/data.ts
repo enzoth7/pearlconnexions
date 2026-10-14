@@ -16,6 +16,9 @@ export type AuthContext = {
   isManager: boolean;
   managerId: string | null;
   canManageEmployees: boolean;
+  canAddActions: boolean;
+  canEditActions: boolean;
+  canDeleteActions: boolean;
 };
 
 export type ManagerWithProfile = Manager & {
@@ -32,6 +35,7 @@ export type ManagerWithProfile = Manager & {
 export type ManagerDirectory = {
   managers: ManagerWithProfile[];
   teamHierarchyReady: boolean;
+  permissionsReady: boolean;
 };
 
 type SupabaseErrorLike = {
@@ -49,6 +53,17 @@ export function isMissingTeamHierarchyColumn(error: SupabaseErrorLike | null) {
   );
 }
 
+export function isMissingGranularPermissionsColumn(error: SupabaseErrorLike | null) {
+  if (!error) return false;
+  const message = error.message?.toLowerCase() ?? "";
+  return (
+    error.code === "42703" &&
+    (message.includes("can_add_actions") ||
+      message.includes("can_edit_actions") ||
+      message.includes("can_delete_actions"))
+  );
+}
+
 export async function requireAuth(): Promise<AuthContext> {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
@@ -63,13 +78,38 @@ export async function requireAuth(): Promise<AuthContext> {
   if (!profile || profile.role === "pending") redirect("/access-pending");
 
   let canManageEmployees = false;
+  let canAddActions = profile.role === "director";
+  let canEditActions = profile.role === "director";
+  let canDeleteActions = profile.role === "director";
   if (profile.role === "manager" && profile.manager_id) {
-    const { data: manager } = await supabase
+    let { data: manager, error: managerError } = await supabase
       .from("managers")
-      .select("can_manage_employees")
+      .select("can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions")
       .eq("id", profile.manager_id)
       .maybeSingle();
+
+    if (isMissingGranularPermissionsColumn(managerError)) {
+      const legacyResult = await supabase
+        .from("managers")
+        .select("can_manage_employees")
+        .eq("id", profile.manager_id)
+        .maybeSingle();
+      manager = legacyResult.data
+        ? {
+            ...legacyResult.data,
+            can_add_actions: true,
+            can_edit_actions: true,
+            can_delete_actions: false,
+          }
+        : null;
+      managerError = legacyResult.error;
+    }
+
+    if (managerError) throw new Error(managerError.message);
     canManageEmployees = Boolean(manager?.can_manage_employees);
+    canAddActions = Boolean(manager?.can_add_actions);
+    canEditActions = Boolean(manager?.can_edit_actions);
+    canDeleteActions = Boolean(manager?.can_delete_actions);
   }
 
   return {
@@ -79,6 +119,9 @@ export async function requireAuth(): Promise<AuthContext> {
     isManager: profile.role === "manager",
     managerId: (profile.manager_id as string | null) ?? null,
     canManageEmployees,
+    canAddActions,
+    canEditActions,
+    canDeleteActions,
   };
 }
 
@@ -149,10 +192,22 @@ export async function getManagers(): Promise<Manager[]> {
   const { supabase, isManager, managerId } = await requireAuth();
   let { data, error } = await supabase
     .from("managers")
-    .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees")
+    .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions")
     .order("name");
 
-  if (isMissingTeamHierarchyColumn(error)) {
+  if (isMissingGranularPermissionsColumn(error)) {
+    const compatibilityResult = await supabase
+      .from("managers")
+      .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees")
+      .order("name");
+    data = compatibilityResult.data?.map((manager) => ({
+      ...manager,
+      can_add_actions: true,
+      can_edit_actions: true,
+      can_delete_actions: false,
+    })) ?? null;
+    error = compatibilityResult.error;
+  } else if (isMissingTeamHierarchyColumn(error)) {
     const legacyResult = await supabase
       .from("managers")
       .select("id, name, role_title, email, source_code")
@@ -161,6 +216,9 @@ export async function getManagers(): Promise<Manager[]> {
       ...manager,
       parent_manager_id: null,
       can_manage_employees: false,
+      can_add_actions: true,
+      can_edit_actions: true,
+      can_delete_actions: false,
     })) ?? null;
     error = legacyResult.error;
   }
@@ -179,7 +237,7 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
   ] = await Promise.all([
     supabase
       .from("managers")
-      .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees")
+      .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions")
       .order("name"),
     supabase
       .from("profiles")
@@ -188,8 +246,23 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
 
   let { data: managers, error: managersError } = initialManagersResult;
   let teamHierarchyReady = true;
-  if (isMissingTeamHierarchyColumn(managersError)) {
+  let permissionsReady = true;
+  if (isMissingGranularPermissionsColumn(managersError)) {
+    permissionsReady = false;
+    const compatibilityResult = await supabase
+      .from("managers")
+      .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees")
+      .order("name");
+    managers = compatibilityResult.data?.map((manager) => ({
+      ...manager,
+      can_add_actions: true,
+      can_edit_actions: true,
+      can_delete_actions: false,
+    })) ?? null;
+    managersError = compatibilityResult.error;
+  } else if (isMissingTeamHierarchyColumn(managersError)) {
     teamHierarchyReady = false;
+    permissionsReady = false;
     const legacyResult = await supabase
       .from("managers")
       .select("id, name, role_title, email, source_code")
@@ -198,6 +271,9 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
       ...manager,
       parent_manager_id: null,
       can_manage_employees: false,
+      can_add_actions: true,
+      can_edit_actions: true,
+      can_delete_actions: false,
     })) ?? null;
     managersError = legacyResult.error;
   }
@@ -225,6 +301,9 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
       email: manager.email ?? null,
       parent_manager_id: manager.parent_manager_id ?? null,
       can_manage_employees: Boolean(manager.can_manage_employees),
+      can_add_actions: manager.can_add_actions !== false,
+      can_edit_actions: manager.can_edit_actions !== false,
+      can_delete_actions: Boolean(manager.can_delete_actions),
       profile_id: linkedProfile?.id || null,
       profile: linkedProfile
         ? {
@@ -236,7 +315,7 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
     };
   });
 
-  return { managers: mergedManagers, teamHierarchyReady };
+  return { managers: mergedManagers, teamHierarchyReady, permissionsReady };
 }
 
 function filterManagerTree<T extends { id: string; parent_manager_id?: string | null }>(

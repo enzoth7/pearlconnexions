@@ -36,7 +36,9 @@ export function ActionsTable({
   initialResponsibility = "",
   initialQuery = "",
   initialDeadlineWindow = "",
+  canAddActions = true,
   canEditActions = true,
+  canDeleteActions = true,
   editableActionIds,
   canFilterManagers = canEditActions,
 }: {
@@ -49,7 +51,9 @@ export function ActionsTable({
   initialResponsibility?: string;
   initialQuery?: string;
   initialDeadlineWindow?: DeadlineWindow;
+  canAddActions?: boolean;
   canEditActions?: boolean;
+  canDeleteActions?: boolean;
   editableActionIds?: string[];
   canFilterManagers?: boolean;
 }) {
@@ -346,7 +350,7 @@ export function ActionsTable({
             <option key={value || "all"} value={value}>{label}</option>
           ))}
         </select>
-        {canEditActions && (
+        {canAddActions && (
           <button
             type="button"
             className="btn btn-primary whitespace-nowrap"
@@ -488,22 +492,27 @@ export function ActionsTable({
         Showing {filtered.length} of {actions.length} actions
       </p>
 
-      {canEditActions && (
+      {(canEditActions || canAddActions) && (
         <>
-          <QuickEditDrawer
-            action={selectedAction}
-            workstreams={workstreams}
-            managers={managers}
-            isOpen={Boolean(selectedAction)}
-            onClose={() => setSelectedAction(null)}
-          />
+          {canEditActions && (
+            <QuickEditDrawer
+              action={selectedAction}
+              workstreams={workstreams}
+              managers={managers}
+              isOpen={Boolean(selectedAction)}
+              canDeleteAction={canDeleteActions}
+              onClose={() => setSelectedAction(null)}
+            />
+          )}
 
-          <NewActionDialog
-            workstreams={workstreams}
-            managers={managers}
-            isOpen={isNewActionOpen}
-            onClose={() => setIsNewActionOpen(false)}
-          />
+          {canAddActions && (
+            <NewActionDialog
+              workstreams={workstreams}
+              managers={managers}
+              isOpen={isNewActionOpen}
+              onClose={() => setIsNewActionOpen(false)}
+            />
+          )}
         </>
       )}
     </>

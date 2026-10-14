@@ -18,7 +18,7 @@ type ActionsPageProps = {
 };
 
 export default async function ActionsPage({ searchParams }: ActionsPageProps) {
-  const { isDirector, isManager, profile } = await requireAuth();
+  const { isDirector, isManager, profile, canAddActions, canEditActions, canDeleteActions } = await requireAuth();
   const [actions, managers, workstreams] = await Promise.all([
     getActions(),
     getManagers(),
@@ -66,6 +66,8 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
   const editableManagerIds = new Set(managers.map((manager) => manager.id));
   const editableActionIds = isDirector
     ? actions.map((action) => action.id)
+    : !canEditActions
+    ? []
     : actions
         .filter(
           (action) =>
@@ -110,7 +112,9 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           initialResponsibility={initialResponsibility}
           initialQuery={initialQuery}
           initialDeadlineWindow={initialDeadlineWindow}
-          canEditActions={isDirector || isManager}
+          canAddActions={canAddActions}
+          canEditActions={canEditActions}
+          canDeleteActions={canDeleteActions}
           editableActionIds={editableActionIds}
           canFilterManagers={canFilterManagers}
         />

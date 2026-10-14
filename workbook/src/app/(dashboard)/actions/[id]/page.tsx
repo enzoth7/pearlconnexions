@@ -25,7 +25,7 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
   if (!action) notFound();
 
   const editableManagerIds = new Set(managers.map((manager) => manager.id));
-  const canEdit = auth.isDirector || (
+  const canEdit = auth.isDirector || (auth.canEditActions && (
     auth.isManager && (
       action.created_by === auth.profile.id ||
       action.participants.some(
@@ -34,7 +34,7 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
           editableManagerIds.has(participant.manager.id)
       )
     )
-  );
+  ));
   const readOnly = !canEdit;
   const latestNextReview = action.updates?.find((u) => u.next_review_at)?.next_review_at;
 

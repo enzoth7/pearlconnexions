@@ -131,6 +131,9 @@ export type Manager = {
   source_code?: string | null;
   parent_manager_id?: string | null;
   can_manage_employees?: boolean;
+  can_add_actions?: boolean;
+  can_edit_actions?: boolean;
+  can_delete_actions?: boolean;
 };
 export type Participant = {
   id: string;

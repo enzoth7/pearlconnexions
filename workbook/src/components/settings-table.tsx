@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { AlertTriangle, Check, CornerDownRight, KeyRound, Mail, ShieldCheck, Trash2, User, UserCheck, UserPlus, UsersRound, UserX, X } from "lucide-react";
-import { createManager, updateManagerCredentials, deleteManager, setManagerEmployeePermission } from "@/app/actions";
+import { AlertTriangle, Check, CornerDownRight, FolderCog, KeyRound, Mail, Pencil, ShieldCheck, Trash2, User, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { createManager, updateManagerCredentials, deleteManager, setManagerPermission } from "@/app/actions";
 import type { ManagerWithProfile } from "@/lib/data";
 import {
   AVATAR_PALETTE,
@@ -17,6 +17,7 @@ export function SettingsTable({
   isDirector,
   canManageEmployees,
   teamHierarchyReady,
+  permissionsReady,
 }: {
   managers: ManagerWithProfile[];
   currentProfileId?: string;
@@ -24,7 +25,9 @@ export function SettingsTable({
   isDirector: boolean;
   canManageEmployees: boolean;
   teamHierarchyReady: boolean;
+  permissionsReady: boolean;
 }) {
+  const [activeTab, setActiveTab] = useState<"settings" | "permissions">("settings");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingManager, setEditingManager] = useState<ManagerWithProfile | null>(null);
   const [managerColors, setManagerColors] = useState<Record<string, string>>({});
@@ -71,7 +74,18 @@ export function SettingsTable({
           </div>
         </div>
       )}
-      <div className={`flex flex-col gap-4 sm:flex-row sm:items-center ${isDirector ? "sm:justify-end" : "sm:justify-between"}`}>
+      {isDirector && !permissionsReady && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={18} />
+          <div>
+            <p className="font-bold">Permissions update pending</p>
+            <p className="mt-0.5 text-amber-800">
+              Apply the granular permissions migration before changing individual access.
+            </p>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         {!isDirector && (
           <div>
             <h2 className="text-lg font-bold text-slate-900">My Employees & User Logins</h2>
@@ -80,6 +94,36 @@ export function SettingsTable({
                 ? "Add employees and manage the people who report directly to you."
                 : "Manage your login and the employees who report to you."}
             </p>
+          </div>
+        )}
+        {isDirector && (
+          <div className="flex items-end gap-1 border-b border-slate-200" role="tablist" aria-label="Team administration">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "settings"}
+              onClick={() => setActiveTab("settings")}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-t-xl border border-b-0 px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0097B2] ${
+                activeTab === "settings"
+                  ? "border-slate-200 bg-white text-slate-900 shadow-[0_-1px_3px_rgba(15,23,42,0.04)]"
+                  : "border-transparent bg-slate-100/70 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              }`}
+            >
+              <FolderCog size={17} /> Settings
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "permissions"}
+              onClick={() => setActiveTab("permissions")}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-t-xl border border-b-0 px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0097B2] ${
+                activeTab === "permissions"
+                  ? "border-slate-200 bg-white text-slate-900 shadow-[0_-1px_3px_rgba(15,23,42,0.04)]"
+                  : "border-transparent bg-slate-100/70 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              }`}
+            >
+              <ShieldCheck size={17} /> Permissions
+            </button>
           </div>
         )}
         {(isDirector || canManageEmployees) && (
@@ -94,7 +138,7 @@ export function SettingsTable({
         )}
       </div>
 
-      <div className="card overflow-hidden">
+      {(!isDirector || activeTab === "settings") && <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -103,7 +147,6 @@ export function SettingsTable({
                 <th className="px-6 py-3.5">Role / Workbook</th>
                 <th className="px-6 py-3.5">System Role</th>
                 <th className="px-6 py-3.5">Email / Login</th>
-                <th className="px-6 py-3.5">Can manage employees?</th>
                 <th className="px-6 py-3.5">Access Status</th>
                 <th className="px-6 py-3.5 text-right">Actions</th>
               </tr>
@@ -119,7 +162,7 @@ export function SettingsTable({
                 const initials = getInitials(m.name, m.source_code);
                 const colorKey = getManagerColorKey(m.id, m.source_code, managerColors);
                 const color = AVATAR_PALETTE[colorKey] || AVATAR_PALETTE.teal;
-                const canEdit = isDirector || isSelf || m.parent_manager_id === currentManagerId;
+                const canEdit = isDirector || isSelf || (canManageEmployees && m.parent_manager_id === currentManagerId);
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50/75 transition-colors">
@@ -169,10 +212,10 @@ export function SettingsTable({
                       ) : (
                         <span
                           className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200"
-                          title="Manager editor — Can manage their actions and their reporting line"
+                          title="Manager — Access is configured in Permissions"
                         >
                           <User size={13} className="text-slate-500" />
-                          Editor
+                          Manager
                         </span>
                       )}
                     </td>
@@ -184,19 +227,6 @@ export function SettingsTable({
                         </span>
                       ) : (
                         <span className="text-slate-400 italic">No email assigned</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {isAdmin ? (
-                        <span className="text-xs font-semibold text-slate-400">Director access</span>
-                      ) : isDirector ? (
-                        <EmployeePermissionToggle manager={m} schemaReady={teamHierarchyReady} />
-                      ) : m.can_manage_employees ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-[#007A91]">
-                          <UsersRound size={13} /> Yes
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold text-slate-400">No</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -224,10 +254,11 @@ export function SettingsTable({
                             <button
                               type="button"
                               onClick={() => setEditingManager(m)}
-                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-[#0097B2]/40 hover:bg-[#E0F7FA]/60 hover:text-[#007A91] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0097B2]"
+                              title={hasAccount ? `Edit ${m.name}` : `Set login for ${m.name}`}
+                              aria-label={hasAccount ? `Edit ${m.name}` : `Set login for ${m.name}`}
                             >
-                              <KeyRound size={13} />
-                              {hasAccount ? "Edit / Password" : "Set login"}
+                              <Pencil size={17} />
                             </button>
                             <DeleteManagerButton
                               managerId={m.id}
@@ -246,7 +277,14 @@ export function SettingsTable({
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
+
+      {isDirector && activeTab === "permissions" && (
+        <PermissionsMatrix
+          managers={orderedManagers}
+          permissionsReady={permissionsReady}
+        />
+      )}
 
       {/* Add Manager Modal */}
       {isAddOpen && (
@@ -322,34 +360,118 @@ function flattenManagerTree(managers: ManagerWithProfile[]) {
   return flattened;
 }
 
-function EmployeePermissionToggle({
+const PERMISSION_COLUMNS = [
+  { key: "can_add_actions", label: "Add actions" },
+  { key: "can_edit_actions", label: "Edit actions" },
+  { key: "can_delete_actions", label: "Delete actions" },
+  { key: "can_manage_employees", label: "Manage employees" },
+] as const;
+
+type PermissionKey = (typeof PERMISSION_COLUMNS)[number]["key"];
+
+function PermissionsMatrix({
+  managers,
+  permissionsReady,
+}: {
+  managers: Array<{ manager: ManagerWithProfile; depth: number }>;
+  permissionsReady: boolean;
+}) {
+  return (
+    <section className="card overflow-hidden" aria-labelledby="permissions-heading">
+      <div className="border-b border-slate-200 bg-white px-5 py-4">
+        <h2 id="permissions-heading" className="font-bold text-slate-900">Manager permissions</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Choose what each manager can do. Director access is always enabled.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-[860px] w-full border-collapse text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <tr>
+              <th scope="col" className="sticky left-0 z-10 min-w-64 border-r border-slate-200 bg-slate-50 px-5 py-3.5 text-left">
+                Manager
+              </th>
+              {PERMISSION_COLUMNS.map((permission) => (
+                <th key={permission.key} scope="col" className="min-w-40 px-4 py-3.5 text-center">
+                  {permission.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {managers.map(({ manager, depth }) => {
+              const isAdmin = manager.profile?.role === "director" ||
+                (!manager.profile && manager.role_title?.toLowerCase() === "director");
+              return (
+                <tr key={manager.id} className="group hover:bg-slate-50/70">
+                  <th scope="row" className="sticky left-0 z-10 border-r border-slate-100 bg-white px-5 py-3.5 text-left font-normal group-hover:bg-slate-50">
+                    <div className="flex items-center gap-2" style={{ paddingLeft: `${Math.min(depth, 4) * 22}px` }}>
+                      {depth > 0 && <CornerDownRight aria-label="Employee" size={16} className="shrink-0 text-[#0097B2]" />}
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-slate-900" title={manager.name}>{manager.name}</p>
+                        <p className="font-mono text-xs text-slate-400">{manager.source_code}</p>
+                      </div>
+                    </div>
+                  </th>
+                  {PERMISSION_COLUMNS.map((permission) => (
+                    <td key={permission.key} className="px-4 py-3 text-center">
+                      {isAdmin ? (
+                        <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">
+                          <Check size={14} /> Full access
+                        </span>
+                      ) : (
+                        <PermissionToggle
+                          manager={manager}
+                          permission={permission.key}
+                          enabled={Boolean(manager[permission.key])}
+                          disabled={!permissionsReady}
+                        />
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function PermissionToggle({
   manager,
-  schemaReady,
+  permission,
+  enabled,
+  disabled,
 }: {
   manager: ManagerWithProfile;
-  schemaReady: boolean;
+  permission: PermissionKey;
+  enabled: boolean;
+  disabled: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
-  const enabled = Boolean(manager.can_manage_employees);
+  const label = PERMISSION_COLUMNS.find((item) => item.key === permission)?.label ?? permission;
 
   return (
     <button
       type="button"
       role="switch"
       aria-checked={enabled}
-      aria-label={`${enabled ? "Disable" : "Enable"} employee management for ${manager.name}`}
-      disabled={isPending || !schemaReady}
+      aria-label={`${enabled ? "Disable" : "Enable"} ${label.toLowerCase()} for ${manager.name}`}
+      disabled={isPending || disabled}
       onClick={() => {
         startTransition(async () => {
           const formData = new FormData();
           formData.set("manager_id", manager.id);
+          formData.set("permission", permission);
           formData.set("enabled", String(!enabled));
-          const result = await setManagerEmployeePermission(formData);
-          if (!result.ok) alert(result.message || "Could not update employee access.");
+          const result = await setManagerPermission(formData);
+          if (!result.ok) alert(result.message || "Could not update this permission.");
         });
       }}
-      title={!schemaReady ? "Available after the team hierarchy migration" : undefined}
-      className={`inline-flex min-h-11 min-w-[88px] items-center justify-start gap-2.5 rounded-full border px-3 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+      title={disabled ? "Available after the permissions migration" : `${label}: ${enabled ? "allowed" : "not allowed"}`}
+      className={`inline-flex min-h-11 min-w-[78px] items-center justify-start gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0097B2] disabled:cursor-not-allowed disabled:opacity-60 ${
         enabled
           ? "border-cyan-200 bg-cyan-50 text-[#007A91]"
           : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
@@ -357,15 +479,15 @@ function EmployeePermissionToggle({
     >
       <span
         aria-hidden="true"
-        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#0097B2]" : "bg-slate-300"}`}
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#0097B2]" : "bg-slate-300"}`}
       >
         <span
-          className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-[left,right] ${
+          className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition-[left,right] ${
             enabled ? "right-0.5" : "left-0.5"
           }`}
         />
       </span>
-      <span className="min-w-6 text-left">{enabled ? "Yes" : "No"}</span>
+      <span className="min-w-6 text-left">{isPending ? "…" : enabled ? "Yes" : "No"}</span>
     </button>
   );
 }
@@ -384,10 +506,10 @@ function DeleteManagerButton({
   if (isProtected) {
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-xs text-slate-300 cursor-not-allowed"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-300 cursor-not-allowed"
         title="You cannot delete your own active account"
       >
-        <Trash2 size={13} />
+        <Trash2 size={17} />
       </span>
     );
   }
@@ -412,11 +534,11 @@ function DeleteManagerButton({
           });
         }
       }}
-      className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 p-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer disabled:opacity-50"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 disabled:opacity-50"
       title={`Delete ${managerName}`}
       aria-label={`Delete ${managerName}`}
     >
-      <Trash2 size={13} />
+      <Trash2 size={17} />
     </button>
   );
 }
@@ -474,7 +596,8 @@ function AddManagerModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              aria-label={isDirector ? "Close add manager dialog" : "Close add employee dialog"}
             >
               <X size={18} />
             </button>
@@ -482,7 +605,7 @@ function AddManagerModal({
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             {error && (
-              <p className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200">
+              <p role="alert" className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200">
                 {error}
               </p>
             )}
@@ -587,7 +710,7 @@ function AddManagerModal({
                     className="field"
                     defaultValue="manager"
                   >
-                    <option value="manager">Editor — Own and team actions</option>
+                    <option value="manager">Manager — Configurable access</option>
                     <option value="director">Admin — Full access (All workbooks & settings)</option>
                   </select>
                 </div>
@@ -693,7 +816,7 @@ function EditManagerModal({
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={onClose} />
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+        <div className="relative w-full max-w-3xl rounded-xl bg-white p-6 shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div>
               <span className="font-mono text-xs font-bold text-[#007A91]">{manager.source_code}</span>
@@ -702,15 +825,16 @@ function EditManagerModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              aria-label="Close manager editor"
             >
               <X size={18} />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
             {error && (
-              <p className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200">
+              <p role="alert" className="rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200 md:col-span-2">
                 {error}
               </p>
             )}
@@ -868,7 +992,7 @@ function EditManagerModal({
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 md:col-span-2">
               <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isPending}>
                 Cancel
               </button>

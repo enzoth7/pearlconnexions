@@ -27,12 +27,14 @@ export function QuickEditDrawer({
   workstreams,
   managers,
   isOpen,
+  canDeleteAction,
   onClose,
 }: {
   action: ActionRecord | null;
   workstreams: Workstream[];
   managers: Manager[];
   isOpen: boolean;
+  canDeleteAction: boolean;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -86,6 +88,7 @@ export function QuickEditDrawer({
               action={action}
               workstreams={workstreams}
               managers={managers}
+              canDeleteAction={canDeleteAction}
               onClose={onClose}
             />
           </div>
@@ -99,11 +102,13 @@ function QuickEditForm({
   action,
   workstreams,
   managers,
+  canDeleteAction,
   onClose,
 }: {
   action: ActionRecord;
   workstreams: Workstream[];
   managers: Manager[];
+  canDeleteAction: boolean;
   onClose: () => void;
 }) {
   const [state, formAction, pending] = useActionState(updateAction, initial);
@@ -279,15 +284,17 @@ function QuickEditForm({
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100">
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={isDeleting || pending}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 hover:border-red-300 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <Trash2 size={14} />
-          {isDeleting ? "Deleting…" : "Delete"}
-        </button>
+        {canDeleteAction ? (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isDeleting || pending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 hover:border-red-300 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Trash2 size={14} />
+            {isDeleting ? "Deleting…" : "Delete"}
+          </button>
+        ) : <span />}
 
         <div className="flex items-center gap-3">
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isDeleting}>

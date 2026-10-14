@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   ]);
 
   const { profile, isDirector, canManageEmployees } = auth;
-  const { managers, teamHierarchyReady } = directory;
+  const { managers, teamHierarchyReady, permissionsReady } = directory;
 
   return (
     <>
@@ -30,6 +30,7 @@ export default async function SettingsPage() {
         isDirector={isDirector}
         canManageEmployees={canManageEmployees}
         teamHierarchyReady={teamHierarchyReady}
+        permissionsReady={permissionsReady}
       />
     </>
   );

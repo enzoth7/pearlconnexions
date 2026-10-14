@@ -52,6 +52,9 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
     return { message: "Check the highlighted fields.", errors: z.flattenError(parsed.error).fieldErrors };
   }
   const auth = await requireEditor();
+  if (!auth.canAddActions) {
+    return { message: "You do not have permission to add actions." };
+  }
   const { supabase } = auth;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
   const [{ data: workstream, error: workstreamError }, { data: existingActions, error: referencesError }] =
@@ -146,7 +149,9 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
 export async function updateAction(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = actionSchema.safeParse(actionFormValues(formData));
   if (!parsed.success) return { message: "Check the highlighted fields.", errors: z.flattenError(parsed.error).fieldErrors };
-  const { supabase } = await requireEditor();
+  const auth = await requireEditor();
+  if (!auth.canEditActions) return { message: "You do not have permission to edit actions." };
+  const { supabase } = auth;
   const { id, owner_manager_ids, support_manager_id, ...values } = parsed.data;
   const payload: Record<string, unknown> = { ...values };
   if (!payload.workstream_id) delete payload.workstream_id;
@@ -246,7 +251,9 @@ export async function saveParticipant(_: FormState, formData: FormData): Promise
   if (!parsed.success) {
     return { message: "Check the participant fields.", errors: z.flattenError(parsed.error).fieldErrors };
   }
-  const { supabase } = await requireEditor();
+  const auth = await requireEditor();
+  if (!auth.canEditActions) return { message: "You do not have permission to edit actions." };
+  const { supabase } = auth;
   const { id, action_id, manager_id, responsibility_type, responsibility_text } = parsed.data;
 
   if (id) {
@@ -293,7 +300,9 @@ export async function saveParticipant(_: FormState, formData: FormData): Promise
 export async function removeParticipant(formData: FormData): Promise<void> {
   const id = z.string().uuid().parse(formData.get("id"));
   const actionId = formData.get("action_id") ? z.string().uuid().parse(formData.get("action_id")) : null;
-  const { supabase } = await requireEditor();
+  const auth = await requireEditor();
+  if (!auth.canEditActions) throw new Error("You do not have permission to edit actions.");
+  const { supabase } = auth;
   const { data: deletedParticipant, error } = await supabase
     .from("action_participants")
     .delete()
@@ -323,7 +332,9 @@ const updateSchema = z.object({
 export async function addUpdate(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { message: "Add a review date and check the form.", errors: z.flattenError(parsed.error).fieldErrors };
-  const { supabase } = await requireEditor();
+  const auth = await requireEditor();
+  if (!auth.canEditActions) return { message: "You do not have permission to edit actions." };
+  const { supabase } = auth;
   const payload = Object.fromEntries(Object.entries(parsed.data).map(([k, v]) => [k, v === "" ? null : v]));
   const { error } = await supabase.from("action_updates").insert(payload);
   if (error) return { message: error.message };
@@ -348,7 +359,9 @@ const updateReviewSchema = z.object({
 export async function updateReview(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = updateReviewSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { message: "Add a review date and check the form.", errors: z.flattenError(parsed.error).fieldErrors };
-  const { supabase } = await requireEditor();
+  const auth = await requireEditor();
+  if (!auth.canEditActions) return { message: "You do not have permission to edit actions." };
+  const { supabase } = auth;
   const { id, action_id, ...values } = parsed.data;
   const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v === "" ? null : v]));
   const { data: updatedReview, error } = await supabase
@@ -368,7 +381,9 @@ export async function updateReview(_: FormState, formData: FormData): Promise<Fo
 export async function deleteReview(formData: FormData): Promise<void> {
   const id = z.string().uuid().parse(formData.get("id"));
   const actionId = formData.get("action_id") ? z.string().uuid().parse(formData.get("action_id")) : null;
-  const { supabase } = await requireEditor();
+  const auth = await requireEditor();
+  if (!auth.canEditActions) throw new Error("You do not have permission to edit actions.");
+  const { supabase } = auth;
   const { data: deletedReview, error } = await supabase
     .from("action_updates")
     .delete()
@@ -387,7 +402,9 @@ export async function signOffAction(_: FormState, formData: FormData): Promise<F
     const id = z.string().uuid().parse(formData.get("action_id"));
     const signerName = formData.get("signed_off_by_name")?.toString().trim();
     const customCompletedAt = formData.get("completed_at")?.toString().trim();
-    const { supabase, profile } = await requireEditor();
+    const auth = await requireEditor();
+    if (!auth.canEditActions) return { ok: false, message: "You do not have permission to edit actions." };
+    const { supabase, profile } = auth;
     const finalSigner = signerName || profile.display_name || "Joel Samuel";
 
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
@@ -421,7 +438,9 @@ export async function signOffAction(_: FormState, formData: FormData): Promise<F
 export async function deleteAction(formData: FormData): Promise<{ ok: boolean; message?: string }> {
   try {
     const id = z.string().uuid().parse(formData.get("id"));
-    const { supabase } = await requireEditor();
+    const auth = await requireEditor();
+    if (!auth.canDeleteActions) return { ok: false, message: "You do not have permission to delete actions." };
+    const { supabase } = auth;
     const { data: deletedAction, error } = await supabase
       .from("actions")
       .delete()
@@ -595,6 +614,9 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
 
     const isSelf = managerId === auth.managerId || currentProfile.manager_id === managerId;
     if (!auth.isDirector && !isSelf) {
+      if (!auth.canManageEmployees) {
+        return { ok: false, message: "You do not have permission to manage employees." };
+      }
       if (
         !hierarchyReady ||
         (targetManager as { parent_manager_id?: string | null }).parent_manager_id !== auth.managerId
@@ -741,7 +763,8 @@ export async function deleteManager(formData: FormData): Promise<{ ok: boolean; 
     }
     if (
       !auth.isDirector &&
-      (!hierarchyReady ||
+      (!auth.canManageEmployees ||
+        !hierarchyReady ||
         (targetManager as { parent_manager_id?: string | null }).parent_manager_id !== auth.managerId)
     ) {
       return { ok: false, message: "You can only delete employees who report directly to you." };
@@ -779,12 +802,20 @@ export async function deleteManager(formData: FormData): Promise<{ ok: boolean; 
   }
 }
 
-export async function setManagerEmployeePermission(
+const managerPermissionSchema = z.enum([
+  "can_add_actions",
+  "can_edit_actions",
+  "can_delete_actions",
+  "can_manage_employees",
+]);
+
+export async function setManagerPermission(
   formData: FormData
 ): Promise<{ ok: boolean; message?: string }> {
   try {
     const { supabase } = await requireDirector();
     const managerId = z.string().uuid().parse(formData.get("manager_id"));
+    const permission = managerPermissionSchema.parse(formData.get("permission"));
     const enabled = z.enum(["true", "false"]).parse(formData.get("enabled")) === "true";
 
     const { data: linkedProfile, error: profileError } = await supabase
@@ -794,17 +825,25 @@ export async function setManagerEmployeePermission(
       .maybeSingle();
     if (profileError) return { ok: false, message: profileError.message };
     if (linkedProfile?.role === "director") {
-      return { ok: false, message: "Directors already have full team access." };
+      return { ok: false, message: "Directors always have full access." };
+    }
+
+    const updates: Record<string, boolean> = { [permission]: enabled };
+    if (permission === "can_add_actions" && enabled) updates.can_edit_actions = true;
+    if (permission === "can_delete_actions" && enabled) updates.can_edit_actions = true;
+    if (permission === "can_edit_actions" && !enabled) {
+      updates.can_add_actions = false;
+      updates.can_delete_actions = false;
     }
 
     const { error } = await supabase
       .from("managers")
-      .update({ can_manage_employees: enabled })
+      .update(updates)
       .eq("id", managerId);
     if (isMissingTeamHierarchyColumn(error)) {
       return {
         ok: false,
-        message: "Team hierarchy is not active yet. Apply the pending database migration first.",
+        message: "Granular permissions are not active yet. Apply the pending database migration first.",
       };
     }
     if (error) return { ok: false, message: error.message };
@@ -812,7 +851,7 @@ export async function setManagerEmployeePermission(
     revalidatePath("/settings");
     return { ok: true };
   } catch (err: unknown) {
-    return { ok: false, message: err instanceof Error ? err.message : "Failed to update team access" };
+    return { ok: false, message: err instanceof Error ? err.message : "Failed to update manager permission" };
   }
 }
 
