@@ -28,6 +28,8 @@ export function QuickEditDrawer({
   managers,
   isOpen,
   canDeleteAction,
+  canReassignAction,
+  canSignOffAction,
   onClose,
 }: {
   action: ActionRecord | null;
@@ -35,6 +37,8 @@ export function QuickEditDrawer({
   managers: Manager[];
   isOpen: boolean;
   canDeleteAction: boolean;
+  canReassignAction: boolean;
+  canSignOffAction: boolean;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -89,6 +93,8 @@ export function QuickEditDrawer({
               workstreams={workstreams}
               managers={managers}
               canDeleteAction={canDeleteAction}
+              canReassignAction={canReassignAction}
+              canSignOffAction={canSignOffAction}
               onClose={onClose}
             />
           </div>
@@ -103,12 +109,16 @@ function QuickEditForm({
   workstreams,
   managers,
   canDeleteAction,
+  canReassignAction,
+  canSignOffAction,
   onClose,
 }: {
   action: ActionRecord;
   workstreams: Workstream[];
   managers: Manager[];
   canDeleteAction: boolean;
+  canReassignAction: boolean;
+  canSignOffAction: boolean;
   onClose: () => void;
 }) {
   const [state, formAction, pending] = useActionState(updateAction, initial);
@@ -176,7 +186,7 @@ function QuickEditForm({
         </select>
       </div>
 
-      <div className="grid grid-cols-2 items-start gap-3">
+      {canReassignAction ? <div className="grid grid-cols-2 items-start gap-3">
         <ManagerMultiSelect
           managers={managers}
           defaultValue={currentOwners.map((participant) => participant.manager.id)}
@@ -201,7 +211,15 @@ function QuickEditForm({
             ))}
           </select>
         </div>
-      </div>
+      </div> : (
+        <div>
+          <p className="label">Ownership &amp; support</p>
+          <p className="text-sm text-slate-600">
+            {currentOwners.map((item) => item.manager.name).join(", ") || "Unassigned"}
+            {currentSupport ? ` · Support: ${currentSupport.manager.name}` : ""}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -266,7 +284,7 @@ function QuickEditForm({
         </div>
       </div>
 
-      <div>
+      {canSignOffAction ? <div>
         <label className="label" htmlFor="quick-completed-at">
           Date completed
         </label>
@@ -277,7 +295,7 @@ function QuickEditForm({
           name="completed_at"
           defaultValue={action.completed_at || ""}
         />
-      </div>
+      </div> : <input type="hidden" name="completed_at" value={action.completed_at || ""} />}
 
       <div className="pt-2">
         <Result state={state} />

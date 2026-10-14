@@ -39,6 +39,8 @@ export function ActionsTable({
   canAddActions = true,
   canEditActions = true,
   canDeleteActions = true,
+  canReassignActions = true,
+  canSignOffActions = true,
   editableActionIds,
   canFilterManagers = canEditActions,
 }: {
@@ -54,6 +56,8 @@ export function ActionsTable({
   canAddActions?: boolean;
   canEditActions?: boolean;
   canDeleteActions?: boolean;
+  canReassignActions?: boolean;
+  canSignOffActions?: boolean;
   editableActionIds?: string[];
   canFilterManagers?: boolean;
 }) {
@@ -501,6 +505,8 @@ export function ActionsTable({
               managers={managers}
               isOpen={Boolean(selectedAction)}
               canDeleteAction={canDeleteActions}
+              canReassignAction={canReassignActions}
+              canSignOffAction={canSignOffActions}
               onClose={() => setSelectedAction(null)}
             />
           )}
@@ -509,6 +515,7 @@ export function ActionsTable({
             <NewActionDialog
               workstreams={workstreams}
               managers={managers}
+              canReassignAction={canReassignActions}
               isOpen={isNewActionOpen}
               onClose={() => setIsNewActionOpen(false)}
             />

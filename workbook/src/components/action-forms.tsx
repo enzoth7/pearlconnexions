@@ -45,11 +45,15 @@ export function ActionForm({
   workstreams,
   managers,
   readOnly = false,
+  canReassign = true,
+  canSignOff = true,
 }: {
   action: ActionRecord;
   workstreams: Workstream[];
   managers?: Manager[];
   readOnly?: boolean;
+  canReassign?: boolean;
+  canSignOff?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(updateAction, initial);
   const currentOwners = action.participants.filter((p) => p.responsibility_type !== "Support");
@@ -152,7 +156,7 @@ export function ActionForm({
               <option>Low</option>
             </select>
           </div>
-          {managers && managers.length > 0 && (
+          {managers && managers.length > 0 && canReassign && (
             <>
               <ManagerMultiSelect
                 managers={managers}
@@ -179,6 +183,15 @@ export function ActionForm({
                 </select>
               </div>
             </>
+          )}
+          {managers && managers.length > 0 && !canReassign && (
+            <div className="sm:col-span-2">
+              <p className="label">Ownership &amp; support</p>
+              <p className="text-sm text-slate-600">
+                {currentOwners.map((item) => item.manager.name).join(", ") || "Unassigned"}
+                {currentSupport ? ` · Support: ${currentSupport.manager.name}` : ""}
+              </p>
+            </div>
           )}
           <div>
             <label className="label" htmlFor="base_status">
@@ -219,7 +232,7 @@ export function ActionForm({
               defaultValue={action.extended_deadline || ""}
             />
           </div>
-          <div>
+          {canSignOff ? <div>
             <label className="label" htmlFor="completed_at">
               Date completed
             </label>
@@ -230,7 +243,7 @@ export function ActionForm({
               name="completed_at"
               defaultValue={action.completed_at || ""}
             />
-          </div>
+          </div> : <input type="hidden" name="completed_at" value={action.completed_at || ""} />}
         </div>
         <Result state={state} />
         <button className="btn btn-primary" disabled={pending}>

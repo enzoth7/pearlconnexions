@@ -16,6 +16,7 @@ export function SettingsTable({
   currentManagerId,
   isDirector,
   canManageEmployees,
+  canManageLogins,
   teamHierarchyReady,
   permissionsReady,
 }: {
@@ -24,6 +25,7 @@ export function SettingsTable({
   currentManagerId?: string | null;
   isDirector: boolean;
   canManageEmployees: boolean;
+  canManageLogins: boolean;
   teamHierarchyReady: boolean;
   permissionsReady: boolean;
 }) {
@@ -162,7 +164,7 @@ export function SettingsTable({
                 const initials = getInitials(m.name, m.source_code);
                 const colorKey = getManagerColorKey(m.id, m.source_code, managerColors);
                 const color = AVATAR_PALETTE[colorKey] || AVATAR_PALETTE.teal;
-                const canEdit = isDirector || isSelf || (canManageEmployees && m.parent_manager_id === currentManagerId);
+                const canEdit = isDirector || isSelf || ((canManageEmployees || canManageLogins) && m.parent_manager_id === currentManagerId);
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50/75 transition-colors">
@@ -292,6 +294,7 @@ export function SettingsTable({
           managers={managers}
           isDirector={isDirector}
           teamHierarchyReady={teamHierarchyReady}
+          canManageLogins={canManageLogins}
           onClose={() => setIsAddOpen(false)}
           onCreated={(newId, colorKey) => {
             if (newId && colorKey) handleSaveColor(newId, colorKey);
@@ -312,6 +315,8 @@ export function SettingsTable({
             (currentManagerId && editingManager.id === currentManagerId) ||
             (currentProfileId && editingManager.profile_id === currentProfileId)
           )}
+          canManageEmployees={canManageEmployees}
+          canManageLogins={canManageLogins}
           onClose={() => setEditingManager(null)}
         />
       )}
@@ -363,8 +368,11 @@ function flattenManagerTree(managers: ManagerWithProfile[]) {
 const PERMISSION_COLUMNS = [
   { key: "can_add_actions", label: "Add actions" },
   { key: "can_edit_actions", label: "Edit actions" },
+  { key: "can_reassign_actions", label: "Reassign actions" },
+  { key: "can_sign_off_actions", label: "Sign off actions" },
   { key: "can_delete_actions", label: "Delete actions" },
   { key: "can_manage_employees", label: "Manage employees" },
+  { key: "can_manage_logins", label: "Manage logins" },
 ] as const;
 
 type PermissionKey = (typeof PERMISSION_COLUMNS)[number]["key"];
@@ -377,22 +385,22 @@ function PermissionsMatrix({
   permissionsReady: boolean;
 }) {
   return (
-    <section className="card overflow-hidden" aria-labelledby="permissions-heading">
-      <div className="border-b border-slate-200 bg-white px-5 py-4">
+    <section className="overflow-hidden border-y border-slate-200 bg-white" aria-labelledby="permissions-heading">
+      <div className="border-b border-slate-200 px-1 py-4">
         <h2 id="permissions-heading" className="font-bold text-slate-900">Manager permissions</h2>
         <p className="mt-1 text-sm text-slate-500">
           Choose what each manager can do. Director access is always enabled.
         </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-[860px] w-full border-collapse text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+        <table className="min-w-[1220px] w-full border-collapse text-sm">
+          <thead className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
             <tr>
-              <th scope="col" className="sticky left-0 z-10 min-w-64 border-r border-slate-200 bg-slate-50 px-5 py-3.5 text-left">
+              <th scope="col" className="sticky left-0 z-10 min-w-64 border-r border-slate-200 bg-white px-5 py-3.5 text-left">
                 Manager
               </th>
               {PERMISSION_COLUMNS.map((permission) => (
-                <th key={permission.key} scope="col" className="min-w-40 px-4 py-3.5 text-center">
+                <th key={permission.key} scope="col" className="min-w-36 px-3 py-3.5 text-center">
                   {permission.label}
                 </th>
               ))}
@@ -416,8 +424,8 @@ function PermissionsMatrix({
                   {PERMISSION_COLUMNS.map((permission) => (
                     <td key={permission.key} className="px-4 py-3 text-center">
                       {isAdmin ? (
-                        <span className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">
-                          <Check size={14} /> Full access
+                        <span className="inline-flex h-11 w-11 items-center justify-center text-purple-600" title="Full access" aria-label={`${permission.label}: full access`}>
+                          <Check size={18} strokeWidth={2.5} />
                         </span>
                       ) : (
                         <PermissionToggle
@@ -471,23 +479,19 @@ function PermissionToggle({
         });
       }}
       title={disabled ? "Available after the permissions migration" : `${label}: ${enabled ? "allowed" : "not allowed"}`}
-      className={`inline-flex min-h-11 min-w-[78px] items-center justify-start gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0097B2] disabled:cursor-not-allowed disabled:opacity-60 ${
-        enabled
-          ? "border-cyan-200 bg-cyan-50 text-[#007A91]"
-          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
-      }`}
+      className="inline-flex h-11 w-14 items-center justify-center rounded-xl transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0097B2] disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span
         aria-hidden="true"
-        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#0097B2]" : "bg-slate-300"}`}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#0097B2]" : "bg-slate-300"}`}
       >
         <span
-          className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition-[left,right] ${
+          className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-[left,right] ${
             enabled ? "right-0.5" : "left-0.5"
           }`}
         />
       </span>
-      <span className="min-w-6 text-left">{isPending ? "…" : enabled ? "Yes" : "No"}</span>
+      <span className="sr-only">{isPending ? "Updating" : enabled ? "Allowed" : "Not allowed"}</span>
     </button>
   );
 }
@@ -547,12 +551,14 @@ function AddManagerModal({
   managers,
   isDirector,
   teamHierarchyReady,
+  canManageLogins,
   onClose,
   onCreated,
 }: {
   managers: ManagerWithProfile[];
   isDirector: boolean;
   teamHierarchyReady: boolean;
+  canManageLogins: boolean;
   onClose: () => void;
   onCreated?: (newId: string, colorKey: string) => void;
 }) {
@@ -610,7 +616,7 @@ function AddManagerModal({
               </p>
             )}
 
-            <div>
+            {(isDirector || canManageLogins) && <div>
               <label className="label" htmlFor="new-mgr-name">
                 Full Name
               </label>
@@ -623,9 +629,9 @@ function AddManagerModal({
                 onChange={(e) => setName(e.target.value)}
                 required
               />
-            </div>
+            </div>}
 
-            <div>
+            {(isDirector || canManageLogins) && <div>
               <div className="flex items-center justify-between">
                 <label className="label">Avatar Color</label>
                 <span className="text-xs font-semibold text-slate-500">
@@ -663,7 +669,7 @@ function AddManagerModal({
                   Preview: <span className="font-semibold text-slate-700">{previewInitials}</span> with {color.name} theme
                 </p>
               </div>
-            </div>
+            </div>}
 
             <div>
               <label className="label" htmlFor="new-mgr-role">
@@ -770,6 +776,8 @@ function EditManagerModal({
   currentColorKey,
   onSaveColor,
   isSelf,
+  canManageEmployees,
+  canManageLogins,
   onClose,
 }: {
   manager: ManagerWithProfile;
@@ -779,6 +787,8 @@ function EditManagerModal({
   currentColorKey: string;
   onSaveColor: (colorKey: string) => void;
   isSelf?: boolean;
+  canManageEmployees: boolean;
+  canManageLogins: boolean;
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -811,6 +821,8 @@ function EditManagerModal({
   const isDirectorRole =
     manager.profile?.role === "director" ||
     (!manager.profile && manager.role_title?.toLowerCase() === "director");
+  const canEditDetails = isDirector || Boolean(isSelf) || canManageEmployees;
+  const canEditLogin = isDirector || Boolean(isSelf) || canManageLogins;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
@@ -849,6 +861,7 @@ function EditManagerModal({
                 className="field"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={!canEditDetails}
                 required
               />
             </div>
@@ -868,6 +881,7 @@ function EditManagerModal({
                       key={key}
                       type="button"
                       onClick={() => setSelectedColor(key)}
+                      disabled={!canEditLogin}
                       className={`relative grid h-7 w-7 place-items-center rounded-full transition-all ${opt.dotClass} cursor-pointer ${
                         isSelected
                           ? "ring-2 ring-slate-800 ring-offset-2 scale-110 shadow-xs"
@@ -902,6 +916,7 @@ function EditManagerModal({
                 name="role_title"
                 className="field"
                 defaultValue={manager.role_title || ""}
+                disabled={!canEditDetails}
               />
             </div>
 
@@ -970,6 +985,7 @@ function EditManagerModal({
                 className="field"
                 defaultValue={manager.email || ""}
                 placeholder="manager@pearlconnexions.com"
+                disabled={!canEditLogin}
               />
             </div>
 
@@ -984,6 +1000,7 @@ function EditManagerModal({
                 minLength={6}
                 className="field"
                 placeholder={manager.profile_id ? "Leave blank to keep unchanged" : "Leave blank or at least 6 characters"}
+                disabled={!canEditLogin}
               />
               <p className="mt-1 text-xs text-slate-400">
                 {manager.profile_id

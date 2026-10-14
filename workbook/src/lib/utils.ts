@@ -134,6 +134,9 @@ export type Manager = {
   can_add_actions?: boolean;
   can_edit_actions?: boolean;
   can_delete_actions?: boolean;
+  can_reassign_actions?: boolean;
+  can_sign_off_actions?: boolean;
+  can_manage_logins?: boolean;
 };
 export type Participant = {
   id: string;

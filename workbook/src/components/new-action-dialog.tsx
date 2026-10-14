@@ -25,11 +25,13 @@ function Result({ state }: { state: FormState }) {
 export function NewActionDialog({
   workstreams,
   managers,
+  canReassignAction,
   isOpen,
   onClose,
 }: {
   workstreams: Workstream[];
   managers: Manager[];
+  canReassignAction: boolean;
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -81,6 +83,7 @@ export function NewActionDialog({
           <NewActionForm
             workstreams={workstreams}
             managers={managers}
+            canReassignAction={canReassignAction}
             onClose={onClose}
           />
         </div>
@@ -92,10 +95,12 @@ export function NewActionDialog({
 function NewActionForm({
   workstreams,
   managers,
+  canReassignAction,
   onClose,
 }: {
   workstreams: Workstream[];
   managers: Manager[];
+  canReassignAction: boolean;
   onClose: () => void;
 }) {
   const [state, formAction, pending] = useActionState(createAction, initial);
@@ -165,7 +170,7 @@ function NewActionForm({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+      {canReassignAction ? <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
         <h3 className="text-sm font-bold text-slate-800">Ownership &amp; Support</h3>
         <p className="mt-0.5 text-xs text-slate-500">
           Assign one or more managers to lead the action, plus optional support.
@@ -194,7 +199,9 @@ function NewActionForm({
             </select>
           </div>
         </div>
-      </div>
+      </div> : (
+        <p className="text-sm text-slate-500">This action will be assigned to you automatically.</p>
+      )}
 
       <div className="pt-2">
         <Result state={state} />

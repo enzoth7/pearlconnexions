@@ -10,7 +10,7 @@ export default async function SettingsPage() {
     getManagersWithProfiles(),
   ]);
 
-  const { profile, isDirector, canManageEmployees } = auth;
+  const { profile, isDirector, canManageEmployees, canManageLogins } = auth;
   const { managers, teamHierarchyReady, permissionsReady } = directory;
 
   return (
@@ -29,6 +29,7 @@ export default async function SettingsPage() {
         currentManagerId={profile.manager_id}
         isDirector={isDirector}
         canManageEmployees={canManageEmployees}
+        canManageLogins={canManageLogins}
         teamHierarchyReady={teamHierarchyReady}
         permissionsReady={permissionsReady}
       />

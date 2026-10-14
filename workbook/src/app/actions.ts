@@ -104,9 +104,10 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
 
   if (!newAction) return { message: "The reference was taken by another action. Please try again." };
 
+  const requestedOwnerIds = auth.canReassignActions ? parsed.data.owner_manager_ids : [];
   const ownerIds = [...new Set(
-    parsed.data.owner_manager_ids.length
-      ? parsed.data.owner_manager_ids
+    requestedOwnerIds.length
+      ? requestedOwnerIds
       : auth.managerId
       ? [auth.managerId]
       : []
@@ -122,7 +123,7 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
     source_row: index + 1,
   }));
 
-  if (parsed.data.support_manager_id && !ownerIds.includes(parsed.data.support_manager_id)) {
+  if (auth.canReassignActions && parsed.data.support_manager_id && !ownerIds.includes(parsed.data.support_manager_id)) {
     participants.push({
       action_id: newAction.id,
       manager_id: parsed.data.support_manager_id,
@@ -151,10 +152,15 @@ export async function updateAction(_: FormState, formData: FormData): Promise<Fo
   if (!parsed.success) return { message: "Check the highlighted fields.", errors: z.flattenError(parsed.error).fieldErrors };
   const auth = await requireEditor();
   if (!auth.canEditActions) return { message: "You do not have permission to edit actions." };
+  const changesAssignment = formData.has("owner_managers_present") || formData.has("support_manager_id");
+  if (changesAssignment && !auth.canReassignActions) {
+    return { message: "You do not have permission to reassign actions." };
+  }
   const { supabase } = auth;
   const { id, owner_manager_ids, support_manager_id, ...values } = parsed.data;
   const payload: Record<string, unknown> = { ...values };
   if (!payload.workstream_id) delete payload.workstream_id;
+  if (!auth.canSignOffActions) delete payload.completed_at;
   const { data: updatedAction, error } = await supabase
     .from("actions")
     .update(payload)
@@ -164,7 +170,7 @@ export async function updateAction(_: FormState, formData: FormData): Promise<Fo
   if (error) return { message: error.message };
   if (!updatedAction) return { message: "You do not have permission to edit this action." };
 
-  if (formData.has("owner_managers_present") || formData.has("support_manager_id")) {
+  if (changesAssignment) {
     const { data: existingParts, error: participantsError } = await supabase
       .from("action_participants")
       .select("id, manager_id, responsibility_type")
@@ -178,14 +184,6 @@ export async function updateAction(_: FormState, formData: FormData): Promise<Fo
       : undefined;
     const existingByManager = new Map((existingParts ?? []).map((participant) => [participant.manager_id, participant]));
     const desiredIds = new Set([...desiredOwnerIds, ...(desiredSupportId ? [desiredSupportId] : [])]);
-
-    const obsoleteIds = (existingParts ?? [])
-      .filter((participant) => !desiredIds.has(participant.manager_id))
-      .map((participant) => participant.id);
-    if (obsoleteIds.length > 0) {
-      const { error: deleteError } = await supabase.from("action_participants").delete().in("id", obsoleteIds);
-      if (deleteError) return { message: deleteError.message };
-    }
 
     for (const managerId of desiredOwnerIds) {
       const existing = existingByManager.get(managerId);
@@ -232,6 +230,16 @@ export async function updateAction(_: FormState, formData: FormData): Promise<Fo
         if (insertError) return { message: insertError.message };
       }
     }
+
+    // Add the new owners before removing obsolete ones so the current manager
+    // does not lose their RLS edit scope midway through a reassignment.
+    const obsoleteIds = (existingParts ?? [])
+      .filter((participant) => !desiredIds.has(participant.manager_id))
+      .map((participant) => participant.id);
+    if (obsoleteIds.length > 0) {
+      const { error: deleteError } = await supabase.from("action_participants").delete().in("id", obsoleteIds);
+      if (deleteError) return { message: deleteError.message };
+    }
   }
 
   revalidatePath("/"); revalidatePath("/actions"); revalidatePath(`/actions/${id}`);
@@ -252,7 +260,7 @@ export async function saveParticipant(_: FormState, formData: FormData): Promise
     return { message: "Check the participant fields.", errors: z.flattenError(parsed.error).fieldErrors };
   }
   const auth = await requireEditor();
-  if (!auth.canEditActions) return { message: "You do not have permission to edit actions." };
+  if (!auth.canReassignActions) return { message: "You do not have permission to reassign actions." };
   const { supabase } = auth;
   const { id, action_id, manager_id, responsibility_type, responsibility_text } = parsed.data;
 
@@ -301,7 +309,7 @@ export async function removeParticipant(formData: FormData): Promise<void> {
   const id = z.string().uuid().parse(formData.get("id"));
   const actionId = formData.get("action_id") ? z.string().uuid().parse(formData.get("action_id")) : null;
   const auth = await requireEditor();
-  if (!auth.canEditActions) throw new Error("You do not have permission to edit actions.");
+  if (!auth.canReassignActions) throw new Error("You do not have permission to reassign actions.");
   const { supabase } = auth;
   const { data: deletedParticipant, error } = await supabase
     .from("action_participants")
@@ -403,7 +411,7 @@ export async function signOffAction(_: FormState, formData: FormData): Promise<F
     const signerName = formData.get("signed_off_by_name")?.toString().trim();
     const customCompletedAt = formData.get("completed_at")?.toString().trim();
     const auth = await requireEditor();
-    if (!auth.canEditActions) return { ok: false, message: "You do not have permission to edit actions." };
+    if (!auth.canSignOffActions) return { ok: false, message: "You do not have permission to sign off actions." };
     const { supabase, profile } = auth;
     const finalSigner = signerName || profile.display_name || "Joel Samuel";
 
@@ -491,6 +499,10 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
       : auth.isDirector
       ? requestedParentId
       : auth.managerId;
+
+    if (!auth.isDirector && (email || password) && !auth.canManageLogins) {
+      return { ok: false, message: "You do not have permission to create employee logins." };
+    }
 
     if (!auth.isDirector && !parentManagerId) {
       return { ok: false, message: "Your login is not linked to a manager profile." };
@@ -614,8 +626,8 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
 
     const isSelf = managerId === auth.managerId || currentProfile.manager_id === managerId;
     if (!auth.isDirector && !isSelf) {
-      if (!auth.canManageEmployees) {
-        return { ok: false, message: "You do not have permission to manage employees." };
+      if (!auth.canManageEmployees && !auth.canManageLogins) {
+        return { ok: false, message: "You do not have permission to manage this employee." };
       }
       if (
         !hierarchyReady ||
@@ -630,9 +642,11 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
     }
 
     const managerUpdate: Record<string, unknown> = {};
-    if (name) managerUpdate.name = name;
-    if (roleTitle !== undefined) managerUpdate.role_title = roleTitle || null;
-    if (email !== undefined) managerUpdate.email = email || null;
+    const canEditEmployeeDetails = auth.isDirector || isSelf || auth.canManageEmployees;
+    const canEditEmployeeLogin = auth.isDirector || isSelf || auth.canManageLogins;
+    if (canEditEmployeeDetails && name) managerUpdate.name = name;
+    if (canEditEmployeeDetails && roleTitle !== undefined) managerUpdate.role_title = roleTitle || null;
+    if (canEditEmployeeLogin && email !== undefined) managerUpdate.email = email || null;
     if (hierarchyReady && auth.isDirector && systemRole === "director") {
       managerUpdate.parent_manager_id = null;
     } else if (hierarchyReady && auth.isDirector && formData.has("parent_manager_id")) {
@@ -655,7 +669,7 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
       .maybeSingle();
 
     if (linkedProfile) {
-      if ((auth.isDirector && (systemRole === "director" || systemRole === "manager")) || name) {
+      if ((auth.isDirector && (systemRole === "director" || systemRole === "manager")) || (canEditEmployeeDetails && name)) {
         if (linkedProfile.id === currentProfile.id && systemRole && systemRole !== "director") {
           return { ok: false, message: "You cannot remove your own admin director role." };
         }
@@ -663,7 +677,7 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
         if (auth.isDirector && (systemRole === "director" || systemRole === "manager")) {
           profileUpdate.role = systemRole;
         }
-        if (name) profileUpdate.display_name = name;
+        if (canEditEmployeeDetails && name) profileUpdate.display_name = name;
         if (Object.keys(profileUpdate).length > 0) {
           const admin = createAdminClient();
           if (!admin) {
@@ -674,7 +688,7 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
         }
       }
 
-      if (email || password || avatarColor) {
+      if (canEditEmployeeLogin && (email || password || avatarColor)) {
         const admin = createAdminClient();
         if (!admin) {
           return {
@@ -694,7 +708,7 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
         });
         if (authErr) return { ok: false, message: `Auth error: ${authErr.message}` };
       }
-    } else if (email && password) {
+    } else if (canEditEmployeeLogin && email && password) {
       const admin = createAdminClient();
       if (!admin) {
         return {
@@ -807,6 +821,9 @@ const managerPermissionSchema = z.enum([
   "can_edit_actions",
   "can_delete_actions",
   "can_manage_employees",
+  "can_reassign_actions",
+  "can_sign_off_actions",
+  "can_manage_logins",
 ]);
 
 export async function setManagerPermission(
@@ -831,9 +848,13 @@ export async function setManagerPermission(
     const updates: Record<string, boolean> = { [permission]: enabled };
     if (permission === "can_add_actions" && enabled) updates.can_edit_actions = true;
     if (permission === "can_delete_actions" && enabled) updates.can_edit_actions = true;
+    if (permission === "can_reassign_actions" && enabled) updates.can_edit_actions = true;
+    if (permission === "can_sign_off_actions" && enabled) updates.can_edit_actions = true;
     if (permission === "can_edit_actions" && !enabled) {
       updates.can_add_actions = false;
       updates.can_delete_actions = false;
+      updates.can_reassign_actions = false;
+      updates.can_sign_off_actions = false;
     }
 
     const { error } = await supabase

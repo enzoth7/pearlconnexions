@@ -25,16 +25,17 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
   if (!action) notFound();
 
   const editableManagerIds = new Set(managers.map((manager) => manager.id));
-  const canEdit = auth.isDirector || (auth.canEditActions && (
-    auth.isManager && (
+  const isInManagerScope = auth.isManager && (
       action.created_by === auth.profile.id ||
       action.participants.some(
         (participant) =>
           participant.responsibility_type !== "Support" &&
           editableManagerIds.has(participant.manager.id)
       )
-    )
-  ));
+    );
+  const canEdit = auth.isDirector || (auth.canEditActions && isInManagerScope);
+  const canReassign = auth.isDirector || (auth.canReassignActions && isInManagerScope);
+  const canSignOff = auth.isDirector || (auth.canSignOffActions && isInManagerScope);
   const readOnly = !canEdit;
   const latestNextReview = action.updates?.find((u) => u.next_review_at)?.next_review_at;
 
@@ -55,12 +56,12 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)]">
         <div className="space-y-5">
-          <ActionForm action={action} workstreams={workstreams} managers={managers} readOnly={readOnly} />
+          <ActionForm action={action} workstreams={workstreams} managers={managers} readOnly={readOnly} canReassign={canReassign} canSignOff={canSignOff} />
           <UpdateForm actionId={action.id} readOnly={readOnly} />
         </div>
 
         <aside className="space-y-5">
-          <ParticipantsManager action={action} managers={managers} readOnly={readOnly} />
+          <ParticipantsManager action={action} managers={managers} readOnly={!canReassign} />
 
           <section className="card p-5">
             <h2 className="font-bold text-slate-900">Dates</h2>
@@ -88,7 +89,7 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
             </dl>
           </section>
 
-          <SignOffCard action={action} readOnly={readOnly} />
+          <SignOffCard action={action} readOnly={!canSignOff} />
         </aside>
       </div>
 

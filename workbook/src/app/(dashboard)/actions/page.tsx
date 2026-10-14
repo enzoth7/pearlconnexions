@@ -18,7 +18,7 @@ type ActionsPageProps = {
 };
 
 export default async function ActionsPage({ searchParams }: ActionsPageProps) {
-  const { isDirector, isManager, profile, canAddActions, canEditActions, canDeleteActions } = await requireAuth();
+  const { isDirector, isManager, profile, canAddActions, canEditActions, canDeleteActions, canReassignActions, canSignOffActions } = await requireAuth();
   const [actions, managers, workstreams] = await Promise.all([
     getActions(),
     getManagers(),
@@ -115,6 +115,8 @@ export default async function ActionsPage({ searchParams }: ActionsPageProps) {
           canAddActions={canAddActions}
           canEditActions={canEditActions}
           canDeleteActions={canDeleteActions}
+          canReassignActions={canReassignActions}
+          canSignOffActions={canSignOffActions}
           editableActionIds={editableActionIds}
           canFilterManagers={canFilterManagers}
         />
