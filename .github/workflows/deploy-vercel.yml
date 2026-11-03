@@ -3,9 +3,18 @@ name: Deploy - Vercel (Pearl Connexions)
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - .github/workflows/deploy-vercel.yml
+    paths:
+      - website/**
+      - dashboard/**
   workflow_dispatch:
+    inputs:
+      project:
+        description: Proyecto a desplegar
+        required: true
+        type: choice
+        options:
+          - pc-website
+          - pc-workbook
 
 permissions:
   contents: read
@@ -27,33 +36,55 @@ jobs:
         include:
           - project: pc-website
             project_id: prj_bMvrE0ahVkLnfUTxZNkDA5TaM31I
+            root: website
           - project: pc-workbook
             project_id: prj_2KFiiXLZoTzjoMGvBf4lsP0XKdBI
-          - project: pc-qadashboard
-            project_id: prj_GXB6UVqvb9tK38GWDJvKTVfqX0HY
+            root: dashboard
     env:
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_ENZOTHOME1 }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Detectar cambios del proyecto
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_PROJECT: ${{ inputs.project }}
+          TARGET_PROJECT: ${{ matrix.project }}
+          TARGET_ROOT: ${{ matrix.root }}
+          PREVIOUS_COMMIT: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$REQUESTED_PROJECT" = "$TARGET_PROJECT" ]; then
+              echo 'deploy=true' >> "$GITHUB_OUTPUT"
+            fi
+          elif ! git diff --quiet "$PREVIOUS_COMMIT" "$GITHUB_SHA" -- "$TARGET_ROOT/"; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v5
+        if: steps.target.outputs.deploy == 'true'
         with:
           node-version: 24
-      - name: Instalar pnpm para el panel de calidad
-        if: matrix.project == 'pc-qadashboard'
+      - name: Instalar pnpm para dashboard
+        if: matrix.project == 'pc-workbook' && steps.target.outputs.deploy == 'true'
         uses: pnpm/action-setup@v6
         with:
           version: 11.19.0
           run_install: false
       - name: Instalar Vercel CLI
+        if: steps.target.outputs.deploy == 'true'
         run: npm install --global vercel@50.1.3
       - name: Traer configuración de producción
+        if: steps.target.outputs.deploy == 'true'
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - name: Construir
+        if: steps.target.outputs.deploy == 'true'
         run: vercel build --prod --token="$VERCEL_TOKEN"
       - name: Quitar metadatos del repositorio
+        if: steps.target.outputs.deploy == 'true'
         run: rm -rf .git
       - name: Desplegar
+        if: steps.target.outputs.deploy == 'true'
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-

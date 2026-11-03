@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.vercel/
+.env*
+coverage/
+*.tsbuildinfo
+__pycache__/
+*.pyc
+*.xlsx
+*.xls
+tmp/
+out/
+
