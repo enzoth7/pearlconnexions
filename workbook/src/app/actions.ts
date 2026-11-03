@@ -56,11 +56,14 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
     return { message: "You do not have permission to add actions." };
   }
   const { supabase } = auth;
+  // References are globally unique, while managers can only read actions in
+  // their own scope. Use a server-side read for allocation when available.
+  const referenceClient = createAdminClient() ?? supabase;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
   const [{ data: workstream, error: workstreamError }, { data: existingActions, error: referencesError }] =
     await Promise.all([
       supabase.from("workstreams").select("name").eq("id", parsed.data.workstream_id).single(),
-      supabase.from("actions").select("reference, workstream_id"),
+      referenceClient.from("actions").select("reference, workstream_id"),
     ]);
 
   if (workstreamError || !workstream) return { message: workstreamError?.message || "Workstream not found." };
@@ -73,7 +76,8 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
   let newAction: { id: string; reference: string } | null = null;
   let generatedReference = "";
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  // If the server-side key is unavailable, retry past references hidden by RLS.
+  for (let attempt = 0; attempt < 100; attempt += 1) {
     try {
       generatedReference = nextActionReference(workstream.name, workstreamReferences, allReferences);
     } catch (error) {

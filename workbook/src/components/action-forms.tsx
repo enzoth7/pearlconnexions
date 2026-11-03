@@ -949,13 +949,7 @@ export function SignOffCard({
           </p>
         </div>
       ) : (
-        <form
-          action={async (formData) => {
-            await formAction(formData);
-            setIsEditing(false);
-          }}
-          className="mt-4 space-y-4"
-        >
+        <form action={formAction} className="mt-4 space-y-4">
           <input type="hidden" name="action_id" value={action.id} />
 
           <div>
