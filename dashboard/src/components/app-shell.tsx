@@ -4,7 +4,7 @@ import { WorkspaceNavigation } from "./workspace-navigation";
 export function AppShell({ children, context }: { children: React.ReactNode; context: AccessContext }) {
   return (
     <WorkspaceNavigation name={context.name} qaRole={context.role} workbookRole={context.workbookRole}
-      finance={context.finance} hr={context.hr} isAdmin={context.isAdmin}>
+      finance={context.finance} hr={context.hr} isAdmin={context.isAdmin} canManageEmployees={context.canManageEmployees} qaEnabled={context.qaEnabled} maintenance={context.maintenance} sections={context.sections}>
       {children}
     </WorkspaceNavigation>
   );

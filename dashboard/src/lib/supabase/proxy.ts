@@ -25,6 +25,13 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const isPublic = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
   if (!data?.claims && !isPublic) {
+    if (request.nextUrl.pathname.startsWith("/api/governance")) return NextResponse.json({ ok: false, message: "Your session has expired. Sign in again." }, { status: 401 });
+    if (request.nextUrl.pathname === "/api/settings/permissions") {
+      return NextResponse.json({ ok: false, message: "Your session has expired. Sign in again to save permissions." }, { status: 401 });
+    }
+    if (request.nextUrl.pathname === "/api/settings/accounts") {
+      return NextResponse.json({ ok: false, message: "Your session has expired. Sign in again to save this user." }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";

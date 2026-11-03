@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { firstWorkspacePath } from "@/lib/workspace-sections";
 import { getAccessContext } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -6,10 +7,5 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const context = await getAccessContext();
   if (!context) redirect("/login");
-  if (context.role === "director") redirect("/director");
-  if (context.role === "house_lead") redirect("/portal");
-  if (context.workbookRole) redirect("/workbook");
-  if (context.finance) redirect("/finance");
-  if (context.hr) redirect("/hr");
-  redirect("/access-pending");
+  redirect(firstWorkspacePath(context));
 }

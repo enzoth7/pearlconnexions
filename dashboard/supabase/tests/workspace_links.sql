@@ -12,7 +12,7 @@ begin
   where a.is_admin and p.role = 'director' limit 1;
   select p.id into reader_id from public.profiles p
   left join public.workspace_access a on a.user_id = p.id
-  where p.role = 'manager' and not coalesce(a.is_admin, false) limit 1;
+  where p.role = 'manager' and not coalesce(a.is_admin, false) and 'links.quick_links'=any(a.visible_sections) limit 1;
   if admin_id is null or reader_id is null then
     raise exception 'An existing admin and manager are required for this check';
   end if;
@@ -33,10 +33,15 @@ begin
   perform set_config('request.jwt.claim.sub', reader_id::text, true);
   perform set_config('request.jwt.claims', jsonb_build_object('sub', reader_id, 'role', 'authenticated')::text, true);
   select count(*) into affected from public.workspace_links;
-  if affected <> 1 then raise exception 'A signed-in reader must see the shared links'; end if;
+  if affected <> 1 then raise exception 'A manager with Links permission must see the shared links'; end if;
   update public.workspace_links set website_url = 'https://example.invalid/' where id;
   get diagnostics affected = row_count;
   if affected <> 0 then raise exception 'A manager must not be allowed to edit links'; end if;
+  execute 'reset role';
+  update public.workspace_access set visible_sections=array_remove(visible_sections,'links.quick_links') where user_id=reader_id;
+  execute 'set local role authenticated';
+  select count(*) into affected from public.workspace_links;
+  if affected <> 0 then raise exception 'A manager without Links permission must not read shared links'; end if;
   execute 'reset role';
 end $test$;
 

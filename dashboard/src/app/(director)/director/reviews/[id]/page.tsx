@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, RotateCcw } from "lucide-react";
 import { approveSubmission, reopenSubmission } from "@/app/actions";
 import { PageHeader } from "@/components/app-shell";
@@ -28,6 +28,7 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
   ]);
   if (submissionResult.error || definitionsResult.error) throw new Error(submissionResult.error?.message || definitionsResult.error?.message);
   if (!submissionResult.data) notFound();
+  if (submissionResult.data.form_version === 2) redirect(`/qa/monthly-reports/${id}`);
   const row = submissionResult.data as unknown as Submission & { qa_homes: Home | Home[]; qa_periods: Period | Period[]; qa_metric_values: MetricValue[]; qa_incident_details: IncidentDetail[] };
   const home = one(row.qa_homes);
   const period = one(row.qa_periods);

@@ -2,10 +2,9 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { saveQaHomeAssignments } from "@/app/actions";
+import { savePermissionChange } from "@/lib/permission-save";
 import type { Home } from "@/lib/types";
 import type { WorkspaceUser } from "@/lib/workspace-users";
-import { setManagerPermission } from "@/workbook/actions";
 import type { ManagerWithProfile } from "@/workbook/lib/data";
 
 const actionGroups = [
@@ -16,17 +15,14 @@ const actionGroups = [
     { key: "can_sign_off_actions", label: "Sign off actions" },
     { key: "can_delete_actions", label: "Delete actions" },
   ] },
-  { title: "Team", items: [
-    { key: "can_manage_employees", label: "Manage employees" },
-    { key: "can_manage_logins", label: "Manage logins" },
-  ] },
 ] as const;
 
 type ActionKey = typeof actionGroups[number]["items"][number]["key"];
 
-export function WorkbookActionPermissions({ manager, permissionsReady }: {
+export function WorkbookActionPermissions({ manager, permissionsReady, embedded = false }: {
   manager: ManagerWithProfile;
   permissionsReady: boolean;
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -44,7 +40,7 @@ export function WorkbookActionPermissions({ manager, permissionsReady }: {
       data.set("manager_id", manager.id);
       data.set("permission", key);
       data.set("enabled", String(enabled));
-      const result = await setManagerPermission(data);
+      const result = await savePermissionChange("workbook", data);
       if (!result.ok) {
         setValues(previous => ({ ...previous, [key]: !enabled }));
         setFeedback(result.message || "Could not save this permission.");
@@ -52,13 +48,12 @@ export function WorkbookActionPermissions({ manager, permissionsReady }: {
     });
   }
 
-  return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="workbook-actions-title">
-    <h3 id="workbook-actions-title" className="text-lg font-semibold text-slate-950">Workbook actions</h3>
-    <div className="mt-1 text-sm text-slate-600">What this person can do in Workbook.</div>
+  return <div className={embedded ? "ml-8 mt-2" : "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"}>
+    {!embedded && <><h3 className="text-lg font-semibold text-slate-950">Workbook actions</h3><div className="mt-1 text-sm text-slate-600">What this person can do in Workbook.</div></>}
     {!permissionsReady && <div role="alert" className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Action permissions are unavailable until the database update is applied.</div>}
-    <div className="mt-5 grid gap-6 sm:grid-cols-2">
-      {actionGroups.map(group => <fieldset key={group.title} className="border-t border-slate-200 pt-4">
-        <legend className="px-1 text-sm font-semibold text-slate-900">{group.title}</legend>
+    <div className={embedded ? "space-y-1" : "mt-5 grid gap-6 sm:grid-cols-2"}>
+      {actionGroups.map(group => <fieldset key={group.title} className={embedded ? "" : "border-t border-slate-200 pt-4"}>
+        {!embedded && <legend className="px-1 text-sm font-semibold text-slate-900">{group.title}</legend>}
         <div className="space-y-2">
           {group.items.map(item => <label key={item.key} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm text-slate-800 hover:bg-slate-50">
             <input type="checkbox" checked={isDirector || values[item.key]} disabled={isDirector || !permissionsReady || pending}
@@ -70,6 +65,32 @@ export function WorkbookActionPermissions({ manager, permissionsReady }: {
     </div>
     {isDirector && <div className="mt-4 text-xs font-medium text-teal-800">Directors can perform every Workbook action.</div>}
     {feedback && <div role="status" className="mt-4 text-sm text-red-700">{feedback}</div>}
+  </div>;
+}
+
+export function SettingsEmployeePermissions({ manager, permissionsReady, embedded = false }: { manager: ManagerWithProfile; permissionsReady: boolean; embedded?: boolean }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState("");
+  const [values, setValues] = useState({ can_manage_employees: Boolean(manager.can_manage_employees), can_manage_logins: Boolean(manager.can_manage_logins) });
+  const director = manager.profile?.role === "director";
+  function change(key: keyof typeof values, enabled: boolean) {
+    setValues(previous => ({ ...previous, [key]: enabled }));
+    setFeedback("");
+    startTransition(async () => {
+      const data = new FormData(); data.set("manager_id", manager.id); data.set("permission", key); data.set("enabled", String(enabled));
+      const result = await savePermissionChange("workbook", data);
+      if (!result.ok) { setValues(previous => ({ ...previous, [key]: !enabled })); setFeedback(result.message || "Could not save this permission."); }
+      else router.refresh();
+    });
+  }
+  const enabledCount = (director || values.can_manage_employees ? 1 : 0) + (director || values.can_manage_logins ? 1 : 0);
+  return <section aria-label="Settings" className={embedded ? "border-t border-slate-300 pt-4" : "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"}>
+    {embedded ? <div className="flex min-h-11 items-center justify-between gap-4"><h3 className="font-semibold text-slate-950">Settings</h3><span className="text-sm text-slate-500">{enabledCount}/2</span></div> : <><h3 className="text-lg font-semibold text-slate-950">Settings access</h3><p className="mt-1 text-sm text-slate-600">Decide whether this person can manage their direct employees and their logins.</p></>}
+    <div className={embedded ? "ml-8 mt-2 space-y-1" : "mt-4 grid gap-2 sm:grid-cols-2"}>{([
+      ["can_manage_employees", "Add and manage employees"], ["can_manage_logins", "Manage employee logins"],
+    ] as const).map(([key, label]) => <label key={key} className="flex min-h-11 items-center gap-3 text-sm text-slate-800"><input type="checkbox" className="size-5 accent-teal-700" checked={director || values[key]} disabled={director || !permissionsReady || pending} onChange={event => change(key, event.target.checked)} />{label}</label>)}</div>
+    {feedback && <p role="status" className="mt-3 text-sm text-red-700">{feedback}</p>}
   </section>;
 }
 
@@ -82,22 +103,23 @@ export function QaHomePermissions({ user, homes }: { user: WorkspaceUser; homes:
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    data.set("member_id", user.qaMemberId!);
+    data.set("user_id", user.id);
+    if (user.qaMemberId) data.set("member_id", user.qaMemberId);
     data.set("active", data.has("active") ? "true" : "false");
     setFeedback("");
     startTransition(async () => {
-      const result = await saveQaHomeAssignments(data);
+      const result = await savePermissionChange("qa", data);
       setFeedback(result.message || (result.ok ? "QA access saved." : "Could not save QA access."));
       if (result.ok) router.refresh();
     });
   }
 
   return <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-    <h3 className="text-lg font-semibold text-slate-950">Quality assurance homes</h3>
+    <h3 className="text-lg font-semibold text-slate-950">Assigned homes</h3>
     <div className="mt-1 text-sm text-slate-600">Choose the homes whose reports this person can access.</div>
     <label className="mt-5 flex min-h-11 items-center gap-3 text-sm font-semibold text-slate-900">
       <input type="checkbox" name="active" defaultChecked={user.qaMemberActive} disabled={pending} className="size-5 accent-teal-700" />
-      House Lead access active
+      Home access active
     </label>
     <fieldset className="mt-3 grid gap-2 sm:grid-cols-2">
       <legend className="mb-2 text-sm font-semibold text-slate-900">Assigned homes</legend>

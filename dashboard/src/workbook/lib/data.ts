@@ -25,6 +25,7 @@ export type AuthContext = {
 };
 
 export type ManagerWithProfile = Manager & {
+  include_in_org_chart?: boolean;
   email: string | null;
   source_code?: string | null;
   profile_id?: string | null;
@@ -70,7 +71,7 @@ export function isMissingGranularPermissionsColumn(error: SupabaseErrorLike | nu
   );
 }
 
-export async function requireAuth(): Promise<AuthContext> {
+export async function requireAuth(options: { allowWithoutWorkbook?: boolean } = {}): Promise<AuthContext> {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims?.claims?.sub) redirect("/login");
@@ -90,7 +91,7 @@ export async function requireAuth(): Promise<AuthContext> {
       .eq("user_id", profile.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (access?.workbook === false) redirect("/access-pending");
+    if (access?.workbook === false && !options.allowWithoutWorkbook) redirect("/access-pending");
   }
 
   let canManageEmployees = false;
@@ -168,7 +169,9 @@ export async function requireEditor() {
 }
 
 export async function requireTeamAdmin() {
-  return requireEditor();
+  const auth = await requireAuth({ allowWithoutWorkbook: true });
+  if (!auth.isDirector && !(auth.isManager && auth.managerId)) redirect("/access-pending");
+  return auth;
 }
 
 export async function getActions(managerIdFilter?: string): Promise<ActionRecord[]> {
@@ -220,7 +223,7 @@ export async function getManagers(): Promise<Manager[]> {
   const { supabase, isManager, managerId } = await requireAuth();
   let { data, error } = await supabase
     .from("managers")
-    .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions, can_reassign_actions, can_sign_off_actions, can_manage_logins")
+    .select("id, name, role_title, email, source_code, include_in_org_chart, parent_manager_id, can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions, can_reassign_actions, can_sign_off_actions, can_manage_logins")
     .order("name");
 
   if (isMissingGranularPermissionsColumn(error)) {
@@ -230,6 +233,7 @@ export async function getManagers(): Promise<Manager[]> {
       .order("name");
     data = compatibilityResult.data?.map((manager) => ({
       ...manager,
+      include_in_org_chart: true,
       can_add_actions: true,
       can_edit_actions: true,
       can_delete_actions: false,
@@ -245,6 +249,7 @@ export async function getManagers(): Promise<Manager[]> {
       .order("name");
     data = legacyResult.data?.map((manager) => ({
       ...manager,
+      include_in_org_chart: true,
       parent_manager_id: null,
       can_manage_employees: false,
       can_add_actions: true,
@@ -271,7 +276,7 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
   ] = await Promise.all([
     supabase
       .from("managers")
-      .select("id, name, role_title, email, source_code, parent_manager_id, can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions, can_reassign_actions, can_sign_off_actions, can_manage_logins")
+      .select("id, name, role_title, email, source_code, include_in_org_chart, parent_manager_id, can_manage_employees, can_add_actions, can_edit_actions, can_delete_actions, can_reassign_actions, can_sign_off_actions, can_manage_logins")
       .order("name"),
     supabase
       .from("profiles")
@@ -289,6 +294,7 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
       .order("name");
     managers = compatibilityResult.data?.map((manager) => ({
       ...manager,
+      include_in_org_chart: true,
       can_add_actions: true,
       can_edit_actions: true,
       can_delete_actions: false,
@@ -306,6 +312,7 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
       .order("name");
     managers = legacyResult.data?.map((manager) => ({
       ...manager,
+      include_in_org_chart: true,
       parent_manager_id: null,
       can_manage_employees: false,
       can_add_actions: true,
@@ -336,6 +343,7 @@ export async function getManagersWithProfiles(): Promise<ManagerDirectory> {
     return {
       id: manager.id,
       name: manager.name,
+      include_in_org_chart: manager.include_in_org_chart !== false,
       role_title: manager.role_title,
       source_code: (manager as unknown as { source_code?: string }).source_code ?? null,
       email: manager.email ?? null,

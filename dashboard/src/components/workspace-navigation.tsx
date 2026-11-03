@@ -4,23 +4,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, ClipboardCheck, Landmark, Link2, LogOut, Settings, UserRound, UsersRound, type LucideIcon } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, ClipboardCheck, Landmark, Link2, LogOut, Settings, UserRound, UsersRound, Wrench, type LucideIcon } from "lucide-react";
 import { signOut, switchAccount } from "@/app/actions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { AccessContext } from "@/lib/auth";
+import { canOpenSection, workspaceSectionGroups } from "@/lib/workspace-sections";
 
 type Section = { label: string; href: string };
 type Area = { label: string; icon: LucideIcon; sections: Section[] };
 
-function availableAreas(qa: AccessContext["role"], workbook: AccessContext["workbookRole"], finance: boolean, hr: boolean, isAdmin: boolean) {
+function availableAreas(qa: AccessContext["role"], workbook: AccessContext["workbookRole"], finance: boolean, hr: boolean, isAdmin: boolean, canManageEmployees: boolean, qaEnabled?: boolean, maintenance?: boolean, sections?: string[]) {
   const areas: Area[] = [];
-  if (qa !== "pending") areas.push({
-    label: "Quality assurance", icon: ClipboardCheck,
-    sections: qa === "director" ? [
-      { label: "Overview", href: "/director" },
-      { label: "Reviews", href: "/director/reviews" },
-      { label: "Homes", href: "/director/homes" },
-    ] : [{ label: "My reports", href: "/portal" }],
+  if (qaEnabled || qa !== "pending") areas.push({
+    label: "Quality & Governance", icon: ClipboardCheck,
+    sections: [
+      { label: "Overview", href: "/qa" },
+      { label: "Monthly reports", href: "/qa/monthly-reports" },
+      { label: "Audits", href: "/qa/audits" },
+      { label: "Incidents", href: "/qa/incidents" },
+      { label: "Risk assessments", href: "/qa/risks" },
+      { label: "Reviews", href: "/qa/reviews" },
+      { label: "Homes", href: "/qa/homes" },
+    ],
   });
   if (workbook) areas.push({
     label: "Workbook", icon: BookOpen, sections: [
@@ -29,18 +34,23 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
       { label: "Action register", href: "/workbook/actions" },
       { label: "Action review", href: "/workbook/reviews" },
       { label: "Completed actions", href: "/workbook/archive" },
-      ...(workbook === "manager" ? [{ label: "My team", href: "/workbook/team" }] : []),
     ],
   });
   if (finance) areas.push({ label: "Finance", icon: Landmark, sections: [{ label: "Overview", href: "/finance" }] });
   if (hr) areas.push({ label: "HR", icon: UsersRound, sections: [{ label: "Overview", href: "/hr" }] });
-  if (areas.length || isAdmin) areas.push({ label: "Links", icon: Link2, sections: [
+  if (maintenance) areas.push({ label: "Maintenance", icon: Wrench, sections: [{ label: "Issues", href: "/maintenance" }] });
+  if (qa === "director" || sections?.includes("team.organisation_chart")) areas.push({ label: "Team", icon: UsersRound, sections: [{ label: "Organisation chart", href: "/team" }] });
+  if (areas.length || isAdmin || sections?.includes("links.quick_links")) areas.push({ label: "Links", icon: Link2, sections: [
     { label: "Quick links", href: "/links" },
   ] });
-  if (isAdmin) areas.push({ label: "Settings", icon: Settings, sections: [
+  if (isAdmin || canManageEmployees) areas.push({ label: "Settings", icon: Settings, sections: [
     { label: "Users & permissions", href: "/config/users" },
   ] });
-  return areas;
+  const context = { role: qa, workbookRole: workbook, finance, hr, isAdmin, qaEnabled, maintenance, sections };
+  return areas.map(area => ({ ...area, sections: area.sections.filter(section => {
+    const definition = workspaceSectionGroups.flatMap(group => [...group.sections]).find(item => item.href === section.href);
+    return !definition || canOpenSection(context, definition.id);
+  }) })).filter(area => area.sections.length);
 }
 
 function MobilePicker({ label, value, options }: { label: string; value: string; options: Section[] }) {
@@ -54,12 +64,15 @@ function MobilePicker({ label, value, options }: { label: string; value: string;
   </label>;
 }
 
-export function WorkspaceNavigation({ name, qaRole, workbookRole, finance, hr, isAdmin, children }: {
+export function WorkspaceNavigation({ name, qaRole, workbookRole, finance, hr, isAdmin, canManageEmployees, qaEnabled, maintenance, sections, children }: {
   name: string; qaRole: AccessContext["role"]; workbookRole: AccessContext["workbookRole"];
   finance: boolean; hr: boolean; isAdmin: boolean; children: React.ReactNode;
+  qaEnabled?: boolean; maintenance?: boolean; canManageEmployees?: boolean;
+  sections?: string[];
 }) {
-  const path = usePathname();
-  const areas = availableAreas(qaRole, workbookRole, finance, hr, isAdmin);
+  const rawPath = usePathname();
+  const path = rawPath.startsWith("/director/reviews") ? rawPath.replace("/director/reviews", "/qa/reviews") : rawPath === "/director/homes" ? "/qa/homes" : rawPath === "/director" ? "/qa" : rawPath.startsWith("/portal") ? "/qa/monthly-reports" : rawPath;
+  const areas = availableAreas(qaRole, workbookRole, finance, hr, isAdmin, Boolean(canManageEmployees), qaEnabled, maintenance, sections);
   // Longest match keeps Finance, HR and detail pages under the right heading.
   const matches = (href: string) => path === href || path.startsWith(href + "/") ||
     (href === "/config/users" && (path === "/config/permissions" || path.startsWith("/config/permissions/")));
@@ -81,7 +94,7 @@ export function WorkspaceNavigation({ name, qaRole, workbookRole, finance, hr, i
         <nav className="workspace-areas" aria-label="Workspace areas">
           {areas.map(item => <Link key={item.label} href={item.sections[0].href}
             aria-label={item.label} title={item.label} aria-current={item === area ? "true" : undefined} className="workspace-area">
-            <item.icon size={18} strokeWidth={1.65} aria-hidden="true" /><div className="workspace-area-text">{item.label}</div>
+            <item.icon size={18} strokeWidth={1.65} aria-hidden="true" /><div className="workspace-area-text">{item.label === "Quality & Governance" ? <>Quality &<br />Governance</> : item.label}</div>
           </Link>)}
         </nav>
       </aside>

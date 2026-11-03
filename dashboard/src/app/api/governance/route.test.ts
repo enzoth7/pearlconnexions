@@ -1,0 +1,23 @@
+import {beforeEach,describe,expect,it,vi} from "vitest";
+import {POST} from "./route";
+import {getAccessContext} from "@/lib/auth";
+import type {AccessContext} from "@/lib/auth";
+const {rpc,from}=vi.hoisted(()=>({rpc:vi.fn(),from:vi.fn()}));
+vi.mock("@/lib/auth",()=>({getAccessContext:vi.fn()}));
+vi.mock("@/lib/supabase/server",()=>({createClient:vi.fn(async()=>({rpc,from}))}));
+const home="00000000-0000-4000-8000-000000000001";
+const context:AccessContext={userId:"manager",email:"staff@example.com",name:"Manager",role:"house_lead",workbookRole:"manager",finance:false,hr:false,isAdmin:false,qaEnabled:true,maintenance:true,homes:[{id:home,code:"CH1",name:"Home",provision:"Supported Living",total_beds:3,active:true}]};
+const request=(body:unknown,origin="http://localhost:3000")=>new Request("http://localhost:3000/api/governance",{method:"POST",headers:{origin,"content-type":"application/json"},body:JSON.stringify(body)});
+const record={kind:"maintenance",home_id:"00000000-0000-4000-8000-000000000002",occurred_on:"2026-11-01",title:"Kitchen tap",status:"Reported",data:{description:"The tap is leaking",location:"Kitchen",category:"",priority:"High",owner:"",due_on:"",controls:"",action_taken:"",follow_up:"",checks:"",physical_intervention:false,reported_within_24h:false,workbook_action_id:""}};
+beforeEach(()=>{vi.clearAllMocks();vi.mocked(getAccessContext).mockResolvedValue(context);});
+describe("governance JSON API",()=>{
+ it("rejects a report write when only Incidents is enabled",async()=>{vi.mocked(getAccessContext).mockResolvedValue({...context,sections:["qa.incidents"]});const response=await POST(request({operation:"draft",id:home,version:1,body:{answers:{},occupied_beds:"",records_confirmed:false}}));expect(response.status).toBe(403);expect(rpc).not.toHaveBeenCalled();});
+ it("rejects an incident write when only monthly reports is enabled",async()=>{vi.mocked(getAccessContext).mockResolvedValue({...context,sections:["qa.monthly_reports"]});const response=await POST(request({operation:"record",record:{...record,kind:"incidents",home_id:home,status:"Follow up",data:{...record.data,category:"Other",action_taken:"Followed up"}}}));expect(response.status).toBe(403);expect(from).not.toHaveBeenCalled();});
+ it("rejects cross-origin requests before reading the session",async()=>{expect((await POST(request({},"https://elsewhere.example"))).status).toBe(403);expect(getAccessContext).not.toHaveBeenCalled();});
+ it("returns JSON instead of redirecting an expired session",async()=>{vi.mocked(getAccessContext).mockResolvedValue(null);const response=await POST(request({}));expect(response.status).toBe(401);expect((await response.json()).ok).toBe(false);});
+ it("rejects records for an unassigned house before writing",async()=>{expect((await POST(request({operation:"record",record}))).status).toBe(403);expect(from).not.toHaveBeenCalled();});
+ it("rejects the removed chart visibility operation without writing",async()=>{expect((await POST(request({operation:"org-visibility",manager_id:home,visible:true}))).status).toBe(400);expect(from).not.toHaveBeenCalled();});
+ it("forwards report version checks to the database and reports conflicts",async()=>{rpc.mockResolvedValue({error:{code:"40001",message:"This report changed."}});const response=await POST(request({operation:"draft",id:home,version:3,body:{answers:{},occupied_beds:"",records_confirmed:false}}));expect(response.status).toBe(409);expect((await response.json()).message).toBe("This report changed.");expect(rpc).toHaveBeenCalledWith("qa_save_report",expect.objectContaining({expected_version:3,target:home}));});
+ it("returns a confirmed report version",async()=>{rpc.mockResolvedValue({data:4,error:null});const response=await POST(request({operation:"draft",id:home,version:3,body:{answers:{},occupied_beds:"",records_confirmed:false}}));expect(await response.json()).toMatchObject({ok:true,version:4});});
+ it("rejects invalid report bodies without calling the database",async()=>{expect((await POST(request({operation:"submit",id:home,version:1,body:{answers:[],records_confirmed:true}}))).status).toBe(400);expect(rpc).not.toHaveBeenCalled();});
+});

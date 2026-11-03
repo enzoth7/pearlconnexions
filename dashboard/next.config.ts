@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async redirects() {
     return [
-      { source: "/workbook/settings", destination: "/workbook/team", permanent: false },
-      { source: "/settings", destination: "/workbook/team", permanent: false },
+      { source: "/workbook/settings", destination: "/config/users", permanent: false },
+      { source: "/settings", destination: "/config/users", permanent: false },
       ...["actions", "archive", "calendar", "reviews"].map(section => ({
         source: "/" + section + "/:path*",
         destination: "/workbook/" + section + "/:path*",

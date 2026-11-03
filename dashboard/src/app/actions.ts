@@ -1,11 +1,12 @@
 "use server";
 
+import { workspaceSectionIds } from "@/lib/workspace-sections";
 import { workspaceReturnPath } from "@/lib/workspace-return";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireDirector, requireHouseLead, requireWorkspaceAdmin } from "@/lib/auth";
+import { requireDirector, requireHouseLead, requireSettingsAccess, requireWorkspaceAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,12 +78,23 @@ export async function switchAccount() {
 }
 
 export async function saveWorkspacePermissions(_: ActionState, formData: FormData): Promise<ActionState> {
+  if (formData.get("sections_version") === "1") {
+    const parsed = z.object({ user_id: z.uuid(), sections: z.array(z.string()).max(50) }).safeParse({ user_id: formData.get("user_id"), sections: formData.getAll("sections") });
+    if (!parsed.success || parsed.data.sections.some(key => !workspaceSectionIds.includes(key as typeof workspaceSectionIds[number]))) return { ok: false, message: "Choose valid sections." };
+    const { supabase } = await requireSettingsAccess();
+    const result = await supabase.rpc("save_workspace_sections", { target_user: parsed.data.user_id, sections: [...new Set(parsed.data.sections)], workbook_enabled: formData.has("workbook"), maintenance_lead: formData.has("can_manage_maintenance") });
+    if (result.error) return { ok: false, message: result.error.message };
+    revalidatePath("/config/permissions"); revalidatePath("/config/users"); revalidatePath("/", "layout");
+    return { ok: true, message: "Section access saved." };
+  }
   const parsed = z.object({
     user_id: z.uuid(),
     qa: z.string().optional(),
     workbook: z.string().optional(),
     finance: z.string().optional(),
     hr: z.string().optional(),
+    maintenance: z.string().optional(),
+    can_manage_maintenance: z.string().optional(),
   }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { message: "Invalid permission selection." };
   const { context, supabase } = await requireWorkspaceAdmin();
@@ -98,10 +110,12 @@ export async function saveWorkspacePermissions(_: ActionState, formData: FormDat
 
   const { error } = await supabase.from("workspace_access").upsert({
     user_id: parsed.data.user_id,
-    qa: Boolean(member.data?.active && parsed.data.qa),
+    qa: Boolean(parsed.data.qa),
     workbook: Boolean(profile.data?.role === "manager" && parsed.data.workbook),
     finance: Boolean(parsed.data.finance),
     hr: Boolean(parsed.data.hr),
+    maintenance: Boolean(parsed.data.maintenance || parsed.data.can_manage_maintenance),
+    can_manage_maintenance: Boolean(parsed.data.can_manage_maintenance),
     is_admin: false,
     updated_at: new Date().toISOString(),
   });
@@ -336,42 +350,22 @@ export async function saveQaAccount(formData: FormData): Promise<ActionState> {
 }
 
 export async function saveQaHomeAssignments(formData: FormData): Promise<ActionState> {
-  const parsed = z.object({
-    member_id: z.uuid(),
-    active: z.enum(["true", "false"]).transform(value => value === "true"),
-    home_ids: z.array(z.uuid()),
-  }).safeParse({
-    member_id: formData.get("member_id"),
-    active: formData.get("active") ?? "false",
-    home_ids: formData.getAll("home_ids"),
+  const { supabase } = await requireSettingsAccess();
+  const parsed = z.object({ user_id: z.uuid().optional(), member_id: z.uuid().optional(), active: z.enum(["true", "false"]), home_ids: z.array(z.uuid()) }).safeParse({
+    user_id: formData.get("user_id") || undefined, member_id: formData.get("member_id") || undefined, active: formData.get("active") ?? "false", home_ids: formData.getAll("home_ids"),
   });
-  if (!parsed.success) return { message: "Check the home assignments." };
-  const selectedHomeIds = [...new Set(parsed.data.home_ids)];
-  const { context, supabase } = await requireWorkspaceAdmin();
-  const [member, selectedHomes] = await Promise.all([
-    supabase.from("qa_members").select("id").eq("id", parsed.data.member_id).maybeSingle(),
-    selectedHomeIds.length ? supabase.from("qa_homes").select("id,active").in("id", selectedHomeIds) : Promise.resolve({ data: [], error: null }),
-  ]);
-  if (member.error || !member.data) return { message: member.error?.message || "This House Lead no longer exists." };
-  if (selectedHomes.error || selectedHomes.data.length !== selectedHomeIds.length) {
-    return { message: selectedHomes.error?.message || "One of the selected homes is unavailable." };
+  if (!parsed.success) return { ok: false, message: "Check the home assignments." };
+  let userId = parsed.data.user_id;
+  if (!userId && parsed.data.member_id) {
+    const member = await supabase.from("qa_members").select("user_id").eq("id", parsed.data.member_id).maybeSingle();
+    if (member.error) return { ok: false, message: member.error.message };
+    userId = member.data?.user_id;
   }
-  if (parsed.data.active && !selectedHomes.data.some(home => home.active)) {
-    return { message: "Choose at least one active home before enabling House Lead access." };
-  }
-  const { error } = await supabase.from("qa_members").update({ active: parsed.data.active }).eq("id", parsed.data.member_id);
-  if (error) return { message: error.message };
-  const removal = await supabase.from("qa_member_homes").delete().eq("member_id", parsed.data.member_id);
-  if (removal.error) return { message: removal.error.message };
-  if (selectedHomeIds.length > 0) {
-    const assignment = await supabase.from("qa_member_homes").insert(
-      selectedHomeIds.map(homeId => ({ member_id: parsed.data.member_id, home_id: homeId, assigned_by: context.userId })),
-    );
-    if (assignment.error) return { message: assignment.error.message };
-  }
-  revalidatePath("/config/users");
-  revalidatePath("/config/permissions");
-  return { ok: true, message: "QA access saved." };
+  if (!userId) return { ok: false, message: "A login account is required." };
+  const result = await supabase.rpc("qa_assign_homes", { target_user: userId, enabled: parsed.data.active === "true", homes: [...new Set(parsed.data.home_ids)] });
+  if (result.error) return { ok: false, message: result.error.message };
+  revalidatePath("/config/users"); revalidatePath("/config/permissions"); revalidatePath("/qa");
+  return { ok: true, message: "Home assignments saved." };
 }
 
 export async function updateHome(formData: FormData) {

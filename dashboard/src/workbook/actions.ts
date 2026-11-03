@@ -5,6 +5,7 @@ import { z } from "zod";
 import { isMissingTeamHierarchyColumn, requireDirector, requireEditor, requireTeamAdmin } from "@/workbook/lib/data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nextActionReference } from "@/workbook/lib/utils";
+import { getAccessContext } from "@/lib/auth";
 
 const optionalDate = z.string().transform((v) => v || null).nullable();
 
@@ -481,6 +482,9 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
     if (!auth.isDirector && !auth.canManageEmployees) {
       return { ok: false, message: "You do not have permission to add employees." };
     }
+    if (!auth.isDirector && !(await getAccessContext())?.canManageEmployees) {
+      return { ok: false, message: "You do not have permission to add employees." };
+    }
     const admin = createAdminClient();
     if (!admin) {
       return {
@@ -528,6 +532,14 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
       .join("")
       .slice(0, 4) || "MGR";
     const sourceCode = `${initials}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const newEmployeeActions = auth.isDirector ? {} : {
+      can_add_actions: false,
+      can_edit_actions: false,
+      can_delete_actions: false,
+      can_reassign_actions: false,
+      can_sign_off_actions: false,
+      can_manage_logins: false,
+    };
 
     let insertResult = await admin
       .from("managers")
@@ -538,6 +550,7 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
         source_code: sourceCode,
         parent_manager_id: parentManagerId,
         can_manage_employees: false,
+        ...newEmployeeActions,
       })
       .select("id")
       .single();
@@ -583,6 +596,18 @@ export async function createManager(formData: FormData): Promise<{ ok: boolean; 
         await admin.auth.admin.deleteUser(authData.user.id);
         await admin.from("managers").delete().eq("id", newManager.id);
         return { ok: false, message: `Could not assign manager access: ${profileErr.message}` };
+      }
+      const { error: accessError } = await admin.from("workspace_access").upsert({
+        user_id: authData.user.id,
+        workbook: auth.isDirector,
+        qa: false, finance: false, hr: false, maintenance: false,
+        can_manage_maintenance: false,
+        visible_sections: [],
+      });
+      if (accessError) {
+        await admin.auth.admin.deleteUser(authData.user.id);
+        await admin.from("managers").delete().eq("id", newManager.id);
+        return { ok: false, message: `Could not set employee access: ${accessError.message}` };
       }
     }
 
@@ -630,6 +655,8 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
 
     const isSelf = managerId === auth.managerId || currentProfile.manager_id === managerId;
     if (!auth.isDirector && !isSelf) {
+      const access = await getAccessContext();
+      if (!access?.canManageEmployees && !access?.canManageLogins) return { ok: false, message: "You do not have permission to manage this employee." };
       if (!auth.canManageEmployees && !auth.canManageLogins) {
         return { ok: false, message: "You do not have permission to manage this employee." };
       }
@@ -666,11 +693,12 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
       if (mgrErr) return { ok: false, message: mgrErr.message };
     }
 
-    const { data: linkedProfile } = await supabase
+    const { data: linkedProfile, error: linkedProfileError } = await supabase
       .from("profiles")
       .select("id, role, manager_id")
       .eq("manager_id", managerId)
       .maybeSingle();
+    if (linkedProfileError) return { ok: false, message: linkedProfileError.message };
 
     if (linkedProfile) {
       if ((auth.isDirector && (systemRole === "director" || systemRole === "manager")) || (canEditEmployeeDetails && name)) {
@@ -742,6 +770,17 @@ export async function updateManagerCredentials(formData: FormData): Promise<{ ok
         await admin.auth.admin.deleteUser(authData.user.id);
         return { ok: false, message: `Could not assign manager access: ${profileErr.message}` };
       }
+      const { error: accessError } = await admin.from("workspace_access").upsert({
+        user_id: authData.user.id,
+        workbook: false,
+        qa: false, finance: false, hr: false, maintenance: false,
+        can_manage_maintenance: false,
+        visible_sections: [],
+      });
+      if (accessError) {
+        await admin.auth.admin.deleteUser(authData.user.id);
+        return { ok: false, message: `Could not set employee access: ${accessError.message}` };
+      }
     }
 
     revalidatePath("/config/users");
@@ -784,6 +823,7 @@ export async function deleteManager(formData: FormData): Promise<{ ok: boolean; 
     if (
       !auth.isDirector &&
       (!auth.canManageEmployees ||
+        !(await getAccessContext())?.canManageEmployees ||
         !hierarchyReady ||
         (targetManager as { parent_manager_id?: string | null }).parent_manager_id !== auth.managerId)
     ) {

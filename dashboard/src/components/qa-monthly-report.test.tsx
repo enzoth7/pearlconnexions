@@ -1,0 +1,15 @@
+import {cleanup,fireEvent,render,screen} from "@testing-library/react";
+import {afterEach,describe,expect,it,vi} from "vitest";
+import {QaMonthlyReport} from "./qa-monthly-report";
+import {saveGovernance} from "@/lib/governance";
+vi.mock("next/navigation",()=>({useRouter:()=>({refresh:vi.fn()})}));
+vi.mock("@/lib/governance",async original=>({...await original<typeof import("@/lib/governance")>(),saveGovernance:vi.fn()}));
+afterEach(cleanup);
+const props={id:"report",initialVersion:1,initialStatus:"draft",home:{id:"home",code:"CH1",name:"Home",provision:"Supported Living" as const,total_beds:3,active:true},month:"2026-11",questions:[{code:"core",section:1,label:"Staff records complete?",provisions:[]},{code:"children",section:2,label:"School attendance checked?",provisions:["Children's Home" as const]}],initialBody:{answers:{},occupied_beds:"",records_confirmed:false},records:[],director:false,reopenReason:null,snapshotAt:null};
+describe("monthly report editor",()=>{
+ it("does not offer links to registers the manager cannot open",()=>{render(<QaMonthlyReport {...props} accessibleRegisters={[]}/>);fireEvent.click(screen.getByRole("button",{name:"Registers"}));expect(screen.queryByRole("link",{name:"Open register"})).not.toBeInTheDocument();expect(screen.getByLabelText(/I confirm the incident/)).toBeInTheDocument();});
+ it("shows relevant questions and asks for an explanation of No",()=>{render(<QaMonthlyReport {...props}/>);fireEvent.click(screen.getByRole("button",{name:"Team & records"}));fireEvent.click(screen.getByLabelText("No"));expect(screen.getByLabelText("What is outstanding and what happens next?")).toBeInTheDocument();fireEvent.click(screen.getByRole("button",{name:"People & support"}));expect(screen.queryByText("School attendance checked?")).not.toBeInTheDocument();});
+ it("keeps entries after an unconfirmed save",async()=>{vi.mocked(saveGovernance).mockResolvedValue({ok:false,message:"Connection interrupted"});render(<QaMonthlyReport {...props}/>);const occupancy=screen.getByLabelText("Average occupied beds during the month");fireEvent.change(occupancy,{target:{value:"2"}});fireEvent.click(screen.getByRole("button",{name:"Save draft"}));expect(await screen.findByRole("status")).toHaveTextContent("Connection interrupted");expect(occupancy).toHaveValue(2);});
+ it("locks a submitted report for managers",()=>{render(<QaMonthlyReport {...props} initialStatus="submitted"/>);expect(screen.getByLabelText("Average occupied beds during the month")).toBeDisabled();expect(screen.queryByRole("button",{name:"Save draft"})).not.toBeInTheDocument();expect(screen.queryByText("Director review")).not.toBeInTheDocument();});
+ it("shows Reviews-only access as read-only",()=>{render(<QaMonthlyReport {...props} canEditReport={false}/>);expect(screen.getByLabelText("Average occupied beds during the month")).toBeDisabled();expect(screen.queryByRole("button",{name:"Save draft"})).not.toBeInTheDocument();expect(screen.getByRole("link",{name:"Reviews"})).toHaveAttribute("href","/qa/reviews");});
+});

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/app-shell";
 import { MonthlyForm } from "@/components/monthly-form";
 import { requireHouseLead } from "@/lib/auth";
@@ -15,6 +15,7 @@ export default async function SubmissionPage({ params }: { params: Promise<{ id:
   ]);
   if (submissionResult.error || definitionsResult.error) throw new Error(submissionResult.error?.message || definitionsResult.error?.message);
   if (!submissionResult.data) notFound();
+  if (submissionResult.data.form_version === 2) redirect(`/qa/monthly-reports/${id}`);
   const row = submissionResult.data as unknown as Submission & {
     qa_homes: Home | Home[];
     qa_periods: Period | Period[];
