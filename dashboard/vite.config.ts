@@ -1,0 +1,40 @@
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "node:path";
+const root = path.resolve(__dirname, "legacy/src");
+export default defineConfig(({ mode }) => ({
+  plugins: [react()],
+  define: { "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development") },
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+  ssr: { noExternal: [/@radix-ui\//] },
+  test: { include: ["src/**/*.test.{ts,tsx}"], testTimeout: 15000, server: { deps: { inline: true } } },
+  resolve: { alias: [
+    { find: /^react$/, replacement: path.resolve(__dirname, "node_modules/react/index.js") },
+    { find: /^react\/jsx-runtime$/, replacement: path.resolve(__dirname, "node_modules/react/jsx-runtime.js") },
+    { find: /^react\/jsx-dev-runtime$/, replacement: path.resolve(__dirname, "node_modules/react/jsx-dev-runtime.js") },
+    { find: /^react-dom$/, replacement: path.resolve(__dirname, "node_modules/react-dom/index.js") },
+    { find: /^react-dom\/client$/, replacement: path.resolve(__dirname, "node_modules/react-dom/client.js") },
+    { find: /^next\/link$/, replacement: path.resolve(__dirname, "src/shims/link.tsx") },
+    { find: /^next\/navigation$/, replacement: path.resolve(__dirname, "src/shims/navigation.ts") },
+    { find: /^next\/image$/, replacement: path.resolve(__dirname, "src/shims/image.tsx") },
+    { find: /^next\/headers$/, replacement: path.resolve(__dirname, "src/shims/headers.ts") },
+    { find: /^next\/cache$/, replacement: path.resolve(__dirname, "src/shims/cache-next.ts") },
+    { find: /^@\/lib\/auth$/, replacement: path.resolve(__dirname, "src/shims/auth.ts") },
+    { find: /^@\/workbook\/lib\/data$/, replacement: path.resolve(__dirname, "src/shims/workbook-data.ts") },
+    { find: /^@\/lib\/qa-report-rows$/, replacement: path.resolve(__dirname, "src/shims/qa-report-rows.ts") },
+    { find: /^@\/lib\/config-directory$/, replacement: path.resolve(__dirname, "src/shims/config-directory.ts") },
+    { find: /^@\/lib\/governance-server$/, replacement: path.resolve(__dirname, "src/shims/governance-server.ts") },
+    { find: /^@\/lib\/settings-save$/, replacement: path.resolve(__dirname, "src/shims/settings-save.ts") },
+    { find: /^@\/lib\/supabase\/server$/, replacement: path.resolve(__dirname, "src/shims/server-supabase.ts") },
+    { find: /^@\/lib\/supabase\/admin$/, replacement: path.resolve(__dirname, "src/shims/admin.ts") },
+    { find: /^@\/lib\/governance$/, replacement: path.resolve(__dirname, "src/shims/governance.ts") },
+    { find: /^@\/components\/app-shell$/, replacement: path.resolve(__dirname, "src/shims/app-shell.tsx") },
+    { find: /^@\/app\/actions$/, replacement: path.resolve(__dirname, "src/shims/app-actions.ts") },
+    { find: /^@\/workbook\/actions$/, replacement: path.resolve(__dirname, "src/shims/workbook-actions.ts") },
+    { find: /^@\/app\/links\/actions$/, replacement: path.resolve(__dirname, "src/shims/links-actions.ts") },
+    { find: /^@\/app\/config\/houses\/actions$/, replacement: path.resolve(__dirname, "src/shims/houses-actions.ts") },
+    { find: /^@\/(.*)$/, replacement: `${root}/$1` },
+  ], dedupe: ["react", "react-dom"] },
+  server: { fs: { allow: [".."] }, proxy: { "/api/private": "http://127.0.0.1:3003" } },
+  preview: { proxy: { "/api/private": "http://127.0.0.1:3003" } },
+}));

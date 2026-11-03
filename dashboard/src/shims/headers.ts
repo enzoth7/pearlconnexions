@@ -1,0 +1,1 @@
+export async function cookies() { return { get(name: string) { const value = document.cookie.split("; ").find(item => item.startsWith(`${name}=`))?.slice(name.length + 1); return value ? { value } : undefined; } }; }

@@ -1,26 +1,23 @@
 {
-  "name": "pearl-connexions-dashboard",
+  "name": "pearl-connexions-dashboard-vite",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "next dev -p 3000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:import": "python scripts/test_import_v3.py"
+    "dev": "node server/start.mjs",
+    "build": "tsc --noEmit && vite build",
+    "lint": "eslint src server",
+    "preview": "node server/start.mjs --preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.116.0",
     "@tanstack/react-table": "8.21.3",
-    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cn": "0.2.6",
     "lucide-react": "0.544.0",
-    "next": "16.3.4",
     "radix-ui": "1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -30,17 +27,19 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@eslint/js": "9.37.0",
     "@tailwindcss/postcss": "4.3.3",
-    "@testing-library/jest-dom": "6.8.0",
-    "@testing-library/react": "16.3.0",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "24.6.2",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "5.1.1",
     "eslint": "9.37.0",
-    "eslint-config-next": "16.3.4",
-    "jsdom": "27.0.0",
+    "jsdom": "^30.1.3",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
+    "typescript-eslint": "8.46.2",
+    "vite": "7.2.2",
     "vitest": "3.2.4"
   },
   "packageManager": "pnpm@11.19.0"
