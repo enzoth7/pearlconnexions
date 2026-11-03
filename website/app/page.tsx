@@ -1,28 +1,25 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
+import { ServicesGrid } from '@/components/services-grid';
 
 const provisions = [
   {
     href: '/supported-living',
-    label: 'Adults 18+',
     title: 'Supported Living',
-    copy: 'A safe, welcoming home for women in South Croydon, with personalised support that builds confidence and independence.',
-    regulator: 'CQC framework',
+    image: '/services/supported-living.webp',
+    alt: 'Three adults talking together at home, one in a wheelchair',
   },
   {
     href: '/supported-accommodation',
-    label: 'Young people 16–17',
     title: 'Supported Accommodation',
-    copy: 'Stable accommodation and practical support for young people preparing for adulthood and their next chapter.',
-    regulator: 'Ofsted framework',
+    image: '/services/supported-accommodation.jpg',
+    alt: 'Warm living room with a sofa and natural light',
   },
   {
     href: '/childrens-home',
-    label: 'Children & young people',
     title: 'Children’s Home',
-    copy: 'Nurturing residential care shaped around safety, trusted relationships and individual progress.',
-    regulator: 'Ofsted framework',
+    image: '/services/childrens-home.jpg',
+    alt: 'House with a garden',
   },
 ];
 
@@ -30,65 +27,80 @@ export default function Home() {
   return (
     <main id="content">
       <section className="home-hero">
-        <div className="hero-blob hero-blob-one" />
-        <div className="hero-blob hero-blob-two" />
-        <div className="shell home-hero-grid">
+        <Image
+          className="hero-photo"
+          src="/hero-community.webp"
+          alt="Friends spending time together at an outdoor cinema"
+          fill
+          priority
+          sizes="100vw"
+          quality={85}
+        />
+        <div className="shell home-hero-content">
           <div className="hero-copy-block">
-            <h1>Safe, nurturing homes.</h1>
+            <h1>
+              The right setting.
+              <br />
+              A purposeful next step.
+            </h1>
             <div className="lede">
-              A place where people feel known, supported and able to build a
-              more independent future.
+              South London accommodation and support for young people and adults, with careful matching,
+              practical life skills and progress reviewed together.
             </div>
             <div className="button-row">
               <Link className="button primary" href="/referrals">
-                Make a referral <ArrowRight size={18} />
+                Discuss a placement
               </Link>
-              <Link className="text-link" href="/about">
-                Discover our approach <ArrowRight size={16} />
+              <Link className="text-link" href="/supported-living">
+                Explore supported living
               </Link>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="hero-image-wrap">
-              <Image
-                src="/young-person-reading.jpg"
-                alt="A young person relaxing with a book at home"
-                fill
-                priority
-                sizes="(max-width: 860px) 90vw, 48vw"
-              />
             </div>
           </div>
         </div>
       </section>
 
       <section className="section shell">
-        <div className="section-heading split-heading">
-          <div>
-            <h2>The right support for each stage of the journey.</h2>
-          </div>
-          <div className="section-intro">
-            Each provision has its own team, approach and regulatory
-            framework—connected by the same commitment to dignity, safety and
-            meaningful progress.
-          </div>
+        <div className="section-heading services-heading">
+          <h2>Find the right environment for the person.</h2>
         </div>
-        <div className="provision-grid">
-          {provisions.map((item, index) => (
-            <Link
-              className={`provision-card card-${index + 1}`}
-              href={item.href}
-              key={item.href}
-            >
-              <div className="card-label">{item.label}</div>
-              <h3>{item.title}</h3>
-              <div className="card-copy">{item.copy}</div>
-              <div className="card-footer">
-                <div>{item.regulator}</div>
-                <ArrowRight />
+        <ServicesGrid services={provisions} />
+      </section>
+
+      <section className="section approach-section">
+        <div className="shell">
+          <div className="section-heading">
+            <h2>Start with the person.</h2>
+            <div className="section-intro homes-intro">
+              A suitable placement depends on more than a vacancy. We bring
+              assessment, practical support and professional review together.
+            </div>
+          </div>
+          <div className="pillar-grid">
+            <article>
+              <h3>Match carefully</h3>
+              <div className="pillar-copy">
+                Consider wishes, communication, support needs, risk, location
+                and compatibility with existing residents.
               </div>
-            </Link>
-          ))}
+            </article>
+            <article>
+              <h3>Plan useful support</h3>
+              <div className="pillar-copy">
+                Agree routines and goals for everyday independence, wellbeing
+                and education or employment where appropriate.
+              </div>
+            </article>
+            <article>
+              <h3>Review what changes</h3>
+              <div className="pillar-copy">
+                Record a starting point, involve the person and their network,
+                and adjust the plan when needs or risks change.
+              </div>
+            </article>
+          </div>
+          <Link className="text-link approach-link" href="/about">
+            Read about our approach
+          </Link>
         </div>
       </section>
     </main>

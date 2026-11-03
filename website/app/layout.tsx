@@ -2,12 +2,13 @@ import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import ScrollEffects from '@/components/ScrollEffects';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: { default: 'Pearl Connexions', template: '%s | Pearl Connexions' },
   description:
-    'Supported living, supported accommodation and children’s homes built around safety, connection and independence.',
+    'South London supported living for adults, with careful placement matching, practical life skills and progress reviewed together.',
 };
 
 export default function RootLayout({
@@ -19,6 +20,7 @@ export default function RootLayout({
         <SiteHeader />
         {children}
         <SiteFooter />
+        <ScrollEffects />
         <Analytics />
       </body>
     </html>

@@ -17,25 +17,27 @@ export type Home = {
   imageAlt?: string;
 };
 
-const supportedLivingOverview =
-  'A safe, welcoming home with personalised support designed to help women build confidence and greater independence.';
-
-const supportedLivingSupport = [
-  'Female-only provision for adults aged 18+',
-  'Personalised, strengths-based support',
-  'A clear focus on confidence and independence',
-];
-
-const supportedAccommodationOverview =
-  'Stable accommodation with practical support for young people as they prepare for adulthood and their next chapter.';
-
-const supportedAccommodationSupport = [
-  'Provision for young people aged 16–17',
-  'Practical preparation for adulthood',
-  'Support shaped around individual goals',
-];
-
+// The commissioner guides describe these four settings as supported living
+// for adults. Availability and individual suitability are confirmed at referral.
 export const homes: Home[] = [
+  {
+    slug: 'crimsworth',
+    name: 'Sapphire House',
+    location: 'Crimsworth, Vauxhall',
+    provision: 'supported-living',
+    provisionTitle: 'Supported Living',
+    provisionHref: '/supported-living',
+    audience: 'Men aged 18+',
+    overview:
+      'A three-bedroom shared setting in Vauxhall for adults who may benefit from access to transport, community, education and employment opportunities.',
+    support: [
+      'Three bedrooms and two shared bathrooms',
+      'Support planned around assessed needs and independence goals',
+      'Access to community, education and employment opportunities',
+    ],
+    image: '/properties/crimsworth-kitchen.jpg',
+    imageAlt: 'Shared kitchen at the Crimsworth setting',
+  },
   {
     slug: 'coulsdon',
     name: 'Coulsdon',
@@ -43,87 +45,49 @@ export const homes: Home[] = [
     provision: 'supported-living',
     provisionTitle: 'Supported Living',
     provisionHref: '/supported-living',
-    audience: 'Women aged 18+',
-    overview: supportedLivingOverview,
-    support: supportedLivingSupport,
+    audience: 'Adults aged 18+',
+    overview:
+      'A three-bedroom shared setting for adults developing independence with support shaped around their assessed needs.',
+    support: [
+      'Three-bedroom shared provision',
+      'Individual goals and support based on assessment',
+      'A residential South London setting',
+    ],
     image: '/properties/coulsdon-bedroom.jpg',
-    imageAlt: 'Bright private bedroom at the Coulsdon home',
+    imageAlt: 'Bedroom at the Coulsdon setting',
   },
   {
     slug: 'heathfields',
-    name: 'Heathfields',
-    location: 'Location to be confirmed',
+    name: 'Ruby House',
+    location: 'Heathfields, South Croydon',
     provision: 'supported-living',
     provisionTitle: 'Supported Living',
     provisionHref: '/supported-living',
     audience: 'Women aged 18+',
-    overview: supportedLivingOverview,
-    support: supportedLivingSupport,
+    overview:
+      'A female-only setting for women whose preferences and needs include personal space and a quieter residential environment.',
+    support: [
+      'Female-only supported living',
+      'Allocated bathroom arrangements',
+      'Support planned around privacy, wellbeing and independence',
+    ],
     image: '/properties/heathfields-living-room.jpg',
-    imageAlt: 'Comfortable living room at the Heathfields home',
-  },
-  {
-    slug: 'crimsworth',
-    name: 'Crimsworth',
-    location: 'Location to be confirmed',
-    provision: 'supported-living',
-    provisionTitle: 'Supported Living',
-    provisionHref: '/supported-living',
-    audience: 'Women aged 18+',
-    overview: supportedLivingOverview,
-    support: supportedLivingSupport,
-    image: '/properties/crimsworth-kitchen.jpg',
-    imageAlt: 'Modern shared kitchen at the Crimsworth home',
-  },
-  {
-    slug: 'friday-road',
-    name: 'Friday Road',
-    location: 'Location to be confirmed',
-    provision: 'supported-living',
-    provisionTitle: 'Supported Living',
-    provisionHref: '/supported-living',
-    audience: 'Women aged 18+',
-    overview: supportedLivingOverview,
-    support: supportedLivingSupport,
-    image: '/properties/friday-road-garden.jpg',
-    imageAlt: 'Private garden at the Friday Road home',
-  },
-  {
-    slug: 'victoria-road',
-    name: 'Victoria Road',
-    location: 'Location to be confirmed',
-    provision: 'supported-accommodation',
-    provisionTitle: 'Supported Accommodation',
-    provisionHref: '/supported-accommodation',
-    audience: 'Young people aged 16–17',
-    overview: supportedAccommodationOverview,
-    support: supportedAccommodationSupport,
+    imageAlt: 'Living room at the Heathfields setting',
   },
   {
     slug: 'milne-park',
     name: 'Milne Park',
-    location: 'Location to be confirmed',
-    provision: 'supported-accommodation',
-    provisionTitle: 'Supported Accommodation',
-    provisionHref: '/supported-accommodation',
-    audience: 'Young people aged 16–17',
-    overview: supportedAccommodationOverview,
-    support: supportedAccommodationSupport,
-  },
-  {
-    slug: 'brambles-acre',
-    name: 'Brambles Acre',
-    location: 'Location shared during the referral process',
-    provision: 'childrens-home',
-    provisionTitle: 'Children’s Home',
-    provisionHref: '/childrens-home',
-    audience: 'Children and young people',
+    location: 'New Addington, South London',
+    provision: 'supported-living',
+    provisionTitle: 'Supported Living',
+    provisionHref: '/supported-living',
+    audience: 'Adults aged 18+',
     overview:
-      'A nurturing residential home shaped around safety, trusted relationships and individual progress.',
+      'Supported living focused on preparation for adulthood and the practical skills needed for greater independence.',
     support: [
-      'A safe and nurturing home environment',
-      'Support built through trusted relationships',
-      'Care shaped around individual progress',
+      'Everyday living, relationships and budgeting',
+      'Community participation',
+      'Education, employment and training goals where appropriate',
     ],
   },
 ];

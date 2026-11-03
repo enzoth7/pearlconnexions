@@ -1,20 +1,48 @@
 import type { Metadata } from 'next';
-import ProvisionPage, { type Provision } from '@/components/ProvisionPage';
-import { homesFor } from '@/lib/homes';
+import Link from 'next/link';
 
-export const metadata: Metadata = { title: 'Children’s Home' };
-
-const data: Provision = {
-  title: 'Children’s Home',
-  intro:
-    'A nurturing residential home where children and young people can feel safe, build trusted relationships and make progress.',
-  regulator: 'Ofsted children’s homes framework',
-  regulatorCopy:
-    'This provision is shaped around the Children’s Homes (England) Regulations 2015 and the quality standards for residential care.',
-  provisionLabel: 'Children’s Home',
-  homes: homesFor('childrens-home'),
+export const metadata: Metadata = {
+  title: 'Planned Children’s Home',
+  description:
+    'Pearl Connexions is planning a children’s home. Opening is subject to Ofsted registration and this is not a current placement offer.',
 };
 
 export default function Page() {
-  return <ProvisionPage data={data} />;
+  return (
+    <main id="content">
+      <section className="page-hero provision-hero">
+        <div className="shell provision-hero-grid">
+          <div>
+            <h1>Children’s Home</h1>
+            <div className="lede">
+              Pearl Connexions is planning a children’s home. Opening is
+              subject to Ofsted registration, so this is not a current
+              placement offer.
+            </div>
+            <Link className="button primary" href="/contact">
+              Contact our team
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="section shell about-intro">
+        <h2>Planning around the person</h2>
+        <div>
+          <div className="body-copy">
+            The same principles guide this planned service: understand the
+            child’s wishes and needs, prepare the right environment and work
+            closely with the professional network.
+          </div>
+          <div className="body-copy">
+            For current placement discussions, please contact us about the
+            services that are available and their assessed scope.
+          </div>
+          <Link className="text-link" href="/referrals">
+            Discuss a current referral
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
 }

@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import ProvisionPage, { type Provision } from '@/components/ProvisionPage';
 import { homesFor } from '@/lib/homes';
 
-export const metadata: Metadata = { title: 'Supported Living' };
+export const metadata: Metadata = {
+  title: 'Supported Living',
+  description:
+    'Explore Pearl Connexions supported living settings for adults aged 18+ in Vauxhall, Coulsdon, South Croydon and New Addington.',
+};
 
 const data: Provision = {
   title: 'Supported Living',
   intro:
-    'Female-only supported living for women aged 18+ who need a safe home and personalised support to build greater independence.',
-  regulator: 'Care Quality Commission framework',
-  regulatorCopy:
-    'This provision is developed around CQC expectations for safe, effective, caring, responsive and well-led support.',
-  provisionLabel: 'Supported Living',
+    'Supported living for adults aged 18+ across four South London settings. We consider the person, the environment and existing residents before confirming a placement.',
   homes: homesFor('supported-living'),
 };
 

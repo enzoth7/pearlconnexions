@@ -1,29 +1,41 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Image from 'next/image';
 import {
-  ArrowRight,
   BookOpenCheck,
-  GraduationCap,
   HeartHandshake,
   ShieldCheck,
+  UsersRound,
 } from 'lucide-react';
-export const metadata: Metadata = { title: 'About us' };
+
+export const metadata: Metadata = {
+  title: 'Our Approach',
+  description:
+    'How Pearl Connexions approaches placement matching, practical independence, staff preparation and progress reviews.',
+};
+
 const training = [
-  [
-    'Trauma-informed approach',
-    'Understanding the impact of trauma and responding with empathy.',
-  ],
-  [
-    'Care Certificate',
-    'A strong foundation of knowledge and best practice in care.',
-  ],
-  [
-    'Oliver McGowan Training',
-    'Better understanding of people with a learning disability and autistic people.',
-  ],
-  ['Safeguarding', 'Protecting rights, safety, wellbeing and dignity.'],
+  {
+    title: 'Learning disability and autism',
+    copy: 'Communication, sensory needs, predictable routines and person-specific adjustments. Oliver McGowan training is included where applicable to staff roles.',
+    icon: BookOpenCheck,
+  },
+  {
+    title: 'Trauma-informed practice',
+    copy: 'Understanding behaviour in the context of experience, relationships and what helps the person feel safe.',
+    icon: HeartHandshake,
+  },
+  {
+    title: 'Safeguarding and risk',
+    copy: 'Recognising contextual risks, sharing concerns appropriately and responding before difficulties escalate.',
+    icon: ShieldCheck,
+  },
+  {
+    title: 'Reflective supervision',
+    copy: 'Management oversight, professional boundaries and review of the support provided in each setting.',
+    icon: UsersRound,
+  },
 ];
+
 const teamRoles = [
   { role: 'Director & Operations', image: '/team/team-member-01.jpg' },
   { role: 'Placement Coordination', image: '/team/team-member-02.jpg' },
@@ -32,71 +44,75 @@ const teamRoles = [
   { role: 'Supported Living', image: '/team/team-member-05.jpg' },
   { role: 'Children’s Services', image: '/team/team-member-06.jpg' },
 ];
+
 export default function About() {
   return (
     <main id="content">
-      <section className="page-hero about-hero">
-        <div className="shell page-hero-grid">
+      <section className="page-hero provision-hero about-hero">
+        <div className="shell about-hero-grid">
           <div>
-            <h1>Real people behind meaningful support.</h1>
+            <h1>The person shapes the placement.</h1>
             <div className="lede">
-              Great support starts with people who listen, keep learning and
-              genuinely care about the difference they make.
+              We bring the right environment, consistent relationships and
+              purposeful support together with the person and their
+              professional network.
             </div>
           </div>
           <div className="about-symbol">
             <div className="about-team-crop">
               <Image
                 className="about-team-photo"
-                src="/about-team.jpg"
-                width={1600}
-                height={975}
-                alt="Pearl Connexions team together"
+                src="/about-team-portrait.webp"
+                fill
+                alt="Group portrait from the Pearl Connexions team artwork"
                 priority
-                sizes="(max-width: 860px) 90vw, 40vw"
+                unoptimized
+                sizes="(max-width: 860px) 90vw, 476px"
               />
             </div>
           </div>
         </div>
       </section>
+
       <section className="section shell about-intro">
+        <h2>Careful matching. Clear goals. Early review.</h2>
         <div>
-          <h2>Empowering independence. Enriching lives.</h2>
-        </div>
-        <div>
-          <div>
-            We create safe, nurturing homes and provide personalised support
-            that helps people build confidence, wellbeing and meaningful
-            community connections.
+          <div className="body-copy">
+            Assessment considers strengths, wishes, communication, daily
+            support needs, risks, geography and compatibility with existing
+            residents. A vacancy alone does not establish suitability.
           </div>
-          <div>
-            Our approach is practical and relational: understand the person,
-            build trust, agree clear goals and celebrate progress—big or small.
+          <div className="body-copy">
+            With the person, we agree practical goals for wellbeing,
+            relationships, everyday living and education or employment where
+            appropriate. We review what is changing and adjust the plan with
+            the relevant professionals.
           </div>
         </div>
       </section>
-      <section className="team-band">
+
+      <section className="section about-team-section">
         <div className="shell">
           <div className="section-heading">
             <h2>Meet the team</h2>
             <div className="section-intro homes-intro">
-              Temporary reference portraits are shown here. Names and final
-              roles will be added with the approved team photography.
+              These are reference portraits. Names and final roles will be
+              added when the team photography is approved.
             </div>
           </div>
           <div className="team-grid">
-            {teamRoles.map((member, i) => (
+            {teamRoles.map((member, index) => (
               <article className="team-card" key={member.role}>
                 <div className="team-photo">
                   <Image
                     src={member.image}
-                    alt={`Placeholder portrait for ${member.role}`}
+                    alt={`Reference portrait for ${member.role}`}
                     fill
-                    sizes="(max-width: 600px) 100vw, 33vw"
+                    sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw"
                   />
                 </div>
                 <div className="team-card-content">
-                  <h3>Team member {String(i + 1).padStart(2, '0')}</h3>
+                  <h3>Team member {String(index + 1).padStart(2, '0')}</h3>
                   <div>{member.role}</div>
                 </div>
               </article>
@@ -104,46 +120,87 @@ export default function About() {
           </div>
         </div>
       </section>
+
+      <section className="team-band">
+        <div className="shell">
+          <div className="section-heading">
+            <h2>Make progress visible.</h2>
+            <div className="section-intro homes-intro">
+              Charting Your Path is a structured life-skills programme for care
+              leavers and young people aged 16+, used where it fits the
+              individual’s goals and needs.
+            </div>
+          </div>
+          <div className="pillar-grid">
+            <article>
+              <h3>Start with a baseline</h3>
+              <div className="pillar-copy">
+                Understand what the person already manages and where support
+                is needed.
+              </div>
+            </article>
+            <article>
+              <h3>Agree practical goals</h3>
+              <div className="pillar-copy">
+                Plan key work around skills such as communication, budgeting,
+                relationships, health and safer choices.
+              </div>
+            </article>
+            <article>
+              <h3>Review the change</h3>
+              <div className="pillar-copy">
+                Discuss examples of skills demonstrated, the support still
+                needed and the next goal.
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section className="section shell">
         <div className="section-heading">
-          <h2>Training and practice</h2>
+          <h2>A workforce prepared for the person.</h2>
+          <div className="section-intro homes-intro">
+            Training and supervision should translate into how staff
+            communicate, recognise distress, make adjustments and respond
+            safely.
+          </div>
         </div>
         <div className="training-grid">
-          {training.map(([title, copy], i) => (
+          {training.map(({ title, copy, icon: Icon }) => (
             <article key={title}>
-              {i === 0 ? (
-                <HeartHandshake />
-              ) : i === 1 ? (
-                <BookOpenCheck />
-              ) : i === 2 ? (
-                <GraduationCap />
-              ) : (
-                <ShieldCheck />
-              )}
+              <Icon aria-hidden="true" />
               <h3>{title}</h3>
               <div className="training-copy">{copy}</div>
             </article>
           ))}
         </div>
       </section>
-      <section className="section shell values-grid">
-        <div className="manifesto-wrap">
-          <Image
-            src="/manifesto.png"
-            width={1034}
-            height={1009}
-            alt="Pearl Connexions manifesto wheel"
-          />
-        </div>
-        <div>
-          <h2>Six values. One connected approach.</h2>
-          <div className="lede small">
-            Resilience, self-care, guidance, restorative practice, nurturing and
-            healing help us turn care into consistent everyday action.
+
+      <section className="section approach-section about-network-section">
+        <div className="shell about-network-grid">
+          <div className="about-network-copy">
+            <h2>Work with the wider professional network.</h2>
+            <div className="body-copy">
+              Social care, leaving care, health, education, youth justice and
+              other professionals are involved where relevant. Emerging
+              concerns are shared early so the support and safety plans can
+              respond to what is happening.
+            </div>
+            <div className="body-copy">
+              The person’s views should inform assessment, key work, reviews
+              and transition planning in ways that work for their
+              communication and understanding.
+            </div>
           </div>
-          <Link className="button primary" href="/referrals">
-            Talk to our team <ArrowRight />
-          </Link>
+          <div className="about-network-image">
+            <Image
+              src="/about-professional-network.webp"
+              alt="Professionals discussing plans together around a table"
+              fill
+              sizes="(max-width: 860px) 100vw, 50vw"
+            />
+          </div>
         </div>
       </section>
     </main>

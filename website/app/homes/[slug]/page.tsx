@@ -1,14 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Image as ImageIcon,
-  MapPin,
-} from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
+import { Check, MapPin } from 'lucide-react';
 import { homeBySlug, homes } from '@/lib/homes';
 
 type HomePageProps = {
@@ -35,6 +29,11 @@ export async function generateMetadata({
 
 export default async function HomePage({ params }: HomePageProps) {
   const { slug } = await params;
+
+  if (slug === 'victoria-road') redirect('/supported-accommodation');
+  if (slug === 'brambles-acre') redirect('/childrens-home');
+  if (slug === 'friday-road') redirect('/supported-living');
+
   const home = homeBySlug(slug);
 
   if (!home) notFound();
@@ -42,10 +41,12 @@ export default async function HomePage({ params }: HomePageProps) {
   return (
     <main id="content">
       <section className="home-detail-hero">
-        <div className="shell home-detail-grid">
+        <div
+          className={`shell home-detail-grid ${home.image ? '' : 'text-only'}`}
+        >
           <div className="home-detail-copy">
             <Link className="home-back-link" href={home.provisionHref}>
-              <ArrowLeft /> Back to {home.provisionTitle}
+              Back to {home.provisionTitle}
             </Link>
             <h1>{home.name}</h1>
             <div className="home-detail-location">
@@ -53,8 +54,8 @@ export default async function HomePage({ params }: HomePageProps) {
             </div>
             <div className="lede">{home.overview}</div>
           </div>
-          <div className="home-detail-media">
-            {home.image ? (
+          {home.image && (
+            <div className="home-detail-media">
               <Image
                 src={home.image}
                 alt={home.imageAlt ?? home.name}
@@ -62,13 +63,8 @@ export default async function HomePage({ params }: HomePageProps) {
                 priority
                 sizes="(max-width: 860px) 100vw, 48vw"
               />
-            ) : (
-              <div className="home-detail-placeholder">
-                <ImageIcon />
-                <div>Photography coming soon</div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -108,11 +104,12 @@ export default async function HomePage({ params }: HomePageProps) {
           <h2>Ask about this home</h2>
           <div>
             Exact address and availability details can be shared safely during
-            the referral process.
+            the referral process. A vacancy does not automatically mean a
+            suitable match.
           </div>
         </div>
         <Link className="button primary" href="/referrals">
-          Discuss a referral <ArrowRight />
+          Discuss a referral
         </Link>
       </section>
     </main>

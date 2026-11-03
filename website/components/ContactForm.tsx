@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { LoaderCircle } from 'lucide-react';
 
 type FormStatus = 'idle' | 'submitting' | 'unconfigured' | 'error';
 
@@ -96,7 +96,7 @@ export default function ContactForm() {
           </>
         ) : (
           <>
-            Send message <ArrowRight />
+            Send message
           </>
         )}
       </button>
@@ -104,7 +104,7 @@ export default function ContactForm() {
         {status === 'unconfigured' &&
           'The form is ready, but email delivery has not been connected yet.'}
         {status === 'error' &&
-          'We could not process the form. Please email operations@pearlconnexions.com.'}
+          'We could not process the form. Please email admin@pearlconnexions.co.uk.'}
       </div>
     </form>
   );

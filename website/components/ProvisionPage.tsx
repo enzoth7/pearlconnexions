@@ -1,19 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  ArrowRight,
-  Image as ImageIcon,
-  MapPin,
-  ShieldCheck,
-} from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import type { Home } from '@/lib/homes';
 
 export type Provision = {
   title: string;
   intro: string;
-  regulator: string;
-  regulatorCopy: string;
-  provisionLabel: string;
   homes: Home[];
 };
 
@@ -26,29 +18,19 @@ export default function ProvisionPage({ data }: { data: Provision }) {
             <h1>{data.title}</h1>
             <div className="lede">{data.intro}</div>
             <Link className="button primary" href="/referrals">
-              Discuss a referral <ArrowRight />
+              Discuss a referral
             </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="regulation-strip">
-        <div className="shell regulation-inner">
-          <ShieldCheck />
-          <div>
-            <strong>{data.regulator}</strong>
-            <div className="regulation-copy">{data.regulatorCopy}</div>
           </div>
         </div>
       </section>
 
       <section className="section shell homes-section">
         <div className="section-heading">
-          <h2>Our homes</h2>
+          <h2>Our supported living settings</h2>
           <div className="section-intro homes-intro">
-            Available photography is shown below. Remaining images and confirmed
-            location details will be added as they are approved. Exact addresses
-            can be shared safely during the referral process.
+            Each environment has a different fit. Availability, staffing,
+            compatibility and support are confirmed through assessment and a
+            placement discussion.
           </div>
         </div>
         <div className="homes-grid">
@@ -68,16 +50,18 @@ export default function ProvisionPage({ data }: { data: Provision }) {
                   />
                 </div>
               ) : (
-                <div className="photo-placeholder">
-                  <ImageIcon />
-                  <div>Photography coming soon</div>
+                <div className="home-card-placeholder" aria-hidden="true">
+                  <Image
+                    src="/pearl-logo-light.webp"
+                    alt=""
+                    width={192}
+                    height={77}
+                  />
                 </div>
               )}
               <div className="home-card-content">
-                <div className="home-type">{data.provisionLabel}</div>
                 <div className="home-card-title">
                   <h3>{home.name}</h3>
-                  <ArrowRight aria-hidden="true" />
                 </div>
                 <div className="home-location">
                   <MapPin />
