@@ -10,6 +10,8 @@ The `20261103` governance and section-permission migrations were applied to the 
 - `/maintenance`: issues and follow-up; `/team`: director-only organisation chart.
 - Existing `/director`, `/portal`, report detail and review URLs remain supported.
 
+Directors can open `/qa?view=demo` to inspect three illustrative October 2026 reports and sample incident/risk scenarios. They are stored in the `demo` reporting period and its report snapshots, separate from live submissions and the live incident/risk registers. The preview names real team roles for layout review, but no manager submitted these reports and no real incident or risk is implied. The normal `/qa` view remains live-only.
+
 In Settings, open a person's permissions, select the visible areas and individual subsections, then save their explicit home assignments separately. The parent checkbox selects all eligible subsections and shows a partial state when only some are enabled. Workbook action permissions appear beneath Workbook; employee-management and login permissions appear beneath Settings. Reviews and Team can be assigned individually. A reporting line does not grant access to a subordinate's homes. Maintenance management grants access to all maintenance issues, not to all QA reports. Maintenance reporters can add follow-up but cannot change issue status or remove previous notes.
 
 Only directors approve or return a report. Returning requires a reason. The checklist uses Yes, No and Not applicable; No and Not applicable require explanations. Applicable checks form the denominator, and an entirely inapplicable checklist has no percentage. Incident, risk and maintenance registers are confirmed separately rather than treating an empty register as a declaration of no cases.
