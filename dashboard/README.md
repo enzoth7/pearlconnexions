@@ -12,7 +12,8 @@ Workspace privado de Pearl Connexions. Reúne QA operativo, Workbook, configurac
 
 - `/director` y `/portal`: QA operativo, revisiones, hogares y reportes.
 - `/workbook`: acciones, calendario, revisiones, archivo y equipo.
-- `/config/users` y `/config/permissions`: cuentas y acceso a paneles/acciones.
+- `/config/users` y `/config/permissions`: Settings, cuentas y acceso a paneles/acciones.
+- `/links`: enlaces compartidos del dashboard y la web, editables por administradores.
 - `/hr` y `/finance`: áreas protegidas por permisos.
 
 `/workbook/settings` y `/settings` redirigen a `/workbook/team` por compatibilidad. QA Settings y `/config/qa` no forman parte de la aplicación.

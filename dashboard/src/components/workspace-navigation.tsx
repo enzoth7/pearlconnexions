@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, ClipboardCheck, Landmark, LogOut, Settings, UserRound, UsersRound, type LucideIcon } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, ClipboardCheck, Landmark, Link2, LogOut, Settings, UserRound, UsersRound, type LucideIcon } from "lucide-react";
 import { signOut, switchAccount } from "@/app/actions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { AccessContext } from "@/lib/auth";
@@ -34,7 +34,10 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
   });
   if (finance) areas.push({ label: "Finance", icon: Landmark, sections: [{ label: "Overview", href: "/finance" }] });
   if (hr) areas.push({ label: "HR", icon: UsersRound, sections: [{ label: "Overview", href: "/hr" }] });
-  if (isAdmin) areas.push({ label: "Config", icon: Settings, sections: [
+  if (areas.length || isAdmin) areas.push({ label: "Links", icon: Link2, sections: [
+    { label: "Quick links", href: "/links" },
+  ] });
+  if (isAdmin) areas.push({ label: "Settings", icon: Settings, sections: [
     { label: "Users & permissions", href: "/config/users" },
   ] });
   return areas;
