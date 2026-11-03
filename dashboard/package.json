@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server/start.mjs",
     "build": "tsc --noEmit && vite build",
-    "lint": "eslint src server",
+    "lint": "eslint src server api",
     "preview": "node server/start.mjs --preview",
     "test": "vitest run"
   },

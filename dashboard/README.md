@@ -1,6 +1,6 @@
 # Pearl dashboard (React/Vite)
 
-Local client-side dashboard. Its page and component source is in `legacy/src`; Vite uses it through aliases while the local account service handles privileged operations.
+Client-side dashboard. Its page and component source is in `legacy/src`; Vite uses it through aliases. Privileged account operations run through the same protected handler locally and on Vercel.
 
 ## Run locally
 
@@ -23,4 +23,4 @@ pnpm lint
 pnpm build
 ```
 
-No production application or database migrations are changed by these commands. The local service must be running for account creation, invitations, login edits and other privileged operations.
+These checks do not change production or apply database migrations. On Vercel, `/api/private` runs as a server function with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and server-only `SUPABASE_SECRET_KEY` configured in the project environment. Its browser caller sends the signed-in user's access token; the function checks the user and their permissions before using the secret key.
