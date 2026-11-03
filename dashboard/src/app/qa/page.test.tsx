@@ -29,9 +29,11 @@ describe("quality overview", () => {
 
     render(await Page({ searchParams: Promise.resolve({ view: "demo" }) }));
     expect(screen.getByText("Example data · October 2026")).toBeInTheDocument();
-    expect(screen.getByText("Sample lead")).toBeInTheDocument();
+    expect(screen.getByText(/Sample home · Sample lead/)).toBeInTheDocument();
     expect(screen.getByText("Illustrative incident")).toBeInTheDocument();
     expect(screen.getByText("Illustrative risk")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Checklist by home" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Reports by home" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Return to live data" })).toHaveAttribute("href", "/qa");
     expect(rpc).not.toHaveBeenCalled();
   });
@@ -43,7 +45,9 @@ describe("quality overview", () => {
     vi.mocked(requireGovernance).mockResolvedValue({ supabase: { rpc, from: () => { throw new Error("Demo query must not run"); } } } as never);
 
     render(await Page({ searchParams: Promise.resolve({ view: "demo" }) }));
-    expect(screen.getByText("Live home")).toBeInTheDocument();
+    expect(screen.getByText("0 / 1")).toBeInTheDocument();
+    expect(screen.getByText("Results will appear when a monthly report is submitted. Drafts do not count as completed checks.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Reports by home" })).not.toBeInTheDocument();
     expect(screen.queryByText("Example data · October 2026")).not.toBeInTheDocument();
     expect(rpc).toHaveBeenCalledWith("qa_visible_record_counts");
   });
