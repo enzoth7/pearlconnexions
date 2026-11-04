@@ -25,6 +25,7 @@
   flex-direction: column;
   padding: 1.35rem .75rem .75rem;
   overflow-x: hidden;
+  border-right: .5px solid rgb(255 255 255 / .16);
 }
 .workspace-brand { position: relative; display: grid; place-items: center; width: 100%; height: 4.5rem; flex-shrink: 0; }
 .workspace-brand img { position: absolute; height: auto; transition: opacity 180ms ease, transform 260ms ease; }
@@ -96,7 +97,7 @@
 }
 @media (max-width: 70rem) {
   .workspace { display: block; }
-  .workspace-primary { position: static; height: auto; flex-direction: row; justify-content: flex-start; align-items: center; padding: .3rem 1rem; overflow: visible; }
+  .workspace-primary { position: static; height: auto; flex-direction: row; justify-content: flex-start; align-items: center; padding: .3rem 1rem; overflow: visible; border-right: 0; }
   .workspace-brand img { width: 6.6rem; }
   .workspace-brand { width: 6.6rem; height: 3rem; }
   .workspace-brand-icon { display: none; }

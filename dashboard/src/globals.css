@@ -70,9 +70,55 @@ button, a, select { touch-action: manipulation; cursor: pointer; }
 
 .data-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: 0 1px 3px rgba(15, 42, 78, 0.04); }
 .metric-input { min-height: 44px; }
-[data-slot="card-title"] { color: #15345f; font-weight: 800; letter-spacing: -0.01em; }
+[data-slot="card-title"] { color: #102c39; font-weight: 800; letter-spacing: -0.01em; }
 [data-slot="select-trigger"] { background: #fff; border-color: #cbd7e6; }
-[data-slot="table-head"] { color: #1d3d6b; }
+[data-slot="table-head"] { color: #102c39; }
+.workspace-canvas :is(h1, h2, h3, h4, h5, h6), [data-slot="dialog-title"] { color: #102c39; }
+.workspace-canvas :is(section, article, div)[class*="rounded-2xl"][class*="border"],
+.workspace-canvas :is(section, article, div)[class*="rounded-xl"][class*="border"],
+.workspace-canvas [data-slot="card"] { background-color: #fff; }
+.workspace-canvas table:not(.sr-only) thead,
+.workspace-canvas table:not(.sr-only) thead th {
+  background-color: #102c39;
+  color: #fff;
+}
+.workspace-canvas table:not(.sr-only) thead :is(button, svg, [data-slot="table-head"]) { color: #fff; }
+.workspace-canvas table:not(.sr-only) thead tr:first-child th:first-child { border-top-left-radius: 1rem; }
+.workspace-canvas table:not(.sr-only) thead tr:first-child th:last-child { border-top-right-radius: 1rem; }
+.workspace-canvas section:has(> div:first-child > h2) table:not(.sr-only) thead tr:first-child th:first-child { border-top-left-radius: 0; }
+.workspace-canvas section:has(> div:first-child > h2) table:not(.sr-only) thead tr:first-child th:last-child { border-top-right-radius: 0; }
+
+.workspace-canvas [data-slot="card"]:has(> [data-slot="card-header"]) { padding-top: 0; }
+.workspace-canvas [data-slot="card"] > [data-slot="card-header"] {
+  border-radius: 0.75rem 0.75rem 0 0;
+  background-color: #102c39;
+  color: #fff;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.workspace-canvas [data-slot="card"] > [data-slot="card-header"] :is([data-slot="card-title"], [data-slot="card-description"], h1, h2, h3, h4, svg) { color: #fff; }
+
+.workspace-canvas section[class*="rounded-2xl"][class*="bg-white"] > div:first-child:has(> h2),
+.workspace-canvas section[class*="rounded-3xl"][class*="bg-white"] > div:first-child:has(> h2) {
+  background-color: #102c39;
+  color: #fff;
+  border-radius: 1rem 1rem 0 0;
+  border-bottom: 0;
+}
+.workspace-canvas section[class*="rounded-3xl"][class*="bg-white"] > div:first-child:has(> h2) { border-radius: 1.5rem 1.5rem 0 0; }
+.workspace-canvas section[class*="rounded-2xl"][class*="bg-white"][class*="p-5"] > div:first-child:has(> h2) {
+  margin: -1.25rem -1.25rem 0;
+  padding: 1rem 1.25rem;
+}
+.workspace-canvas section[class*="rounded-2xl"][class*="bg-white"] > div:first-child:has(> h2) :is(h2, div, svg),
+.workspace-canvas section[class*="rounded-3xl"][class*="bg-white"] > div:first-child:has(> h2) :is(h2, div, svg) { color: #fff; }
+.workspace-canvas section[class*="rounded-2xl"][class*="bg-white"][class*="p-5"] > h2:first-child {
+  margin: -1.25rem -1.25rem 0;
+  border-radius: 1rem 1rem 0 0;
+  background-color: #102c39;
+  color: #fff;
+  padding: 1rem 1.25rem;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -1,7 +1,7 @@
 export const workspaceSectionGroups = [
   { id: "qa", label: "Quality & Governance", sections: [
     { id: "qa.overview", label: "Overview", href: "/qa" },
-    { id: "qa.monthly_reports", label: "Monthly reports", href: "/qa/monthly-reports" },
+    { id: "qa.monthly_reports", label: "Reports", href: "/qa/monthly-reports" },
     { id: "qa.audits", label: "Audits", href: "/qa/audits" },
     { id: "qa.incidents", label: "Incidents", href: "/qa/incidents" },
     { id: "qa.risks", label: "Risk assessments", href: "/qa/risks" },

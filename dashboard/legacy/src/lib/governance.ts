@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Home } from "@/lib/types";
+import { measurementSchema, type Measurement } from "./qa-capture";
 
 export const recordKinds = ["audits", "incidents", "risks", "maintenance"] as const;
 export type RecordKind = typeof recordKinds[number];
@@ -23,8 +24,8 @@ export const recordSchema = z.object({
 export type GovernanceRecord = z.infer<typeof recordSchema> & { id: string; version: number; created_at: string };
 export type Question = { code: string; section: number; label: string; provisions: Home["provision"][] };
 export type Answer = { answer: "yes" | "no" | "na" | ""; note: string };
-export type ReportBody = { answers: Record<string, Answer>; occupied_beds: string; records_confirmed: boolean };
-export const reportBodySchema = z.object({ answers: z.record(z.string(), z.object({ answer: z.enum(["yes", "no", "na", ""]), note: text })), occupied_beds: z.string().max(20), records_confirmed: z.boolean() });
+export type ReportBody = { answers: Record<string, Answer>; occupied_beds: string; records_confirmed: boolean; measurements?: Record<string, Measurement> };
+export const reportBodySchema = z.object({ answers: z.record(z.string(), z.object({ answer: z.enum(["yes", "no", "na", ""]), note: text })), occupied_beds: z.string().max(20), records_confirmed: z.boolean(), measurements: z.record(z.string(), measurementSchema).optional() });
 export function checklistScore(answers: Record<string, Answer>) {
   const applicable = Object.values(answers).filter(item => item.answer === "yes" || item.answer === "no");
   return applicable.length ? applicable.filter(item => item.answer === "yes").length / applicable.length : null;

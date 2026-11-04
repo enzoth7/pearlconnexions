@@ -1,6 +1,5 @@
 import { requireSection } from "@/lib/auth";
 import type { QaReportRow } from "@/components/qa-reports-list";
-import { withLocalReports } from "@/lib/qa-local-fixtures";
 export async function loadReportRows(section: "qa.overview" | "qa.monthly_reports" | "qa.reviews" = "qa.monthly_reports") {
   const { context, supabase } = await requireSection(section);
   const [result,scores] = await Promise.all([
@@ -14,5 +13,5 @@ export async function loadReportRows(section: "qa.overview" | "qa.monthly_report
     const period = Array.isArray(row.qa_periods) ? row.qa_periods[0] : row.qa_periods;
     return { id: row.id, homeId: row.home_id, home: home.name, month: period.month_start.slice(0, 7), status: row.status, version: row.version, formVersion: row.form_version, checklist: checklist.get(row.id) ?? null };
   });
-  return { context, rows: withLocalReports(rows) };
+  return { context, rows };
 }

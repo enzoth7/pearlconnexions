@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { firstWorkspacePath } from "@/lib/workspace-sections";
 import { getAccessContext, clearAccessContext, type AccessContext } from "./shims/auth";
@@ -48,17 +48,35 @@ export default function App() {
   const search = useSearchParams().toString();
   const path = pathname + (search ? `?${search}` : "");
   const [context, setContext] = useState<AccessContext | null | undefined>(undefined);
+  const currentUserId = useRef<string | null>(null);
   usePages();
 
   useEffect(() => {
     let active = true;
-    getAccessContext().then(value => { if (active) setContext(value); }).catch(() => { if (active) setContext(null); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT" || event === "SIGNED_IN") {
+    const initialVersion = authVersion;
+    getAccessContext().then(value => {
+      if (!active || initialVersion !== authVersion) return;
+      currentUserId.current = value?.userId ?? null;
+      setContext(value);
+    }).catch(() => { if (active && initialVersion === authVersion) setContext(null); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
         authVersion += 1;
+        currentUserId.current = null;
         clearAccessContext(); clearDataCache(); clearPages();
-        getAccessContext().then(value => { if (active) setContext(value); });
+        if (active) setContext(null);
+        return;
       }
+      if (event !== "SIGNED_IN" || session?.user.id === currentUserId.current) return;
+      authVersion += 1;
+      const version = authVersion;
+      currentUserId.current = session?.user.id ?? null;
+      clearAccessContext(); clearDataCache(); clearPages();
+      getAccessContext().then(value => {
+        if (!active || version !== authVersion) return;
+        currentUserId.current = value?.userId ?? null;
+        setContext(value);
+      }).catch(() => { if (active && version === authVersion) setContext(null); });
     });
     return () => { active = false; subscription.unsubscribe(); };
   }, []);
@@ -88,6 +106,7 @@ export default function App() {
     if (pathname === "/director/reviews") { navigate("/qa/reviews", true); return; }
     if (pathname === "/director/homes") { navigate("/qa/homes", true); return; }
     if (pathname === "/director/finance") { navigate("/finance", true); return; }
+    if (pathname === "/maintenance/dashboard") { navigate("/maintenance/overview", true); return; }
     if (pathname === "/director/hr") { navigate("/hr", true); return; }
     if (pathname === "/director/users") { navigate("/config/users", true); return; }
     if (pathname === "/workbook/team") { navigate(context?.canManageEmployees || context?.role === "director" ? "/config/users" : "/workbook", true); return; }
@@ -120,6 +139,7 @@ export default function App() {
       clearAccessContext(); clearDataCache();
       void getAccessContext().then(next => {
         if (version !== authVersion) return;
+        currentUserId.current = next?.userId ?? null;
         setContext(next);
         const opened = [...pages.keys()];
         if (!opened.includes(path)) opened.push(path);
@@ -134,10 +154,8 @@ export default function App() {
         // Keep already loaded views when a background refresh cannot reach Supabase.
       });
     };
-    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
     window.addEventListener("pearl:refresh", refresh);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => { window.removeEventListener("pearl:refresh", refresh); document.removeEventListener("visibilitychange", onVisible); };
+    return () => { window.removeEventListener("pearl:refresh", refresh); };
   }, [context, path]);
 
   useEffect(() => {

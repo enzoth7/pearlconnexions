@@ -103,7 +103,7 @@ describe("panel access editor", () => {
   it("selects one QA subtab and shows a partial parent selection", async () => {
     vi.mocked(savePermissionChange).mockResolvedValue({ ok: true, message: "Section access saved." });
     render(<WorkspacePermissionsForm user={{ ...user, sections: [] }} />);
-    fireEvent.click(screen.getByRole("checkbox", { name: "Quality & Governance: Monthly reports" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Quality & Governance: Reports" }));
     expect(screen.getByRole("checkbox", { name: "Quality & Governance" })).toBePartiallyChecked();
     expect(screen.getByRole("checkbox", { name: "Quality & Governance: Incidents" })).not.toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "Save section access" }));
@@ -113,12 +113,12 @@ describe("panel access editor", () => {
   it("toggles every QA section, including Reviews", () => {
     render(<WorkspacePermissionsForm user={{ ...user, sections: [] }} />);
     fireEvent.click(screen.getByRole("checkbox", { name: "Quality & Governance" }));
-    expect(screen.getByRole("checkbox", { name: "Quality & Governance: Monthly reports" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Quality & Governance: Reports" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Quality & Governance: Incidents" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Quality & Governance: Reviews" })).toBeEnabled();
     expect(screen.getByRole("checkbox", { name: "Quality & Governance: Reviews" })).toBeChecked();
     fireEvent.click(screen.getByRole("checkbox", { name: "Quality & Governance" }));
-    expect(screen.getByRole("checkbox", { name: "Quality & Governance: Monthly reports" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Quality & Governance: Reports" })).not.toBeChecked();
   });
   it("lets an authorised manager grant only sections they can open", async () => {
     vi.mocked(savePermissionChange).mockResolvedValue({ ok: true });

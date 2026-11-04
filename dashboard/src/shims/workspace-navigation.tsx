@@ -19,9 +19,10 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
     label: "Quality & Governance", icon: ClipboardCheck,
     sections: [
       { label: "Overview", href: "/qa" },
-      { label: "Monthly reports", href: "/qa/monthly-reports" },
+      { label: "Reports", href: "/qa/monthly-reports" },
       { label: "Audits", href: "/qa/audits" },
       { label: "Incidents", href: "/qa/incidents" },
+      { label: "Recurrences", href: "/qa/recurrences" },
       { label: "Risk assessments", href: "/qa/risks" },
       { label: "Reviews", href: "/qa/reviews" },
       { label: "Homes", href: "/qa/homes" },
@@ -36,9 +37,9 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
       { label: "Completed actions", href: "/workbook/archive" },
     ],
   });
-  if (finance) areas.push({ label: "Finance", icon: Landmark, sections: [{ label: "Overview", href: "/finance" }] });
-  if (hr) areas.push({ label: "HR", icon: UsersRound, sections: [{ label: "Overview", href: "/hr" }] });
-  if (maintenance) areas.push({ label: "Maintenance", icon: Wrench, sections: [{ label: "Issues", href: "/maintenance" }] });
+  if (finance) areas.push({ label: "Finance", icon: Landmark, sections: [{ label: "Overview", href: "/finance" }, { label: "Expenses", href: "/finance/expenses" }, { label: "Payroll", href: "/finance/payroll" }, { label: "Invoices", href: "/finance/invoices" }] });
+  if (hr) areas.push({ label: "HR", icon: UsersRound, sections: [{ label: "Overview", href: "/hr" }, { label: "Employees", href: "/hr/employees" }, { label: "Coverage", href: "/hr/coverage" }, { label: "Recruitment", href: "/hr/recruitment" }] });
+  if (maintenance) areas.push({ label: "Maintenance", icon: Wrench, sections: [{ label: "Overview", href: "/maintenance/overview" }, { label: "Issues", href: "/maintenance" }, { label: "Historical", href: "/maintenance/historical" }] });
   if (qa === "director" || sections?.includes("team.organisation_chart")) areas.push({ label: "Team", icon: UsersRound, sections: [{ label: "Organisation chart", href: "/team" }] });
   if (areas.length || isAdmin || sections?.includes("links.quick_links")) areas.push({ label: "Links", icon: Link2, sections: [
     { label: "Quick links", href: "/links" },
@@ -51,7 +52,7 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
   const context = { role: qa, workbookRole: workbook, finance, hr, isAdmin, canManageEmployees, qaEnabled, maintenance, sections };
   return areas.map(area => ({ ...area, sections: area.sections.filter(section => {
     const definition = workspaceSectionGroups.flatMap(group => [...group.sections]).find(item => item.href === section.href);
-    return !definition || canOpenSection(context, definition.id);
+    return section.href === "/qa/recurrences" ? canOpenSection(context, "qa.incidents") : section.href.startsWith("/maintenance") ? canOpenSection(context, "maintenance.issues") : section.href.startsWith("/hr/") ? canOpenSection(context, "hr.overview") : section.href.startsWith("/finance/") ? canOpenSection(context, "finance.overview") : !definition || canOpenSection(context, definition.id);
   }) })).filter(area => area.sections.length);
 }
 
@@ -73,7 +74,7 @@ export function WorkspaceNavigation({ name, qaRole, workbookRole, finance, hr, i
   sections?: string[];
 }) {
   const rawPath = usePathname();
-  const path = rawPath.startsWith("/director/reviews") ? rawPath.replace("/director/reviews", "/qa/reviews") : rawPath === "/director/homes" ? "/qa/homes" : rawPath === "/director" ? "/qa" : rawPath.startsWith("/portal") ? "/qa/monthly-reports" : rawPath;
+  const path = rawPath === "/maintenance/dashboard" ? "/maintenance/overview" : rawPath.startsWith("/director/reviews") ? rawPath.replace("/director/reviews", "/qa/reviews") : rawPath === "/director/homes" ? "/qa/homes" : rawPath === "/director" ? "/qa" : rawPath.startsWith("/portal") ? "/qa/monthly-reports" : rawPath;
   const areas = availableAreas(qaRole, workbookRole, finance, hr, isAdmin, Boolean(canManageEmployees), qaEnabled, maintenance, sections);
   // Longest match keeps Finance, HR and detail pages under the right heading.
   const matches = (href: string) => path === href || path.startsWith(href + "/") ||
