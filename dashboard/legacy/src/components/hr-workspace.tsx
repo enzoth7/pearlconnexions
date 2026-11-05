@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { BriefcaseBusiness, CalendarClock, CheckCircle2, ChevronDown, GraduationCap, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
-import { Popover } from "radix-ui";
+import { useSearchParams } from "next/navigation";
+import { BriefcaseBusiness, CalendarClock, CheckCircle2, GraduationCap, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MaintenanceSelectControl, MaintenanceSelectField } from "@/components/maintenance-select";
+import { MaintenanceSelectField } from "@/components/maintenance-select";
+import { HrFilterHeader } from "@/components/hr-register-controls";
+import { HrCoverageAlerts } from "@/components/hr-coverage-alerts";
 import { supabase } from "../../../src/shims/supabase";
 
 type Employee = {
@@ -16,11 +18,12 @@ type Employee = {
   safeguarding_expires_on: string | null; manual_handling_expires_on: string | null;
   supervision_due_on: string | null; probation_due_on: string | null;
   induction_complete: boolean | null; version: number; removed_at: string | null;
+  medication_competency_required: boolean | null; medication_competency_expires_on: string | null;
 };
 type Manager = { id: string; name: string; role_title: string | null; source_code: string };
 type Home = { id: string; name: string };
 type Row = { key: string; employee?: Employee; name: string; role: string; home: string; manager: string; contract: string; status: string;
-  start: string; dbs: string; right: string; first: string; safeguarding: string; handling: string; induction: string; supervision: string; probation: string };
+  start: string; dbs: string; right: string; first: string; safeguarding: string; handling: string; induction: string; supervision: string; probation: string; medication: string; medication_required: string };
 type Field = keyof Omit<Row, "key" | "employee">;
 const columns: { key: Field; title: string; kind?: "date" | "choice" }[] = [
   { key: "name", title: "Employee" }, { key: "role", title: "Role" }, { key: "home", title: "Home", kind: "choice" },
@@ -30,10 +33,11 @@ const columns: { key: Field; title: string; kind?: "date" | "choice" }[] = [
   { key: "first", title: "First Aid", kind: "date" }, { key: "safeguarding", title: "Safeguarding", kind: "date" },
   { key: "handling", title: "Manual Handling", kind: "date" }, { key: "induction", title: "Induction", kind: "choice" },
   { key: "supervision", title: "Supervision due", kind: "date" }, { key: "probation", title: "Probation due", kind: "date" },
+  { key: "medication_required", title: "Medication competency required", kind: "choice" }, { key: "medication", title: "Medication competency expiry", kind: "date" },
 ];
 const detailTabs: { value: string; label: string; keys: Field[] }[] = [
   { value: "details", label: "Details", keys: ["role", "home", "manager", "contract", "status", "start"] },
-  { value: "follow-up", label: "Follow-up", keys: ["induction", "dbs", "right", "first", "safeguarding", "handling", "supervision", "probation"] },
+  { value: "follow-up", label: "Follow-up", keys: ["induction", "dbs", "right", "first", "safeguarding", "handling", "medication_required", "medication", "supervision", "probation"] },
 ];
 const compactColumnKeys: Field[] = ["name", "role", "home", "contract", "status", "start", "dbs"];
 const compactColumns = columns.filter(column => compactColumnKeys.includes(column.key));
@@ -46,7 +50,7 @@ const statuses = ["Active", "Onboarding", "On leave", "Suspended", "Left"];
 const fieldClass = "mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-[#102c39] focus-visible:outline-2 focus-visible:outline-teal-700";
 const blank = { name: "", role_title: "", home_id: "", manager_id: "", contract_type: "Full time", employment_status: "Active",
   start_on: "", dbs_expires_on: "", right_to_work_expires_on: "", first_aid_expires_on: "", safeguarding_expires_on: "",
-  manual_handling_expires_on: "", supervision_due_on: "", probation_due_on: "", induction_complete: "unknown" };
+  manual_handling_expires_on: "", supervision_due_on: "", probation_due_on: "", induction_complete: "unknown", medication_competency_required: "unknown", medication_competency_expires_on: "" };
 type Form = typeof blank;
 
 function tone(status: string) {
@@ -65,7 +69,8 @@ function fromEmployee(row: Employee): Form {
     dbs_expires_on: row.dbs_expires_on ?? "", right_to_work_expires_on: row.right_to_work_expires_on ?? "",
     first_aid_expires_on: row.first_aid_expires_on ?? "", safeguarding_expires_on: row.safeguarding_expires_on ?? "",
     manual_handling_expires_on: row.manual_handling_expires_on ?? "", supervision_due_on: row.supervision_due_on ?? "",
-    probation_due_on: row.probation_due_on ?? "", induction_complete: row.induction_complete === null ? "unknown" : String(row.induction_complete) };
+    probation_due_on: row.probation_due_on ?? "", induction_complete: row.induction_complete === null ? "unknown" : String(row.induction_complete),
+    medication_competency_required: row.medication_competency_required == null ? "unknown" : String(row.medication_competency_required), medication_competency_expires_on: row.medication_competency_expires_on ?? "" };
 }
 function payload(form: Form) {
   return { ...form, name: form.name.trim(), role_title: form.role_title.trim(), home_id: form.home_id || null,
@@ -73,21 +78,17 @@ function payload(form: Form) {
     right_to_work_expires_on: form.right_to_work_expires_on || null, first_aid_expires_on: form.first_aid_expires_on || null,
     safeguarding_expires_on: form.safeguarding_expires_on || null, manual_handling_expires_on: form.manual_handling_expires_on || null,
     supervision_due_on: form.supervision_due_on || null, probation_due_on: form.probation_due_on || null,
-    induction_complete: form.induction_complete === "unknown" ? null : form.induction_complete === "true" };
+    induction_complete: form.induction_complete === "unknown" ? null : form.induction_complete === "true",
+    medication_competency_required: form.medication_competency_required === "unknown" ? null : form.medication_competency_required === "true",
+    medication_competency_expires_on: form.medication_competency_required === "true" ? form.medication_competency_expires_on || null : null };
 }
 function FilterHeader({ column, value, values, onChange }: { column: typeof columns[number]; value: string; values: string[]; onChange: (value: string) => void }) {
-  const id = `hr-filter-${column.key}`;
-  return <Popover.Root><Popover.Trigger asChild><button type="button" aria-label={`Filter ${column.title}`} className={`flex min-h-10 w-full items-center justify-between gap-2 text-left font-semibold ${value ? "text-teal-800" : "text-[#102c39]"}`}>{column.title}<ChevronDown size={15} aria-hidden /></button></Popover.Trigger>
-    <Popover.Portal><Popover.Content align="start" sideOffset={5} className="z-[60] w-60 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-      <label htmlFor={id} className="mb-2 block text-sm font-medium text-[#102c39]">Filter by {column.title.toLowerCase()}</label>
-      {column.kind === "choice" ? <MaintenanceSelectControl id={id} ariaLabel={`Filter by ${column.title.toLowerCase()}`} value={value || "__all__"} options={[{ value: "__all__", label: "All" }, ...values.filter(Boolean).map(item => ({ value: item, label: item }))]} onChange={choice => onChange(choice === "__all__" ? "" : choice)} />
-        : <input id={id} aria-label={`Filter by ${column.title.toLowerCase()}`} type={column.kind === "date" ? "date" : "text"} value={value} onChange={event => onChange(event.target.value)} className={fieldClass} />}
-      {value && <button type="button" className="mt-2 text-xs font-medium text-teal-800 underline" onClick={() => onChange("")}>Clear</button>}
-    </Popover.Content></Popover.Portal>
-  </Popover.Root>;
+  return <HrFilterHeader id={`hr-filter-${column.key}`} label={column.title} value={value} options={column.kind === "choice" ? values.filter(Boolean) : undefined} type={column.kind === "date" ? "date" : "text"} dark onChange={onChange} />;
 }
 
 export function HrWorkspace({ mode, canEdit, managerId = null }: { mode: "overview" | "employees"; canEdit: boolean; managerId?: string | null }) {
+  const focus = useSearchParams().get("focus");
+  const focusedTitle = focus === "active" ? "Active employees" : focus === "training" ? "Training current" : focus === "onboarding" ? "Onboarding" : focus === "supervision" ? "Supervisions due" : "Employees";
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
   const [homes, setHomes] = useState<Home[]>([]);
@@ -118,8 +119,8 @@ export function HrWorkspace({ mode, canEdit, managerId = null }: { mode: "overvi
       status: person.employment_status, start: person.start_on ?? "", dbs: person.dbs_expires_on ?? "", right: person.right_to_work_expires_on ?? "",
       first: person.first_aid_expires_on ?? "", safeguarding: person.safeguarding_expires_on ?? "", handling: person.manual_handling_expires_on ?? "",
       induction: person.induction_complete === null ? "Pending" : person.induction_complete ? "Complete" : "Incomplete",
-      supervision: person.supervision_due_on ?? "", probation: person.probation_due_on ?? "" }));
-  const visible = rows.filter(row => columns.every(column => !filters[column.key] || (column.kind === "choice" ? row[column.key] === filters[column.key] : row[column.key].toLowerCase().includes(filters[column.key].toLowerCase()))));
+      supervision: person.supervision_due_on ?? "", probation: person.probation_due_on ?? "",
+      medication_required: person.medication_competency_required == null ? "Pending" : person.medication_competency_required ? "Yes" : "No", medication: person.medication_competency_expires_on ?? "" }));
   const now = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const soon = new Date(`${now}T12:00:00Z`); soon.setUTCDate(soon.getUTCDate() + 60);
   const due = soon.toISOString().slice(0, 10);
@@ -130,14 +131,24 @@ export function HrWorkspace({ mode, canEdit, managerId = null }: { mode: "overvi
   const currentCertificates = active.filter(row => certificates(row).every(date => date && date >= now) && row.induction_complete === true).length;
   const trainingRate = active.length ? Math.round(currentCertificates / active.length * 100) : null;
   const onboarding = employees.filter(row => row.employment_status === "Onboarding").length;
+  const visible = rows.filter(row => {
+    const person = row.employee;
+    if (focus === "active" && row.status !== "Active") return false;
+    if (focus === "onboarding" && row.status !== "Onboarding") return false;
+    if (focus === "training" && (!person || person.employment_status !== "Active" || !certificates(person).every(date => date && date >= now) || person.induction_complete !== true)) return false;
+    if (focus === "supervision" && (!person || person.employment_status !== "Active" || !person.supervision_due_on || person.supervision_due_on > now)) return false;
+    return columns.every(column => !filters[column.key] || (column.kind === "choice" ? row[column.key] === filters[column.key] : row[column.key].toLowerCase().includes(filters[column.key].toLowerCase())));
+  });
   const inThirtyDays = new Date(`${now}T12:00:00Z`); inThirtyDays.setUTCDate(inThirtyDays.getUTCDate() + 30);
   const trainingDue = active.filter(row => certificates(row).some(date => date && date <= inThirtyDays.toISOString().slice(0, 10))).length;
+  const medicationDue = active.filter(row => row.medication_competency_required === true && (!row.medication_competency_expires_on || row.medication_competency_expires_on <= inThirtyDays.toISOString().slice(0, 10))).length;
+  const medicationPending = active.filter(row => row.medication_competency_required == null).length;
   const probationDue = employees.filter(row => row.probation_due_on?.startsWith(now.slice(0, 7))).length;
   const summary = [
-    { label: "Active employees", value: active.length, note: `${active.length} of ${employees.length} records active`, icon: UsersRound, color: "#176b93", progress: employees.length ? active.length / employees.length * 100 : 0 },
-    { label: "Training current", value: trainingRate === null ? "—" : `${trainingRate}%`, note: "Core certificates and induction", icon: GraduationCap, color: "#087e65", progress: trainingRate ?? 0 },
-    { label: "Onboarding", value: onboarding, note: "Employees in induction", icon: BriefcaseBusiness, color: "#a15d18", progress: employees.length ? onboarding / employees.length * 100 : 0 },
-    { label: "Supervisions due", value: supervisionDue, note: "Target date reached", icon: CalendarClock, color: "#7053a0", progress: active.length ? supervisionDue / active.length * 100 : 0 },
+    { label: "Active employees", value: active.length, note: `${active.length} of ${employees.length} records active`, icon: UsersRound, color: "#176b93", progress: employees.length ? active.length / employees.length * 100 : 0, href: "/hr/employees?focus=active" },
+    { label: "Training current", value: trainingRate === null ? "—" : `${trainingRate}%`, note: "Core certificates and induction", icon: GraduationCap, color: "#087e65", progress: trainingRate ?? 0, href: "/hr/employees?focus=training" },
+    { label: "Onboarding", value: onboarding, note: "Employees in induction", icon: BriefcaseBusiness, color: "#a15d18", progress: employees.length ? onboarding / employees.length * 100 : 0, href: "/hr/employees?focus=onboarding" },
+    { label: "Supervisions due", value: supervisionDue, note: "Target date reached", icon: CalendarClock, color: "#7053a0", progress: active.length ? supervisionDue / active.length * 100 : 0, href: "/hr/employees?focus=supervision" },
   ];
   const contractColors = ["#176b93", "#087e65", "#a15d18", "#7053a0", "#ac4545"];
   const contractCounts = [...new Set(employees.map(row => row.contract_type || "Unspecified"))]
@@ -174,16 +185,16 @@ export function HrWorkspace({ mode, canEdit, managerId = null }: { mode: "overvi
     { key: "manual_handling_expires_on", label: "Manual Handling expiry" }, { key: "supervision_due_on", label: "Supervision due" }, { key: "probation_due_on", label: "Probation due" },
   ];
   return <div className="space-y-6">
-    <header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className={mode === "overview" ? "text-4xl font-bold tracking-tight text-[#102c39] sm:text-5xl" : "text-3xl font-semibold text-[#102c39]"}>{mode === "overview" ? "Human Resources overview" : "Employees"}</h1>{mode === "employees" && <div className="mt-2 text-sm text-slate-600">Staff records across homes and teams.</div>}</div>
+    <header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className={mode === "overview" ? "text-4xl font-bold tracking-tight text-[#102c39] sm:text-5xl" : "text-3xl font-semibold text-[#102c39]"}>{mode === "overview" ? "Human Resources overview" : focusedTitle}</h1>{mode === "employees" && <div className="mt-2 text-sm text-slate-600">Staff records across homes and teams.</div>}</div>
       {mode === "employees" && canEdit && <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-teal-800 px-5 font-semibold text-white" onClick={() => open()}><Plus size={18} aria-hidden />Add employee</button>}</header>
     {loading ? <div role="status" className="rounded-2xl border border-slate-200 bg-white p-6">Loading employees…</div> : error && !editing && !removing ? <div role="alert" className="rounded-2xl border border-red-200 bg-white p-5 text-red-800">{error}</div> : mode === "overview" ? <>
       <section aria-labelledby="hr-kpis"><h2 id="hr-kpis" className="mb-3 text-base font-extrabold uppercase tracking-[.12em] text-[#102c39]">Snapshot</h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{summary.map(item => <div key={item.label} className="flex min-h-40 flex-col rounded-2xl border border-[#c8d8e7] bg-white p-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{summary.map(item => <Link key={item.label} href={item.href} className="workspace-kpi-link flex min-h-40 flex-col rounded-2xl border border-[#c8d8e7] bg-white p-5">
           <div className="flex items-start justify-between gap-2"><div className="text-sm font-medium text-[#28496b]">{item.label}</div><item.icon size={20} style={{ color: item.color }} aria-hidden /></div>
           <strong className="mt-3 text-3xl font-semibold tracking-tight text-[#102c39]">{item.value}</strong>
           <div className="metric-segments mt-2 w-full" aria-hidden="true"><i style={{ width: `${item.progress}%`, backgroundColor: item.color }} /></div>
           <div className="mt-auto pt-3 text-sm text-[#28496b]">{item.note}</div>
-        </div>)}</div>
+        </Link>)}</div>
       </section>
       <section className="overflow-hidden rounded-3xl border border-[#dce5e2] bg-white shadow-sm"><div className="border-b border-[#c8d8e7] px-6 py-6"><h2 className="flex items-center gap-3 text-xl font-bold text-[#102c39]"><UsersRound size={23} className="text-blue-700" aria-hidden />Register</h2><div className="mt-2 text-base text-[#28496b]">Staff records across homes and teams.</div></div>
         <div className="overflow-x-auto"><table className="w-full min-w-[1250px] text-left text-base"><thead className="border-b border-[#c8d8e7] bg-[#f7f9fa] text-[#28496b]"><tr><th scope="col" className="px-6 py-3">Employee</th><th scope="col" className="px-4 py-3">Role</th><th scope="col" className="px-4 py-3">Service</th><th scope="col" className="px-4 py-3">Contract</th><th scope="col" className="px-4 py-3">Start date</th><th scope="col" className="min-w-48 px-4 py-3">Training</th><th scope="col" className="px-4 py-3">Supervision due</th><th scope="col" className="px-4 py-3">DBS renewal</th><th scope="col" className="px-4 py-3">Status</th></tr></thead>
@@ -203,12 +214,15 @@ export function HrWorkspace({ mode, canEdit, managerId = null }: { mode: "overvi
         <section className="overflow-hidden rounded-3xl border border-[#dce5e2] bg-white shadow-sm"><div className="border-b border-[#c8d8e7] px-6 py-6"><h2 className="flex items-center gap-3 text-xl font-bold text-[#102c39]"><CheckCircle2 size={23} className="text-emerald-700" aria-hidden />People actions</h2><div className="mt-2 text-base text-[#28496b]">Items requiring HR follow-up.</div></div>
           <div className="divide-y divide-[#c8d8e7] px-6 py-5">{[
             { label: "Training certificates due within 30 days", count: trainingDue, color: "bg-amber-100 text-amber-900" },
+            { label: "Medication competency due or missing", count: medicationDue, color: "bg-rose-100 text-rose-900" },
+            { label: "Medication requirement pending", count: medicationPending, color: "bg-amber-100 text-amber-900" },
             { label: "DBS renewals within 60 days", count: dbsDue, color: "bg-amber-100 text-amber-900" },
             { label: "Probation reviews this month", count: probationDue, color: "bg-sky-100 text-sky-900" },
             { label: "Supervisions due", count: supervisionDue, color: "bg-rose-100 text-rose-900" },
           ].map(item => <div key={item.label} className="flex min-h-15 items-center justify-between gap-4 py-3 text-base"><div className="text-[#28496b]">{item.label}</div><strong className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${item.color}`}>{item.count} {item.count === 1 ? "person" : "people"}</strong></div>)}</div>
         </section>
       </div>
+      <HrCoverageAlerts />
     </> : <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><table className="w-full table-fixed border-collapse text-left text-sm"><caption className="sr-only">HR employee register with filters in column headings and more details for each employee</caption>
       <thead className="bg-white"><tr>{compactColumns.map(column => <th key={column.key} scope="col" className={`min-w-0 px-2 py-2 sm:px-3 ${columnVisibility[column.key] ?? ""}`}><FilterHeader column={column} value={filters[column.key] ?? ""} values={[...new Set(rows.map(row => row[column.key]))].sort()} onChange={value => setFilters(current => ({ ...current, [column.key]: value }))} /></th>)}<th scope="col" className="w-14 px-2 py-2"><div className="sr-only">Details</div></th></tr></thead>
       <tbody className="divide-y divide-slate-100">{visible.map(row => <tr key={row.key} className="align-middle">{compactColumns.map(column => <td key={column.key} className={`min-w-0 break-words px-2 py-2.5 sm:px-3 ${columnVisibility[column.key] ?? ""}`}>{column.key === "status" && row.status ? <strong className={`inline-block rounded-lg px-2 py-1 text-xs ${tone(row.status)}`}>{row.status}</strong> : column.kind === "date" ? displayDate(row[column.key]) : row[column.key] || "—"}</td>)}<td className="px-2 py-2"><button type="button" aria-label={`Show details for ${row.name}`} title="Show details" className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-300 text-teal-800 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-teal-700" onClick={() => setDetails(row)}><Plus size={18} aria-hidden /></button></td></tr>)}</tbody>
@@ -227,6 +241,8 @@ export function HrWorkspace({ mode, canEdit, managerId = null }: { mode: "overvi
         <MaintenanceSelectField name="hr_status" label="Status" value={form.employment_status} options={statuses} onChange={value => setForm(current => ({ ...current, employment_status: value }))} />
         {dateFields.map(field => <label key={field.key} className="text-sm font-medium">{field.label}<input type="date" className={fieldClass} value={form[field.key]} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))} /></label>)}
         <MaintenanceSelectField name="hr_induction" label="Induction" value={form.induction_complete} options={[{ value: "unknown", label: "Pending" }, { value: "true", label: "Complete" }, { value: "false", label: "Incomplete" }]} onChange={value => setForm(current => ({ ...current, induction_complete: value }))} />
+        <MaintenanceSelectField name="hr_medication_required" label="Medication competency required" value={form.medication_competency_required} options={[{ value: "unknown", label: "Pending" }, { value: "true", label: "Yes" }, { value: "false", label: "No" }]} onChange={value => setForm(current => ({ ...current, medication_competency_required: value }))} />
+        {form.medication_competency_required === "true" && <label className="text-sm font-medium">Medication competency expiry<input type="date" className={fieldClass} value={form.medication_competency_expires_on} onChange={event => setForm(current => ({ ...current, medication_competency_expires_on: event.target.value }))} /></label>}
       </div>{error && <div role="alert" className="mt-4 text-sm text-red-800">{error}</div>}
       <div className="mt-5 flex justify-end gap-3"><button type="button" className="min-h-11 rounded-xl border border-slate-300 px-4" onClick={() => setEditing(null)}>Cancel</button><button type="button" className="min-h-11 rounded-xl bg-teal-800 px-5 font-semibold text-white disabled:opacity-50" disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : "Save employee"}</button></div>
     </DialogContent></Dialog>

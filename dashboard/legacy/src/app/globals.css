@@ -74,6 +74,7 @@ button, a, select { touch-action: manipulation; cursor: pointer; }
 [data-slot="select-trigger"] { background: #fff; border-color: #cbd7e6; }
 [data-slot="table-head"] { color: #102c39; }
 .workspace-canvas :is(h1, h2, h3, h4, h5, h6), [data-slot="dialog-title"] { color: #102c39; }
+.workspace-canvas h2.qa-report-section-title { color: #fff; }
 .workspace-canvas :is(section, article, div)[class*="rounded-2xl"][class*="border"],
 .workspace-canvas :is(section, article, div)[class*="rounded-xl"][class*="border"],
 .workspace-canvas [data-slot="card"] { background-color: #fff; }
@@ -85,6 +86,8 @@ button, a, select { touch-action: manipulation; cursor: pointer; }
 .workspace-canvas table:not(.sr-only) thead :is(button, svg, [data-slot="table-head"]) { color: #fff; }
 .workspace-canvas table:not(.sr-only) thead tr:first-child th:first-child { border-top-left-radius: 1rem; }
 .workspace-canvas table:not(.sr-only) thead tr:first-child th:last-child { border-top-right-radius: 1rem; }
+.workspace-canvas table.qa-report-table thead tr:first-child th:first-child,
+.workspace-canvas table.qa-report-table thead tr:first-child th:last-child { border-radius: 0; }
 .workspace-canvas section:has(> div:first-child > h2) table:not(.sr-only) thead tr:first-child th:first-child { border-top-left-radius: 0; }
 .workspace-canvas section:has(> div:first-child > h2) table:not(.sr-only) thead tr:first-child th:last-child { border-top-right-radius: 0; }
 

@@ -37,7 +37,6 @@ export function reportErrors(body: ReportBody, questions: Question[], capacity: 
   for (const question of questions) {
     const value = body.answers[question.code];
     if (!value?.answer) errors.push(question.label);
-    else if (value.answer !== "yes" && !value.note.trim()) errors.push(`Explain: ${question.label}`);
   }
   if (!body.records_confirmed) errors.push("Confirm the incident, risk and maintenance registers are complete.");
   return errors;

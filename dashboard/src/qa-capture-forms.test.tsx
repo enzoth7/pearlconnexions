@@ -54,6 +54,12 @@ describe("case form interactions", () => {
     expect(screen.getByLabelText("Management notification time (London)")).toBeTruthy();
     expect(screen.queryByLabelText("Reported within 24 hours")).toBeNull();
   });
+  it("opens the source record from a follow-up link", async () => {
+    const incident = { ...emptyCase("incidents", home.id), title: "Medication support concern", reference: "INC-0013", version: 1, is_draft: false };
+    render(<QaCaseRegister kind="incidents" homes={[home]} records={[incident]} people={[]} risks={[]} canManageMaintenance={false} initialRecordId={incident.id} />);
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "INC-0013" })).toBeTruthy();
+  });
 });
 describe("monthly measurements", () => {
   it("saves incomplete quantities as a draft and prevents incomplete submission", async () => {

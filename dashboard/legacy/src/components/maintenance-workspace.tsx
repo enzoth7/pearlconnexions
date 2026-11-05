@@ -1,12 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Plus, Wrench } from "lucide-react";
-import { Popover } from "radix-ui";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Check, Plus, Wrench } from "lucide-react";
 import { useState, useTransition } from "react";
 import { CaptureField } from "@/components/qa-case-fields";
+import { HrFilterHeader } from "@/components/hr-register-controls";
 import { MaintenanceChoiceField, MaintenanceSelectControl, MaintenanceSelectField } from "@/components/maintenance-select";
 import { MaintenanceTimeline } from "@/components/maintenance-timeline";
+import { MaintenanceSafetySummary } from "@/components/maintenance-safety-checks";
+import { suggestedMaintenanceTarget, maintenanceTargets } from "@/lib/maintenance-safety";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { saveCase } from "@/lib/qa-cases-client";
 import { caseErrors, caseStates, emptyCase, londonToday, maintenanceCategories, type CaseData, type CaseRecord } from "@/lib/qa-capture";
@@ -38,11 +41,14 @@ function priorityBadge(priority: string) {
 
 function ColumnFilter({ label, value, onChange, options, type = "text" }: { label: string; value: string; onChange: (value: string) => void; options?: { value: string; label: string }[]; type?: "text" | "date" }) {
   const id = `filter-${label.toLowerCase().replaceAll(" ", "-")}`;
-  return <Popover.Root><Popover.Trigger asChild><button type="button" aria-label={`Filter ${label}`} className={`flex min-h-10 w-full items-center justify-between gap-2 text-left font-semibold ${value ? "text-teal-800" : "text-[#102c39]"}`}>{label}<ChevronDown size={15} aria-hidden /></button></Popover.Trigger><Popover.Portal><Popover.Content sideOffset={5} align="start" className="z-[60] w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-lg"><label htmlFor={id} className="mb-2 block text-sm font-medium text-[#102c39]">Filter by {label.toLowerCase()}</label>{options ? <MaintenanceSelectControl id={id} ariaLabel={`Filter by ${label.toLowerCase()}`} value={value || "__all__"} options={[{ value: "__all__", label: "All" }, ...options]} onChange={choice => onChange(choice === "__all__" ? "" : choice)} /> : <input id={id} aria-label={`Filter by ${label.toLowerCase()}`} type={type} className={inputClass} value={value} onChange={event => onChange(event.target.value)} />}{value && <button type="button" className="mt-2 text-xs font-medium text-teal-800 underline" onClick={() => onChange("")}>Clear</button>}</Popover.Content></Popover.Portal></Popover.Root>;
+  return <HrFilterHeader id={id} label={label} value={value} options={options} type={type} dark onChange={onChange} />;
 }
 
 export function MaintenanceIssues({ homes, records, canManageMaintenance, historical = false }: Props & { historical?: boolean }) {
   const router = useRouter();
+  const focus = useSearchParams().get("focus");
+  const heading = focus === "open" ? "Open issues" : focus === "overdue" ? "Overdue issues" : focus === "high" ? "High / urgent issues" : focus === "completed-month" ? "Completed this month" : historical ? "Historical" : "Issues";
+  const today = londonToday();
   const [selected, setSelected] = useState<CaseRecord | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -50,6 +56,20 @@ export function MaintenanceIssues({ homes, records, canManageMaintenance, histor
   const [filters, setFilters] = useState({ reference: "", home: "", issue: "", category: "", priority: "", reported: "", target: "", status: "" });
   const setFilter = (key: keyof typeof filters, value: string) => setFilters(current => ({ ...current, [key]: value }));
   const setData = <K extends keyof CaseData>(key: K, value: CaseData[K]) => setSelected(current => current ? { ...current, data: { ...current.data, [key]: value } } : null);
+  const setPriority = (priority: string) => setSelected(current => {
+    if (!current) return null;
+    const previousSuggestion = suggestedMaintenanceTarget(current.occurred_on, current.data.priority);
+    const due_on = !current.data.due_on || current.data.due_on === previousSuggestion
+      ? suggestedMaintenanceTarget(current.occurred_on, priority) : current.data.due_on;
+    return { ...current, data: { ...current.data, priority, due_on } };
+  });
+  const setReportedOn = (occurred_on: string) => setSelected(current => {
+    if (!current) return null;
+    const previousSuggestion = suggestedMaintenanceTarget(current.occurred_on, current.data.priority);
+    const due_on = !current.data.due_on || current.data.due_on === previousSuggestion
+      ? suggestedMaintenanceTarget(occurred_on, current.data.priority) : current.data.due_on;
+    return { ...current, occurred_on, data: { ...current.data, due_on } };
+  });
   const data = selected?.data;
   const legacyRecord = Boolean(selected && selected.schema_version !== 2);
   const readonly = legacyRecord || Boolean(selected?.version && !canManageMaintenance);
@@ -58,6 +78,10 @@ export function MaintenanceIssues({ homes, records, canManageMaintenance, histor
   const locationChoices = ["Entrance / reception", "Hallway", "Stairwell", "Shared lounge", "Dining room", "Kitchen", "Laundry / utility", "Bedroom", "Bathroom", "Toilet", "Office", "Staff room", "Medication room", "Boiler / plant room", "Storage", "Garden", "Driveway / parking", "Exterior / roof", "Outbuilding", ...records.map(row => row.data.location).filter(Boolean)];
   const shown = records.filter(row => {
     if (historical ? row.status !== "Completed" || row.is_draft : row.status === "Completed" && !row.is_draft) return false;
+    if (focus === "open" && row.is_draft) return false;
+    if (focus === "overdue" && (row.is_draft || !row.data.due_on || row.data.due_on >= today)) return false;
+    if (focus === "high" && (row.is_draft || !["High", "Urgent"].includes(row.data.priority))) return false;
+    if (focus === "completed-month" && !row.data.closed_on?.startsWith(today.slice(0, 7))) return false;
     const status = row.is_draft ? "Draft" : row.status;
     return (!filters.reference || (row.reference ?? "").toLowerCase().includes(filters.reference.toLowerCase()))
       && (!filters.home || row.home_id === filters.home)
@@ -95,7 +119,7 @@ export function MaintenanceIssues({ homes, records, canManageMaintenance, histor
     });
   }
   return <div className="space-y-6">
-    <header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-semibold tracking-tight">{historical ? "Historical" : "Issues"}</h1><div className="mt-2 text-sm text-slate-600">{historical ? "Completed repairs across your homes." : "Record and track repairs across the homes."}</div></div>{!historical && <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-teal-800 px-5 font-semibold text-white disabled:opacity-50" disabled={!homes.length} onClick={() => open(emptyCase("maintenance", filters.home || homes[0]?.id))}><Plus size={18} aria-hidden />Add issue</button>}</header>
+    <header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-semibold tracking-tight">{heading}</h1><div className="mt-2 text-sm text-slate-600">{historical ? "Completed repairs across your homes." : "Record and track repairs across the homes."}</div></div>{!historical && <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-teal-800 px-5 font-semibold text-white disabled:opacity-50" disabled={!homes.length} onClick={() => open(emptyCase("maintenance", filters.home || homes[0]?.id))}><Plus size={18} aria-hidden />Add issue</button>}</header>
     {message && !selected && <div role="status" className="rounded-xl border border-slate-200 bg-white p-4 text-sm">{message}</div>}
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(16,43,55,0.035)]">
       <table className="w-full min-w-[1120px] border-collapse text-left text-sm"><caption className="sr-only">Maintenance issues. Filter records from each column heading.</caption>
@@ -130,16 +154,17 @@ export function MaintenanceIssues({ homes, records, canManageMaintenance, histor
     <Dialog open={Boolean(selected)} onOpenChange={value => { if (!value && !pending) setSelected(null); }}><DialogContent><DialogHeader><DialogTitle className="text-xl">{selected?.version ? "Issue details" : "Add issue"}</DialogTitle><DialogDescription asChild><div>Dates use Europe/London. Required fields are checked when registering.</div></DialogDescription></DialogHeader>
       {selected && data && <div className="space-y-5"><fieldset disabled={pending || readonly} className="grid gap-4 sm:grid-cols-2">
         <MaintenanceSelectField name="maintenance_home" label="Home" value={selected.home_id} disabled={pending || readonly || Boolean(selected.version)} options={homes.map(h => ({ value: h.id, label: h.name }))} onChange={value => setSelected({ ...selected, home_id: value })} />
-        <CaptureField name="maintenance_date" label="Date reported" value={selected.occurred_on} type="date" error={errors.occurred_on} onChange={value => setSelected({ ...selected, occurred_on: value })} />
+        <CaptureField name="maintenance_date" label="Date reported" value={selected.occurred_on} type="date" error={errors.occurred_on} onChange={setReportedOn} />
         <CaptureField name="maintenance_title" label="Issue title" value={selected.title} error={errors.title} onChange={value => setSelected({ ...selected, title: value })} />
         <MaintenanceChoiceField name="maintenance_location" label="Location" value={data.location} values={locationChoices} disabled={pending || readonly} error={errors.location} onChange={value => setData("location", value)} />
         <MaintenanceSelectField name="maintenance_category" label="Category" value={data.category} options={maintenanceCategories} disabled={pending || readonly} error={errors.category} onChange={value => setData("category", value)} />
         {data.category === "Other" && <CaptureField name="maintenance_category_other" label="Describe category" value={data.category_other} error={errors.category_other} onChange={value => setData("category_other", value)} />}
-        <MaintenanceSelectField name="maintenance_priority" label="Priority" value={data.priority} options={priorityOptions} disabled={pending || readonly} error={errors.priority} onChange={value => setData("priority", value)} />
+        <div><MaintenanceSelectField name="maintenance_priority" label="Priority" value={data.priority} options={priorityOptions} disabled={pending || readonly} error={errors.priority} onChange={setPriority} /><div className="mt-1 text-xs text-slate-600">Urgent is for an immediate threat to life. Target dates are suggested and can be changed.</div></div>
         <CaptureField name="maintenance_description" label="Description" value={data.description} error={errors.description} multiline onChange={value => setData("description", value)} />
+        {data.priority === "Urgent" && <CaptureField name="maintenance_critical_action" label="Immediate action to keep people safe" value={data.critical_action} error={errors.critical_action} multiline onChange={value => setData("critical_action", value)} />}
         <MaintenanceChoiceField name="maintenance_owner" label="Responsible person" value={data.owner} values={ownerChoices} disabled={pending || readonly} error={errors.owner} onChange={value => setData("owner", value)} />
         <MaintenanceChoiceField name="maintenance_provider" label="Provider / executor" value={data.provider} values={providerChoices} disabled={pending || readonly} onChange={value => setData("provider", value)} />
-        <CaptureField name="maintenance_target" label="Target date" value={data.due_on} type="date" error={errors.due_on} onChange={value => setData("due_on", value)} />
+        <div><CaptureField name="maintenance_target" label="Target date" value={data.due_on} type="date" error={errors.due_on} onChange={value => setData("due_on", value)} />{data.priority && <div className="mt-1 text-xs text-slate-600">Suggested: {maintenanceTargets[data.priority] === 0 ? "same day" : `${maintenanceTargets[data.priority]} days`} from the report date.</div>}</div>
         <CaptureField name="maintenance_started" label="Date started" value={data.started_on} type="date" error={errors.started_on} onChange={value => setData("started_on", value)} />
         <MaintenanceSelectField name="maintenance_status" label="Status" value={selected.status} options={caseStates.maintenance} disabled={pending || readonly || !canManageMaintenance} error={errors.status} className={statusTone(selected.status)} onChange={value => setSelected({ ...selected, status: value })} />
         {selected.status === "Completed" && <><CaptureField name="maintenance_completed" label="Completion date" value={data.closed_on} type="date" error={errors.closed_on} onChange={value => setData("closed_on", value)} /><CaptureField name="maintenance_resolution" label="Resolution" value={data.resolution} multiline error={errors.resolution} onChange={value => setData("resolution", value)} /></>}
@@ -162,10 +187,10 @@ export function MaintenanceOverview({ homes, records }: Pick<Props, "homes" | "r
   const completedMonth = registered.filter(row => row.status === "Completed" && row.data.closed_on?.startsWith(month));
   const high = open.filter(row => ["High", "Urgent"].includes(row.data.priority));
   const summary = [
-    { label: "Open issues", value: open.length, accent: "text-teal-800" },
-    { label: "Overdue", value: overdue.length, accent: "text-rose-700" },
-    { label: "High / urgent", value: high.length, accent: "text-amber-700" },
-    { label: "Completed this month", value: completedMonth.length, accent: "text-emerald-700" },
+    { label: "Open issues", value: open.length, accent: "text-teal-800", href: "/maintenance?focus=open" },
+    { label: "Overdue", value: overdue.length, accent: "text-rose-700", href: "/maintenance?focus=overdue" },
+    { label: "High / urgent", value: high.length, accent: "text-amber-700", href: "/maintenance?focus=high" },
+    { label: "Completed this month", value: completedMonth.length, accent: "text-emerald-700", href: "/maintenance/historical?focus=completed-month" },
   ];
   const areaCounts = new Map<string, number>();
   for (const row of open) {
@@ -177,11 +202,12 @@ export function MaintenanceOverview({ homes, records }: Pick<Props, "homes" | "r
   return <div className="space-y-6">
     <header><h1 className="text-3xl font-semibold tracking-tight">Overview</h1><div className="mt-2 text-sm text-slate-600">Maintenance workload across your homes.</div></header>
     <section aria-label="Maintenance totals" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {summary.map(item => <div key={item.label} className="flex min-h-36 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-5 text-center">
+      {summary.map(item => <Link key={item.label} href={item.href} className="workspace-kpi-link flex min-h-36 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-5 text-center">
         <div className="text-sm font-medium text-[#102c39]">{item.label}</div>
         <strong className={`mt-3 block text-4xl font-semibold ${item.accent}`}>{item.value}</strong>
-      </div>)}
+      </Link>)}
     </section>
+    <MaintenanceSafetySummary homes={homes} />
     <MaintenanceTimeline records={registered} today={today} />
     <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -202,7 +228,7 @@ export function MaintenanceOverview({ homes, records }: Pick<Props, "homes" | "r
         <div className="mt-1 text-sm text-slate-600">Open issues by location</div>
         <div className="mt-5 space-y-4">{areas.map(([area, count], index) => <div key={area}>
           <div className="mb-1 flex items-center justify-between gap-3 text-sm"><strong className="font-medium text-[#102c39]">{area}</strong><strong className="text-[#102c39]">{count}</strong></div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${areaColors[index % areaColors.length]}`} style={{ width: `${Math.max(8, count / Math.max(open.length, 1) * 100)}%` }} /></div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`workspace-measure-fill h-full rounded-full ${areaColors[index % areaColors.length]}`} style={{ width: `${Math.max(8, count / Math.max(open.length, 1) * 100)}%` }} /></div>
         </div>)}
         {!areas.length && <div className="py-6 text-sm text-slate-600">No open issues.</div>}</div>
       </section>

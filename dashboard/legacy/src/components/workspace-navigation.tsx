@@ -20,6 +20,7 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
       { label: "Reports", href: "/qa/monthly-reports" },
       { label: "Audits", href: "/qa/audits" },
       { label: "Incidents", href: "/qa/incidents" },
+      { label: "Follow-up", href: "/qa/follow-up" },
       { label: "Recurrences", href: "/qa/recurrences" },
       { label: "Risk assessments", href: "/qa/risks" },
       { label: "Reviews", href: "/qa/reviews" },
@@ -37,7 +38,7 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
   });
   if (finance) areas.push({ label: "Finance", icon: Landmark, sections: [{ label: "Overview", href: "/finance" }, { label: "Expenses", href: "/finance/expenses" }, { label: "Payroll", href: "/finance/payroll" }, { label: "Invoices", href: "/finance/invoices" }] });
   if (hr) areas.push({ label: "HR", icon: UsersRound, sections: [{ label: "Overview", href: "/hr" }, { label: "Employees", href: "/hr/employees" }, { label: "Coverage", href: "/hr/coverage" }, { label: "Recruitment", href: "/hr/recruitment" }] });
-  if (maintenance) areas.push({ label: "Maintenance", icon: Wrench, sections: [{ label: "Overview", href: "/maintenance/overview" }, { label: "Issues", href: "/maintenance" }, { label: "Historical", href: "/maintenance/historical" }] });
+  if (maintenance) areas.push({ label: "Maintenance", icon: Wrench, sections: [{ label: "Overview", href: "/maintenance/overview" }, { label: "Issues", href: "/maintenance" }, { label: "Checks", href: "/maintenance/checks" }, { label: "Historical", href: "/maintenance/historical" }] });
   if (qa === "director" || sections?.includes("team.organisation_chart")) areas.push({ label: "Team", icon: UsersRound, sections: [{ label: "Organisation chart", href: "/team" }] });
   if (areas.length || isAdmin || sections?.includes("links.quick_links")) areas.push({ label: "Links", icon: Link2, sections: [
     { label: "Quick links", href: "/links" },
@@ -50,7 +51,7 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
   const context = { role: qa, workbookRole: workbook, finance, hr, isAdmin, canManageEmployees, qaEnabled, maintenance, sections };
   return areas.map(area => ({ ...area, sections: area.sections.filter(section => {
     const definition = workspaceSectionGroups.flatMap(group => [...group.sections]).find(item => item.href === section.href);
-    return section.href === "/qa/recurrences" ? canOpenSection(context, "qa.incidents") : section.href.startsWith("/maintenance") ? canOpenSection(context, "maintenance.issues") : section.href.startsWith("/hr/") ? canOpenSection(context, "hr.overview") : section.href.startsWith("/finance/") ? canOpenSection(context, "finance.overview") : !definition || canOpenSection(context, definition.id);
+    return section.href === "/qa/recurrences" ? canOpenSection(context, "qa.incidents") : section.href === "/qa/follow-up" ? (canOpenSection(context, "qa.incidents") || canOpenSection(context, "qa.risks")) : section.href.startsWith("/maintenance") ? canOpenSection(context, "maintenance.issues") : section.href.startsWith("/hr/") ? canOpenSection(context, "hr.overview") : section.href.startsWith("/finance/") ? canOpenSection(context, "finance.overview") : !definition || canOpenSection(context, definition.id);
   }) })).filter(area => area.sections.length);
 }
 

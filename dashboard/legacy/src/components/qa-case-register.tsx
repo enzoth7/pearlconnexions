@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { appendCaseNote, saveCase } from "@/lib/qa-cases-client";
 import { caseErrors, caseStates, emptyCase, londonToday, riskLevels, type CaseData, type CaseKind, type CaseRecord, type Person } from "@/lib/qa-capture";
@@ -8,15 +8,20 @@ import { QaCaseTable } from "./qa-case-table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import type { Home } from "@/lib/types";
 
-type Props = { kind: CaseKind; homes: Home[]; records: CaseRecord[]; people: Person[]; risks: { id: string; title: string; home_id: string; data: { person_ids?: string[] } }[]; canManageMaintenance: boolean };
+type Props = { kind: CaseKind; homes: Home[]; records: CaseRecord[]; people: Person[]; risks: { id: string; title: string; home_id: string; data: { person_ids?: string[] } }[]; canManageMaintenance: boolean; initialRecordId?: string; initialSafeguardingFilter?: string };
 const button = "min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-medium disabled:opacity-50";
 const primary = "min-h-11 rounded-xl bg-teal-800 px-5 font-semibold text-white disabled:opacity-50";
 
-export function QaCaseRegister({ kind, homes, records, people, risks, canManageMaintenance }: Props) {
+export function QaCaseRegister({ kind, homes, records, people, risks, canManageMaintenance, initialRecordId = "", initialSafeguardingFilter = "" }: Props) {
   const router = useRouter();
   const sourceRecords = records; const [record, setRecord] = useState<CaseRecord | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({}); const [message, setMessage] = useState(""); const [pending, start] = useTransition();
   const [note, setNote] = useState("");
+  useEffect(() => {
+    if (!initialRecordId) return;
+    const target = records.find(item => item.id === initialRecordId);
+    if (target) { setRecord(structuredClone(target)); setErrors({}); setMessage(""); setNote(""); }
+  }, [initialRecordId, records]);
   const title = kind === "risks" ? "Individual risk assessments" : kind === "incidents" ? "Incidents & safeguarding" : "Maintenance";
   const original = record ? sourceRecords.find(r => r.id === record.id) : undefined;
   const limited = kind === "maintenance" && Boolean(record?.version) && !canManageMaintenance;
@@ -26,18 +31,26 @@ export function QaCaseRegister({ kind, homes, records, people, risks, canManageM
   const set = <K extends keyof CaseData>(key: K, value: CaseData[K]) => setRecord(current => current ? { ...current, data: { ...current.data, [key]: value } } : null);
   const field = (key: keyof CaseData, label: string, type = "text", multiline = false) => record && <CaptureField name={key} label={label} value={String(record.data[key] ?? "")} onChange={v => set(key, v as never)} error={errors[key]} type={type} multiline={multiline} />;
   function open(value: CaseRecord) { setRecord(structuredClone(value)); setErrors({}); setMessage(""); setNote(""); }
+  function close() {
+    setRecord(null);
+    if (new URLSearchParams(window.location.search).has("record")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("record");
+      router.replace(`${url.pathname}${url.search}`);
+    }
+  }
   function persist(draft: boolean) {
     if (!record) return;
     const candidate = { ...record, is_draft: draft, occurred_on: kind === "incidents" && record.data.occurred_local ? record.data.occurred_local.slice(0, 10) : record.occurred_on };
     const problems = caseErrors(candidate); setErrors(problems);
     if (Object.keys(problems).length) { setMessage("Complete the highlighted fields. You can save an incomplete draft."); requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()); return; }
-    start(async () => { const result = await saveCase(candidate); setMessage(result.message); if (result.errors) setErrors(result.errors); if (result.ok) { setRecord(null); router.refresh(); } });
+    start(async () => { const result = await saveCase(candidate); setMessage(result.message); if (result.errors) setErrors(result.errors); if (result.ok) { close(); router.refresh(); } });
   }
   const today = londonToday();
   return <div className="space-y-6"><header className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-3xl font-semibold tracking-tight text-[#102c39]">{title}</h1><div className="mt-2 text-sm text-slate-600">Dates and times use Europe/London. Drafts are excluded from reported totals.</div></div><button className={primary} disabled={!homes.length} onClick={() => open(emptyCase(kind, homes[0]?.id))}>Add {kind === "risks" ? "individual risk" : kind === "incidents" ? "incident" : "issue"}</button></header>
     {!homes.length && <div>No homes are assigned to your account.</div>}
     {message && <div role="status" className="rounded-xl border bg-white p-4">{message}</div>}
-    <Dialog open={Boolean(record)} onOpenChange={value => { if (!value && !pending) setRecord(null); }}><DialogContent>{record && <div aria-label="Record editor" className="space-y-6"><DialogHeader><DialogTitle className="text-xl text-[#102c39]">{historical ? "Historical record" : record.version ? record.reference || "Update record" : "New record"}</DialogTitle></DialogHeader>{historical && <div className="text-sm text-slate-600">Preserved in its original format. New records use the individual capture form.</div>}
+    <Dialog open={Boolean(record)} onOpenChange={value => { if (!value && !pending) close(); }}><DialogContent>{record && <div aria-label="Record editor" className="space-y-6"><DialogHeader><DialogTitle className="text-xl text-[#102c39]">{historical ? "Historical record" : record.version ? record.reference || "Update record" : "New record"}</DialogTitle></DialogHeader>{historical && <div className="text-sm text-slate-600">Preserved in its original format. New records use the individual capture form.</div>}
       <fieldset disabled={pending || limited || historical} className="space-y-6"><div className="grid gap-5 sm:grid-cols-2"><CaptureField name="home_id" label="Home" value={record.home_id} disabled={Boolean(record.version)} options={homes.map(h => ({ value: h.id, label: h.name }))} onChange={v => setRecord({ ...record, home_id: v, data: { ...record.data, person_ids: [], person_name: "", linked_risk_ids: [] } })} />{kind !== "incidents" && <CaptureField name="occurred_on" label={kind === "risks" ? "Assessment date" : "Date reported"} value={record.occurred_on} type="date" onChange={v => setRecord({ ...record, occurred_on: v })} error={errors.occurred_on} />}<CaptureField name="title" label="Short title" value={record.title} onChange={v => setRecord({ ...record, title: v })} error={errors.title} />{field("description", kind === "risks" ? "Description of the individual risk" : "Description", "text", true)}
       {kind === "risks" ? <RiskFields data={record.data} set={set} errors={errors} people={people.filter(p => p.home_id === record.home_id)} /> : kind === "incidents" ? <IncidentFields data={record.data} set={set} errors={errors} people={people.filter(p => p.home_id === record.home_id)} /> : <MaintenanceFields data={record.data} set={set} errors={errors} people={[]} />}
       <CaptureField name="status" label="Status when registered" value={record.status} options={caseStates[kind]} disabled={kind === "maintenance" && !canManageMaintenance} onChange={v => setRecord({ ...record, status: v })} error={errors.status} />{["Closed", "Completed"].includes(record.status) && <>{field("closed_on", kind === "maintenance" ? "Completion date" : "Closure date", "date")}{field("resolution", kind === "risks" ? "Reason for closure" : "Resolution / outcome", "text", true)}</>}
@@ -46,11 +59,11 @@ export function QaCaseRegister({ kind, homes, records, people, risks, canManageM
       <CaptureSection title="Follow-up actions">{errors.actions && <div className="text-red-800">{errors.actions}</div>}{record.actions.map((a, i) => <div key={a.id} className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-2">{(["description", "owner", "due_on", "status", "completed_on", "resolution"] as const).filter(key => !["completed_on", "resolution"].includes(key) || a.status === "Completed").map(key => <CaptureField key={key} name={`actions.${i}.${key}`} label={{ description: "Action", owner: "Responsible person", due_on: "Action deadline", status: "Action status", completed_on: "Completed on", resolution: "Resolution / evidence note" }[key]} value={a[key]} options={key === "status" ? ["Pending", "Completed"] : undefined} multiline={key === "resolution"} type={key.endsWith("_on") ? "date" : "text"} error={errors[`actions.${i}.${key}`]} onChange={v => setRecord({ ...record, actions: record.actions.map((row, index) => index === i ? { ...row, [key]: v } : row) })} />)}</div>)}<button type="button" className={button} onClick={() => setRecord({ ...record, actions: [...record.actions, { id: crypto.randomUUID(), description: "", owner: "", due_on: "", status: "Pending", completed_on: "", resolution: "" }] })}>Add action</button></CaptureSection>
       {kind === "risks" && <CaptureSection title="Risk reviews">{record.reviews.map((r, i) => { const saved = !original?.is_draft && original?.reviews.some(item => item.id === r.id); return <fieldset disabled={saved} key={r.id} className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-2">{saved && <div className="text-sm text-slate-600 sm:col-span-2">Saved review · retained permanently</div>}{(["reviewed_on", "author", "outcome", "residual_level", "next_review_on"] as const).map(key => <CaptureField key={key} name={`reviews.${i}.${key}`} label={{ reviewed_on: "Review date", author: "Reviewed by", outcome: "Review result", residual_level: "Residual risk after review", next_review_on: "Next review date" }[key]} value={r[key]} options={key === "residual_level" ? riskLevels : undefined} multiline={key === "outcome"} type={key.endsWith("_on") ? "date" : "text"} error={errors[`reviews.${i}.${key}`]} onChange={v => setRecord({ ...record, reviews: record.reviews.map((row, index) => index === i ? { ...row, [key]: v } : row), data: { ...record.data, ...(key === "residual_level" ? { priority: v } : key === "next_review_on" ? { due_on: v } : {}) } })} />)}</fieldset>; })}<button type="button" className={button} onClick={() => setRecord({ ...record, reviews: [...record.reviews, { id: crypto.randomUUID(), reviewed_on: today, author: "", outcome: "", residual_level: record.data.priority, next_review_on: "" }] })}>Add review</button></CaptureSection>}
       <div className="grid gap-4 sm:grid-cols-2">{field("follow_up", "Follow-up notes", "text", true)}</div></fieldset>
-      {limited && !historical && <div className="space-y-3"><div className="whitespace-pre-wrap text-sm">{record.data.follow_up}</div><CaptureField name="append_note" label="Add follow-up note" value={note} onChange={setNote} multiline disabled={pending} /><button className={primary} disabled={pending || !note.trim()} onClick={() => start(async () => { const result = await appendCaseNote(record, note); setMessage(result.message); if (result.ok) { setRecord(null); router.refresh(); } })}>Save follow-up</button></div>}
+      {limited && !historical && <div className="space-y-3"><div className="whitespace-pre-wrap text-sm">{record.data.follow_up}</div><CaptureField name="append_note" label="Add follow-up note" value={note} onChange={setNote} multiline disabled={pending} /><button className={primary} disabled={pending || !note.trim()} onClick={() => start(async () => { const result = await appendCaseNote(record, note); setMessage(result.message); if (result.ok) { close(); router.refresh(); } })}>Save follow-up</button></div>}
       {!!record.history?.length && <details><summary className="cursor-pointer font-medium">State history</summary><ul className="mt-3 space-y-2 text-sm">{[...record.history].sort((a, b) => b.version - a.version).map(h => <li key={h.id}>{new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", dateStyle: "medium", timeStyle: "short" }).format(new Date(h.changed_at))} · {h.from_status || "New"} → {h.to_status}</li>)}</ul></details>}
-      <div className="flex flex-wrap gap-3">{!limited && !historical && <>{(!original || original.is_draft) && <button type="button" className={button} disabled={pending} onClick={() => persist(true)}>Save draft</button>}<button type="button" className={primary} disabled={pending} onClick={() => persist(false)}>{pending ? "Saving…" : original && !original.is_draft ? "Save changes" : "Register record"}</button></>}<button className={button} disabled={pending} onClick={() => setRecord(null)}>Close editor</button></div>
+      <div className="flex flex-wrap gap-3">{!limited && !historical && <>{(!original || original.is_draft) && <button type="button" className={button} disabled={pending} onClick={() => persist(true)}>Save draft</button>}<button type="button" className={primary} disabled={pending} onClick={() => persist(false)}>{pending ? "Saving…" : original && !original.is_draft ? "Save changes" : "Register record"}</button></>}<button className={button} disabled={pending} onClick={close}>Close editor</button></div>
     </div>}</DialogContent></Dialog>
-    {kind !== "maintenance" && <QaCaseTable kind={kind} homes={homes} records={sourceRecords} people={people} onOpen={open} />}
+    {kind !== "maintenance" && <QaCaseTable kind={kind} homes={homes} records={sourceRecords} people={people} onOpen={open} initialSafeguardingFilter={initialSafeguardingFilter} />}
   </div>;
 
 }

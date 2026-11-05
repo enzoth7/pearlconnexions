@@ -6,7 +6,7 @@
 - Style status and count labels throughout the project like the HR Active and Onboarding badges: compact filled pills with fully rounded ends, soft semantic background colors, and dark matching text. Do not use white badges with colored text and a thin outline.
 - Never add a decorative line or thick accent border along the top edge of KPI cards. This pattern is prohibited throughout the project.
 - Make dialogs wide and responsive, with enough room for form fields on desktop and usable margins on mobile.
-- Put table filters inside column-header popovers opened by compact chevron buttons. Do not add always-visible filter inputs beneath headings or a separate filter bar.
+- Open choice filters directly from column headers as a compact styled option list, with no intermediate "Filter by" panel or nested select. Use keyboard-accessible menu items. Text and date filters may open a small input popover. Do not add always-visible filter inputs beneath headings or a separate filter bar.
 - Never add horizontal scrollbars to tables or page content. Keep the main columns within the viewport at each breakpoint, and show additional row fields in a responsive details dialog opened by a `+` button.
 - Use styled, keyboard-accessible dropdown menus instead of the browser's native select menu in new or edited views. Keep a visible label and field-level error, and support a custom value when a fixed list cannot cover the input.
 - The project contains provisional records. Do not add "Demo data" labels or explanatory copy about sample data to the interface.

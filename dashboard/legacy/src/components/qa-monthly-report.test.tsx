@@ -25,7 +25,7 @@ const props = {
 describe("monthly report editor", () => {
   it("shows the full report in sections without steps or progress controls", () => {
     render(<QaMonthlyReport {...props} accessibleRegisters={[]} />);
-    for (const section of ["Home & occupancy", "Team & records", "Safety & property", "Registers", "Review & send"]) {
+    for (const section of ["Home & occupancy", "Team & records", "Safety & property", "Registers"]) {
       expect(screen.getByRole("heading", { name: section })).toBeInTheDocument();
     }
     expect(screen.getByLabelText("Average occupied beds during the month")).toBeInTheDocument();
@@ -35,13 +35,15 @@ describe("monthly report editor", () => {
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open register" })).not.toBeInTheDocument();
-    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.queryByText("Review & send")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save draft" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send to director" })).toBeInTheDocument();
   });
 
-  it("asks for an explanation of No and hides questions for other services", () => {
+  it("keeps checklist responses compact and hides questions for other services", () => {
     render(<QaMonthlyReport {...props} />);
     fireEvent.click(screen.getAllByRole("radio", { name: "No" })[0]);
-    expect(screen.getByLabelText("What is outstanding and what happens next?")).toBeInTheDocument();
+    expect(screen.queryByLabelText("What is outstanding and what happens next?")).not.toBeInTheDocument();
     expect(screen.queryByText("School attendance checked?")).not.toBeInTheDocument();
   });
 
@@ -58,6 +60,7 @@ describe("monthly report editor", () => {
     render(<QaMonthlyReport {...props} />);
     fireEvent.change(screen.getByLabelText("Average occupied beds during the month"), { target: { value: "2" } });
     for (const radio of screen.getAllByRole("radio", { name: "Yes" })) fireEvent.click(radio);
+    fireEvent.click(screen.getAllByRole("radio", { name: "No" })[0]);
     fireEvent.click(screen.getByLabelText(/I confirm the incident/));
     fireEvent.click(screen.getByRole("button", { name: "Send to director" }));
     expect(await screen.findByRole("status")).toHaveTextContent("Report sent.");

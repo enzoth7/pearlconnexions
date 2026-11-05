@@ -175,5 +175,5 @@ export default function App() {
   if (context === undefined || pathname === "/auth/callback" || pathname === "/auth/confirm") return <Loading />;
   if (!match) return <div className="p-8">Page not found.</div>;
   if (match.route.ownShell || !context) return content;
-  return <AppShell context={context}>{match.route.workbook ? <div className="workbook-content">{content}</div> : content}</AppShell>;
+  return <AppShell context={context}><div key={path} className={entry?.node ? "workspace-view-enter" : undefined}>{match.route.workbook ? <div className="workbook-content">{content}</div> : content}</div></AppShell>;
 }

@@ -131,3 +131,39 @@
   mask-image: repeating-linear-gradient(90deg, black 0 2px, transparent 2px 4px);
 }
 .metric-segments i { display: block; height: 100%; }
+
+.workspace-view-enter {
+  animation: workspace-view-enter 240ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes workspace-view-enter {
+  from { opacity: .85; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.workspace-kpi-link {
+  transition: transform 170ms cubic-bezier(.22, 1, .36, 1), border-color 170ms ease, box-shadow 170ms ease;
+}
+.workspace-kpi-link:focus-visible {
+  outline: 3px solid #008c83;
+  outline-offset: 3px;
+}
+.workspace-kpi-link:active { transform: scale(.99); }
+.metric-segments i, .workspace-measure-fill {
+  transform-origin: left center;
+  animation: workspace-measure-fill 560ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes workspace-measure-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .workspace-kpi-link:not(.workspace-kpi-inline):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgb(16 44 57 / .09);
+  }
+  .workspace-kpi-inline:hover { color: #006d72; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-view-enter, .metric-segments i, .workspace-measure-fill { animation: none; }
+  .workspace-kpi-link { transition: none; }
+  .workspace-kpi-link:hover, .workspace-kpi-link:active { transform: none; }
+}

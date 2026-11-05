@@ -7,12 +7,13 @@ const query = (params: URLSearchParams) => Object.fromEntries(params.entries());
 const fromPage = async (source: Promise<{ default: (...args: never[]) => ReactNode | Promise<ReactNode> }>, args?: unknown) => (await source).default(args as never);
 
 export const routes: Record<string, Route> = {
-  "/qa": { section: "qa.overview", load: () => fromPage(import("../legacy/src/app/qa/page")) },
+  "/qa": { section: "qa.overview", load: p => fromPage(import("../legacy/src/app/qa/page"), { searchParams: Promise.resolve(query(p)) }) },
   "/qa/monthly-reports": { section: "qa.monthly_reports", load: () => fromPage(import("../legacy/src/app/qa/monthly-reports/page")) },
   "/qa/audits": { section: "qa.audits", load: () => fromPage(import("../legacy/src/app/qa/audits/page")) },
-  "/qa/incidents": { section: "qa.incidents", load: () => fromPage(import("../legacy/src/app/qa/incidents/page")) },
+  "/qa/incidents": { section: "qa.incidents", load: p => fromPage(import("../legacy/src/app/qa/incidents/page"), { searchParams: Promise.resolve(query(p)) }) },
   "/qa/recurrences": { section: "qa.incidents", load: () => fromPage(import("../legacy/src/app/qa/recurrences/page")) },
-  "/qa/risks": { section: "qa.risks", load: () => fromPage(import("../legacy/src/app/qa/risks/page")) },
+  "/qa/follow-up": { section: "qa.incidents", alternativeSection: "qa.risks", load: () => fromPage(import("../legacy/src/app/qa/follow-up/page")) },
+  "/qa/risks": { section: "qa.risks", load: p => fromPage(import("../legacy/src/app/qa/risks/page"), { searchParams: Promise.resolve(query(p)) }) },
   "/qa/reviews": { section: "qa.reviews", load: () => fromPage(import("../legacy/src/app/qa/reviews/page")) },
   "/qa/homes": { section: "qa.homes", load: () => fromPage(import("../legacy/src/app/qa/homes/page")) },
   "/qa/monthly-reports/:id": { section: "qa.monthly_reports", alternativeSection: "qa.reviews", load: (_p, id) => fromPage(import("../legacy/src/app/qa/monthly-reports/[id]/page"), { params: Promise.resolve({ id }) }) },
@@ -22,6 +23,7 @@ export const routes: Record<string, Route> = {
   "/maintenance/dashboard": { section: "maintenance.issues", load: () => fromPage(import("../legacy/src/app/maintenance/dashboard/page")) },
   "/maintenance/historical": { section: "maintenance.issues", load: () => fromPage(import("../legacy/src/app/maintenance/historical/page")) },
   "/maintenance/overview": { section: "maintenance.issues", load: () => fromPage(import("../legacy/src/app/maintenance/overview/page")) },
+  "/maintenance/checks": { section: "maintenance.issues", load: () => fromPage(import("../legacy/src/app/maintenance/checks/page")) },
   "/team": { section: "team.organisation_chart", load: () => fromPage(import("../legacy/src/app/team/page")) },
   "/finance": { section: "finance.overview", load: () => fromPage(import("../legacy/src/app/finance/page")) },
   "/finance/expenses": { section: "finance.overview", load: () => fromPage(import("../legacy/src/app/finance/expenses/page")) },

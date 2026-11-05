@@ -25,9 +25,9 @@ it("moves completed issues to Historical and keeps its header filters and detail
   expect(screen.getByRole("heading", { name: "Historical" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Add issue" })).toBeNull();
   expect(within(table).queryByText("Window repair")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Filter Home" }));
-  fireEvent.keyDown(screen.getByRole("combobox", { name: "Filter by home" }), { key: "ArrowDown" });
-  fireEvent.click(screen.getByRole("option", { name: "Home B" }));
+  fireEvent.keyDown(screen.getByRole("button", { name: "Filter Home" }), { key: "Enter" });
+  expect(screen.queryByRole("combobox", { name: "Filter by home" })).toBeNull();
+  fireEvent.click(screen.getByRole("menuitemradio", { name: "Home B" }));
   expect(within(table).getByText("Boiler check")).toBeTruthy();
   expect(screen.getByRole("combobox", { name: "Change status for Boiler check" }).className).toContain("bg-emerald-100");
   fireEvent.click(screen.getByRole("button", { name: "View completed Boiler check" }));

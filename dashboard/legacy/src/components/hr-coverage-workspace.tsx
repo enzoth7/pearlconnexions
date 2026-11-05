@@ -13,12 +13,14 @@ type Shift = {
   required_staff: number | null; planned_staff: number | null; present_staff: number | null;
   agency_staff: number | null; overtime_hours: number | null;
   commissioned_support_hours: number | null; delivered_support_hours: number | null;
+  commissioned_one_to_one_hours: number | null; delivered_one_to_one_hours: number | null;
+  commissioned_two_to_one_hours: number | null; delivered_two_to_one_hours: number | null;
   notes: string; version: number;
 };
-type ShiftForm = { home_id: string; shift_on: string; shift_type: string; required_staff: string; planned_staff: string; present_staff: string; agency_staff: string; overtime_hours: string; commissioned_support_hours: string; delivered_support_hours: string; notes: string };
+type ShiftForm = { home_id: string; shift_on: string; shift_type: string; required_staff: string; planned_staff: string; present_staff: string; agency_staff: string; overtime_hours: string; commissioned_support_hours: string; delivered_support_hours: string; commissioned_one_to_one_hours: string; delivered_one_to_one_hours: string; commissioned_two_to_one_hours: string; delivered_two_to_one_hours: string; notes: string };
 const shiftTypes = ["Day", "Evening", "Waking night", "Sleep-in", "Other"];
 const countFields = ["required_staff", "planned_staff", "present_staff", "agency_staff"] as const;
-const hourFields = ["overtime_hours", "commissioned_support_hours", "delivered_support_hours"] as const;
+const hourFields = ["overtime_hours", "commissioned_support_hours", "delivered_support_hours", "commissioned_one_to_one_hours", "delivered_one_to_one_hours", "commissioned_two_to_one_hours", "delivered_two_to_one_hours"] as const;
 const numberFields: { key: (typeof countFields)[number] | (typeof hourFields)[number]; label: string; unit: string }[] = [
   { key: "required_staff", label: "Staff required", unit: "people" },
   { key: "planned_staff", label: "Staff planned", unit: "people" },
@@ -27,14 +29,20 @@ const numberFields: { key: (typeof countFields)[number] | (typeof hourFields)[nu
   { key: "overtime_hours", label: "Overtime", unit: "hours" },
   { key: "commissioned_support_hours", label: "Support commissioned", unit: "hours" },
   { key: "delivered_support_hours", label: "Support delivered", unit: "hours" },
+  { key: "commissioned_one_to_one_hours", label: "1:1 support commissioned", unit: "hours" },
+  { key: "delivered_one_to_one_hours", label: "1:1 support delivered", unit: "hours" },
+  { key: "commissioned_two_to_one_hours", label: "2:1 support commissioned", unit: "hours" },
+  { key: "delivered_two_to_one_hours", label: "2:1 support delivered", unit: "hours" },
 ];
 function blankShift(): ShiftForm {
-  return { home_id: "", shift_on: londonToday(), shift_type: "Day", required_staff: "", planned_staff: "", present_staff: "", agency_staff: "", overtime_hours: "", commissioned_support_hours: "", delivered_support_hours: "", notes: "" };
+  return { home_id: "", shift_on: londonToday(), shift_type: "Day", required_staff: "", planned_staff: "", present_staff: "", agency_staff: "", overtime_hours: "", commissioned_support_hours: "", delivered_support_hours: "", commissioned_one_to_one_hours: "", delivered_one_to_one_hours: "", commissioned_two_to_one_hours: "", delivered_two_to_one_hours: "", notes: "" };
 }
 function asForm(row: Shift): ShiftForm {
   return { home_id: row.home_id, shift_on: row.shift_on, shift_type: row.shift_type,
     required_staff: String(row.required_staff ?? ""), planned_staff: String(row.planned_staff ?? ""), present_staff: String(row.present_staff ?? ""), agency_staff: String(row.agency_staff ?? ""),
-    overtime_hours: String(row.overtime_hours ?? ""), commissioned_support_hours: String(row.commissioned_support_hours ?? ""), delivered_support_hours: String(row.delivered_support_hours ?? ""), notes: row.notes };
+    overtime_hours: String(row.overtime_hours ?? ""), commissioned_support_hours: String(row.commissioned_support_hours ?? ""), delivered_support_hours: String(row.delivered_support_hours ?? ""),
+    commissioned_one_to_one_hours: String(row.commissioned_one_to_one_hours ?? ""), delivered_one_to_one_hours: String(row.delivered_one_to_one_hours ?? ""),
+    commissioned_two_to_one_hours: String(row.commissioned_two_to_one_hours ?? ""), delivered_two_to_one_hours: String(row.delivered_two_to_one_hours ?? ""), notes: row.notes };
 }
 function coverage(row: Shift) {
   if (row.required_staff === null || row.present_staff === null) return "Pending";
@@ -86,7 +94,9 @@ export function HrCoverageWorkspace() {
     const count = (value: string) => value === "" ? null : Number(value);
     const values = { home_id: form.home_id, shift_on: form.shift_on, shift_type: form.shift_type,
       required_staff: count(form.required_staff), planned_staff: count(form.planned_staff), present_staff: count(form.present_staff), agency_staff: count(form.agency_staff),
-      overtime_hours: count(form.overtime_hours), commissioned_support_hours: count(form.commissioned_support_hours), delivered_support_hours: count(form.delivered_support_hours), notes: form.notes.trim() };
+      overtime_hours: count(form.overtime_hours), commissioned_support_hours: count(form.commissioned_support_hours), delivered_support_hours: count(form.delivered_support_hours),
+      commissioned_one_to_one_hours: count(form.commissioned_one_to_one_hours), delivered_one_to_one_hours: count(form.delivered_one_to_one_hours),
+      commissioned_two_to_one_hours: count(form.commissioned_two_to_one_hours), delivered_two_to_one_hours: count(form.delivered_two_to_one_hours), notes: form.notes.trim() };
     setBusy(true);
     const result = editing !== "new" && editing
       ? await supabase.from("hr_coverage_shifts").update({ ...values, version: editing.version + 1 }).eq("id", editing.id).eq("version", editing.version).select().maybeSingle()
@@ -105,6 +115,8 @@ export function HrCoverageWorkspace() {
     <Dialog open={Boolean(details)} onOpenChange={value => { if (!value) setDetails(null); }}><DialogContent><DialogHeader><DialogTitle>{details ? `${homeName(details.home_id)} · ${details.shift_type}` : "Shift details"}</DialogTitle><div className="text-sm text-slate-600">{hrDate(details?.shift_on ?? null)}</div></DialogHeader>{details && <><dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[
       ["Staff required", details.required_staff, "people"], ["Staff planned", details.planned_staff, "people"], ["Staff present", details.present_staff, "people"], ["Agency staff", details.agency_staff, "people"],
       ["Overtime", details.overtime_hours, "hours"], ["Support commissioned", details.commissioned_support_hours, "hours"], ["Support delivered", details.delivered_support_hours, "hours"],
+      ["1:1 commissioned", details.commissioned_one_to_one_hours, "hours"], ["1:1 delivered", details.delivered_one_to_one_hours, "hours"],
+      ["2:1 commissioned", details.commissioned_two_to_one_hours, "hours"], ["2:1 delivered", details.delivered_two_to_one_hours, "hours"],
     ].map(([label, value, unit]) => <div key={String(label)} className="border-b border-slate-200 pb-2"><dt className="text-xs font-semibold text-slate-500">{label}</dt><dd className="mt-1 text-sm font-medium text-[#102c39]">{value === null ? "—" : `${value} ${unit}`}</dd></div>)}</dl>{details.notes && <div><h3 className="text-sm font-semibold text-[#102c39]">Notes</h3><div className="mt-1 whitespace-pre-wrap text-sm">{details.notes}</div></div>}<div className="flex justify-end border-t border-slate-200 pt-4"><button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-4 text-teal-800" onClick={() => { const row = details; setDetails(null); open(row); }}><Pencil size={17} aria-hidden />Edit shift</button></div></>}</DialogContent></Dialog>
     <Dialog open={Boolean(editing)} onOpenChange={value => { if (!value && !busy) { setEditing(null); setError(""); } }}><DialogContent><DialogHeader><DialogTitle>{editing === "new" ? "Add shift" : "Edit shift"}</DialogTitle><div className="text-sm text-slate-600">Enter confirmed numbers; leave unknown amounts blank.</div></DialogHeader>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><MaintenanceSelectField name="coverage-form-home" label="Home" value={form.home_id || "__select__"} options={[{ value: "__select__", label: "Select home" }, ...homes.map(home => ({ value: home.id, label: home.name }))]} onChange={value => setForm(current => ({ ...current, home_id: value === "__select__" ? "" : value }))} error={errors.home_id} /><label className="text-sm font-medium">Date<input type="date" className={hrFieldClass} value={form.shift_on} onChange={event => setForm(current => ({ ...current, shift_on: event.target.value }))} />{errors.shift_on && <div className="mt-1 text-sm text-rose-800">{errors.shift_on}</div>}</label><MaintenanceSelectField name="coverage-form-shift" label="Shift" value={form.shift_type} options={shiftTypes} onChange={value => setForm(current => ({ ...current, shift_type: value }))} error={errors.shift_type} />

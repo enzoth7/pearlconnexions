@@ -9,13 +9,13 @@ export function KpiCard({ label, value, note, icon: Icon, tone = "blue", progres
 }) {
   const content = <>
     <div className="flex items-start justify-between gap-2">
-      <p className="text-[.81rem] leading-5 font-semibold text-slate-600">{label}</p>
+      <div className="text-[.81rem] leading-5 font-semibold text-slate-600">{label}</div>
       <Icon size={17} color={colours[tone]} className="shrink-0" aria-hidden="true" />
     </div>
-    <p className="mt-3 text-[2rem] leading-none font-semibold tracking-[-.045em] tabular-nums">{value}</p>
+    <strong className="mt-3 text-[2rem] leading-none font-semibold tracking-[-.045em] tabular-nums">{value}</strong>
     {typeof progress === "number" && <div className="metric-segments" aria-hidden="true"><i style={{ width: Math.min(100, Math.max(0, progress)) + "%", backgroundColor: colours[tone] }} /></div>}
-    <p className="mt-auto flex items-center justify-between gap-1 pt-3 text-xs leading-5 text-slate-600">{note}{href && <ArrowUpRight size={14} aria-hidden="true" />}</p>
+    <div className="mt-auto flex items-center justify-between gap-1 pt-3 text-xs leading-5 text-slate-600">{note}{href && <ArrowUpRight size={14} aria-hidden="true" />}</div>
   </>;
   const classes = "flex min-w-0 flex-col rounded-2xl border border-[#dce5e2] bg-white p-4 sm:p-5";
-  return href ? <Link href={href} aria-label={linkLabel} className={classes + " hover:border-teal-600"}>{content}</Link> : <div className={classes}>{content}</div>;
+  return href ? <Link href={href} aria-label={linkLabel} className={classes + " workspace-kpi-link hover:border-teal-600"}>{content}</Link> : <div className={classes}>{content}</div>;
 }

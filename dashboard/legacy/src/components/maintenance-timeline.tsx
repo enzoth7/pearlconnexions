@@ -2,6 +2,7 @@
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CaseRecord } from "@/lib/qa-capture";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 
 export function openedByMonth(records: CaseRecord[], today: string) {
   const [year, month] = today.slice(0, 7).split("-").map(Number);
@@ -17,6 +18,7 @@ export function openedByMonth(records: CaseRecord[], today: string) {
 }
 
 export function MaintenanceTimeline({ records, today }: { records: CaseRecord[]; today: string }) {
+  const reduceMotion = useReducedMotion();
   const data = openedByMonth(records, today);
   return <section className="rounded-2xl border border-slate-200 bg-white p-5">
     <h2 className="text-lg font-semibold text-[#102c39]">Issues opened by month</h2>
@@ -28,7 +30,7 @@ export function MaintenanceTimeline({ records, today }: { records: CaseRecord[];
           <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#526978", fontSize: 11 }} tickMargin={12} interval="preserveStartEnd" />
           <YAxis allowDecimals={false} domain={[0, "dataMax + 1"]} axisLine={false} tickLine={false} tick={{ fill: "#526978", fontSize: 11 }} />
           <Tooltip contentStyle={{ background: "white", border: "1px solid #dce7e8", borderRadius: 12 }} formatter={value => [value, "Opened"]} />
-          <Line type="monotone" dataKey="opened" stroke="#008c83" strokeWidth={3} dot={{ r: 4, fill: "#fff", strokeWidth: 2 }} activeDot={{ r: 6 }} />
+          <Line type="monotone" dataKey="opened" stroke="#008c83" strokeWidth={3} dot={{ r: 4, fill: "#fff", strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={!reduceMotion} animationDuration={720} animationEasing="ease-out" />
         </LineChart>
       </ResponsiveContainer>
     </div>

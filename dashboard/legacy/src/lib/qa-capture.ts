@@ -23,7 +23,7 @@ export const caseDataSchema = z.object({
   safeguarding: z.enum(["yes", "no", "pending"]).default("pending"), physical_intervention: z.boolean().default(false), intervention_note: blank,
   notification: z.enum(["pending", "done", "na"]).default("pending"), notified_local: blank, notified_offset: blank, notified_at: z.union([z.iso.datetime({ offset: true }), z.literal("")]).default(""), notified_to: blank, notification_reason: blank,
   external_notifications: z.array(z.object({ recipient: text, notified_on: date, notes: text })).max(30).default([]), linked_risk_ids: z.array(z.guid()).max(50).default([]),
-  provider: blank, started_on: date.default(""), closed_on: date.default(""), resolution: blank,
+  provider: blank, started_on: date.default(""), closed_on: date.default(""), resolution: blank, critical_action: blank,
 });
 export type CaseData = z.infer<typeof caseDataSchema>;
 export const caseSchema = z.object({ id: z.guid(), version: z.number().int().nonnegative(), kind: z.enum(["risks", "incidents", "maintenance"]), home_id: z.guid(), occurred_on: date,
@@ -92,6 +92,7 @@ export function caseErrors(record: CaseRecord): Record<string, string> {
   }
   if (record.kind === "maintenance") {
     need("location", d.location);
+    if (d.priority === "Urgent") need("critical_action", d.critical_action, "Record the immediate action taken to keep people safe.");
     if (["In progress", "Awaiting external"].includes(record.status)) { need("owner", d.owner); need("started_on", d.started_on); need("due_on", d.due_on); }
     if (d.started_on && d.started_on < record.occurred_on) errors.started_on = "Start cannot precede the report.";
   }

@@ -6,13 +6,15 @@ import { matchRoute } from "./routes";
 
 afterEach(cleanup);
 
-it("shows Overview, Issues and Historical in Maintenance navigation and opens overview", async () => {
+it("shows Overview, Issues, Checks and Historical in Maintenance navigation and opens overview", async () => {
   window.scrollTo = vi.fn();
   history.replaceState(null, "", "/maintenance");
   render(<WorkspaceNavigation name="Manager" qaRole="house_lead" workbookRole={null} finance={false} hr={false} isAdmin={false} maintenance sections={["maintenance.issues"]}>Content</WorkspaceNavigation>);
   const navigation = screen.getByRole("navigation", { name: "Maintenance sections" });
   const overview = within(navigation).getByRole("link", { name: "Overview" });
   expect(within(navigation).getByRole("link", { name: "Issues" })).toBeTruthy();
+  expect(within(navigation).getByRole("link", { name: "Checks" }).getAttribute("href")).toBe("/maintenance/checks");
+  expect(matchRoute("/maintenance/checks")?.route.section).toBe("maintenance.issues");
   expect(within(navigation).getByRole("link", { name: "Historical" }).getAttribute("href")).toBe("/maintenance/historical");
   expect(matchRoute("/maintenance/historical")?.route.section).toBe("maintenance.issues");
   expect(overview.getAttribute("href")).toBe("/maintenance/overview");

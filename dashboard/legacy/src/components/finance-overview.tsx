@@ -34,7 +34,7 @@ function FinanceKpi({ label, value, icon: Icon, tone, share, href }: {
     </div>
   </>;
   const className = "flex min-h-44 min-w-0 flex-col rounded-2xl border border-[#dce5e2] bg-white p-5 sm:p-6";
-  return href ? <Link href={href} className={className + " hover:border-teal-600"}>{content}</Link> : <div className={className}>{content}</div>;
+  return href ? <Link href={href} className={className + " workspace-kpi-link hover:border-teal-600"}>{content}</Link> : <div className={className}>{content}</div>;
 }
 
 export function FinanceOverview() {
@@ -93,8 +93,8 @@ export function FinanceOverview() {
     <section aria-label="Finance indicators">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <FinanceKpi label="Invoiced" value={loading ? "…" : moneyOrDash(view.invoiced, view.yearInvoices.length > 0)} icon={CirclePoundSterling} tone="green" share={view.yearInvoices.length ? 100 : null} href="/finance/invoices" />
-        <FinanceKpi label="Recorded expenditure" value={loading ? "…" : moneyOrDash(view.expenditure, view.yearExpenses.length > 0 || view.yearPayroll.length > 0)} icon={Banknote} tone="blue" share={view.invoiced > 0 && (view.yearExpenses.length > 0 || view.yearPayroll.length > 0) ? view.expenditure / view.invoiced * 100 : null} href="/finance/expenses" />
-        <FinanceKpi label="Invoiced less costs" value={loading ? "…" : view.hasPendingPayroll ? "Pending" : moneyOrDash(view.invoiced - view.expenditure, view.yearInvoices.length > 0 && (view.yearExpenses.length > 0 || view.yearPayroll.length > 0))} icon={Landmark} tone="violet" share={view.hasPendingPayroll ? null : view.invoiced > 0 && (view.yearExpenses.length > 0 || view.yearPayroll.length > 0) ? (view.invoiced - view.expenditure) / view.invoiced * 100 : null} />
+        <FinanceKpi label="Recorded expenditure" value={loading ? "…" : moneyOrDash(view.expenditure, view.yearExpenses.length > 0 || view.yearPayroll.length > 0)} icon={Banknote} tone="blue" share={view.invoiced > 0 && (view.yearExpenses.length > 0 || view.yearPayroll.length > 0) ? view.expenditure / view.invoiced * 100 : null} href="#spend-categories" />
+        <FinanceKpi label="Invoiced less costs" value={loading ? "…" : view.hasPendingPayroll ? "Pending" : moneyOrDash(view.invoiced - view.expenditure, view.yearInvoices.length > 0 && (view.yearExpenses.length > 0 || view.yearPayroll.length > 0))} icon={Landmark} tone="violet" share={view.hasPendingPayroll ? null : view.invoiced > 0 && (view.yearExpenses.length > 0 || view.yearPayroll.length > 0) ? (view.invoiced - view.expenditure) / view.invoiced * 100 : null} href="#monthly-position" />
         <FinanceKpi label="Outstanding invoices" value={loading ? "…" : moneyOrDash(view.outstanding, view.yearInvoices.length > 0)} icon={PiggyBank} tone="amber" share={view.invoiced > 0 ? view.outstanding / view.invoiced * 100 : null} href="/finance/invoices" />
       </div>
     </section>

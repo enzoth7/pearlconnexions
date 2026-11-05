@@ -16,9 +16,11 @@ function dateLabel(value: string) {
   return `${day}/${month}/${year}`;
 }
 function severityTone(value: string) {
-  if (["Critical", "High"].includes(value)) return "bg-rose-100 text-rose-900";
-  if (value === "Moderate") return "bg-amber-100 text-amber-900";
-  return "bg-sky-100 text-sky-900";
+  if (["Critical", "Extremely high"].includes(value)) return "bg-red-200 text-red-950";
+  if (value === "High") return "bg-red-100 text-red-900";
+  if (value === "Moderate") return "bg-yellow-100 text-yellow-900";
+  if (value === "Low") return "bg-emerald-100 text-emerald-900";
+  return "bg-slate-100 text-slate-700";
 }
 
 export function QaRecurrences({ homes, records, people }: { homes: Home[]; records: CaseRecord[]; people: Person[] }) {
