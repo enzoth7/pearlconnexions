@@ -32,4 +32,14 @@ describe("browser navigation", () => {
     expect(preloadPaths(context)).not.toContain("/team");
     expect(canLoadRoute(context, matchRoute("/workbook/actions")!.route)).toBe(false);
   });
+  it("guards each finance, HR, maintenance and workbook tab separately", () => {
+    const context = { role: "pending", workbookRole: "manager", finance: true, hr: true,
+      maintenance: true, sections: ["finance.payroll", "hr.coverage", "maintenance.checks", "workbook.calendar"] } as AccessContext;
+    for (const path of ["/finance/payroll", "/hr/coverage", "/maintenance/checks", "/workbook/calendar"]) {
+      expect(canLoadRoute(context, matchRoute(path)!.route)).toBe(true);
+    }
+    for (const path of ["/finance", "/finance/expenses", "/hr", "/hr/employees", "/maintenance", "/maintenance/overview", "/workbook", "/workbook/actions"]) {
+      expect(canLoadRoute(context, matchRoute(path)!.route)).toBe(false);
+    }
+  });
 });

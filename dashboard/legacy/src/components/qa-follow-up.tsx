@@ -17,7 +17,7 @@ function dateLabel(value: string) {
   return year && month && day ? `${day}/${month}/${year.slice(2)}` : value;
 }
 
-export function QaFollowUp({ homes, records }: { homes: Home[]; records: CaseRecord[] }) {
+export function QaFollowUp({ homes, records, canOpenIncidents = true, canOpenRisks = true }: { homes: Home[]; records: CaseRecord[]; canOpenIncidents?: boolean; canOpenRisks?: boolean }) {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const today = londonToday();
   const rows: FollowUpRow[] = records.filter(record => !record.is_draft).flatMap(record => record.actions.map(action => ({ id: action.id, action, record, home: homes.find(home => home.id === record.home_id)?.name ?? "—" })));
@@ -71,7 +71,7 @@ export function QaFollowUp({ homes, records }: { homes: Home[]; records: CaseRec
             <td className="break-words px-2 py-3">{row.action.owner || "—"}</td>
             <td className={`px-2 py-3 tabular-nums ${overdue ? "font-semibold text-red-700" : ""}`}>{dateLabel(row.action.due_on)}</td>
             <td className="px-2 py-3"><strong className={`inline-block rounded-full px-2.5 py-1 font-semibold ${row.action.status === "Completed" ? "bg-emerald-100 text-emerald-900" : overdue ? "bg-red-100 text-red-900" : "bg-amber-100 text-amber-900"}`}>{overdue ? "Overdue" : row.action.status}</strong></td>
-            <td className="px-1 py-3"><Link href={`/qa/${row.record.kind}?record=${encodeURIComponent(row.record.id)}`} aria-label={`Open ${row.record.reference ?? row.record.title}`} title="Open record" className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-300 text-teal-800 focus-visible:outline-2 focus-visible:outline-teal-700"><Plus size={18} aria-hidden /></Link></td>
+            <td className="px-1 py-3">{(row.record.kind === "incidents" ? canOpenIncidents : canOpenRisks) && <Link href={`/qa/${row.record.kind}?record=${encodeURIComponent(row.record.id)}`} aria-label={`Open ${row.record.reference ?? row.record.title}`} title="Open record" className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-300 text-teal-800 focus-visible:outline-2 focus-visible:outline-teal-700"><Plus size={18} aria-hidden /></Link>}</td>
           </tr>;
         })}</tbody>
       </table>

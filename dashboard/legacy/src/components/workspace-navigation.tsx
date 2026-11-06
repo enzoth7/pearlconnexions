@@ -51,7 +51,7 @@ function availableAreas(qa: AccessContext["role"], workbook: AccessContext["work
   const context = { role: qa, workbookRole: workbook, finance, hr, isAdmin, canManageEmployees, qaEnabled, maintenance, sections };
   return areas.map(area => ({ ...area, sections: area.sections.filter(section => {
     const definition = workspaceSectionGroups.flatMap(group => [...group.sections]).find(item => item.href === section.href);
-    return section.href === "/qa/recurrences" ? canOpenSection(context, "qa.incidents") : section.href === "/qa/follow-up" ? (canOpenSection(context, "qa.incidents") || canOpenSection(context, "qa.risks")) : section.href.startsWith("/maintenance") ? canOpenSection(context, "maintenance.issues") : section.href.startsWith("/hr/") ? canOpenSection(context, "hr.overview") : section.href.startsWith("/finance/") ? canOpenSection(context, "finance.overview") : !definition || canOpenSection(context, definition.id);
+    return Boolean(definition && canOpenSection(context, definition.id));
   }) })).filter(area => area.sections.length);
 }
 

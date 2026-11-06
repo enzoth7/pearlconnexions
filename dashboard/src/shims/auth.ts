@@ -153,7 +153,11 @@ export async function requireSettingsAccess() {
 }
 
 export async function requireWorkspaceArea(area: "finance" | "hr") {
-  return (await requireSection(area === "finance" ? "finance.overview" : "hr.overview")).context;
+  const context = await getAccessContext();
+  if (!context) redirect("/login");
+  const group = workspaceSectionGroups.find(group => group.id === area);
+  if (!group?.sections.some(section => canOpenSection(context, section.id))) redirect(firstWorkspacePath(context));
+  return context;
 }
 
 export async function requireHouseLead() {

@@ -108,7 +108,9 @@ describe("panel access editor", () => {
     expect(screen.getByRole("checkbox", { name: "Quality & Governance: Incidents" })).not.toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "Save section access" }));
     await screen.findByRole("status");
-    expect(vi.mocked(savePermissionChange).mock.calls[0][1].getAll("sections")).toEqual(["qa.monthly_reports"]);
+    const sections = vi.mocked(savePermissionChange).mock.calls[0][1].getAll("sections");
+    expect(sections.filter(section => String(section).startsWith("qa."))).toEqual(["qa.monthly_reports"]);
+    expect(sections).toContain("workbook.overview");
   });
   it("toggles every QA section, including Reviews", () => {
     render(<WorkspacePermissionsForm user={{ ...user, sections: [] }} />);

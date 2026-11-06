@@ -3,10 +3,11 @@ import { cached } from "../../../src/shims/cache";
 import { requireGovernance } from "@/lib/auth";
 import { caseDataSchema, caseErrors, caseSchema, londonInstant, personSchema, type CaseKind, type CaseRecord, type Person } from "./qa-capture";
 import type { Home } from "./types";
+import type { WorkspaceSection } from "./workspace-sections";
 
-export function loadCases(kind: CaseKind) {
-  return cached(`qa:cases:${kind}`, async () => {
-    const { context } = await requireGovernance(kind === "maintenance" ? "maintenance" : "qa", kind === "maintenance" ? "maintenance.issues" : `qa.${kind}`);
+export function loadCases(kind: CaseKind, section?: WorkspaceSection) {
+  return cached(`qa:cases:${kind}:${section ?? "register"}`, async () => {
+    const { context } = await requireGovernance(kind === "maintenance" ? "maintenance" : "qa", section ?? (kind === "maintenance" ? "maintenance.issues" : `qa.${kind}` as WorkspaceSection));
     const [homes, records, people, risks] = await Promise.all([
       supabase.from("qa_homes").select("*").eq("active", true).order("name"),
       supabase.from("qa_records").select("*,actions:qa_record_actions(*),reviews:qa_risk_reviews(*),history:qa_record_history(*)").eq("kind", kind).order("created_at", { ascending: false }),
