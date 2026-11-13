@@ -16,6 +16,8 @@ Allowed font weights:
 
 Do not introduce additional font families. Keep `Arial, sans-serif` only as a technical fallback.
 
+Exception: `Caveat` 700 is used only for the footer phrase “Where every connexion counts”.
+
 ## Colour palette
 
 Use exactly the three colours in `assets/brandbook-pearl-connexions-website.md`:
@@ -38,9 +40,10 @@ When a softer background, border, shadow or interaction state is required, deriv
 
 ## Colour responsibilities
 
-- White is the default page, card, navigation and footer background. Full-width sections must be white or dark blue.
+- White is the default page, card and navigation background. The footer and the utility bar are dark blue.
 - Dark blue is the default text colour and the main colour for dark sections.
-- Light blue is reserved for links, active navigation and branded highlights; do not use a pale tint for full-width sections.
+- Light blue is reserved for links, active navigation and branded highlights.
+- The pale tint `--pale-blue` (light blue at 10%, `#E6F6F9` on white) may be used for one or two bands per page and for rounded cards, as in the Figma file (PC-WEBSITE). The project-level rules in `../AGENTS.md` (60/30/10 balance, photo treatment, icons, hand-drawn accents) also apply.
 
 ## Accessibility
 

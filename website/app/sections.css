@@ -1,0 +1,547 @@
+/*
+ * Page sections built from the PC-WEBSITE Figma file.
+ * Shared by Home, About, Who we are, Referrals, Contact and the service pages.
+ */
+
+/* ---------- Primitives ---------- */
+.pc-icon {
+  display: block;
+  flex: none;
+}
+.pc-photo {
+  filter: saturate(0.85) contrast(0.93) brightness(1.04) sepia(0.08);
+}
+.pc-tint {
+  background: var(--pale-blue);
+}
+.pc-section {
+  padding-block: 96px 104px;
+}
+.pc-h2 {
+  font-size: clamp(2.25rem, 3.7vw, 2.96rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+.pc-h2-display {
+  font-size: clamp(2.25rem, 3.6vw, 2.875rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.pc-intro {
+  max-width: 540px;
+  margin: 20px 0 0;
+  color: rgb(16 21 102 / 0.85);
+  font-size: 18px;
+  line-height: 1.55;
+}
+.pc-arrow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dark-blue);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.pc-arrow-link .pc-icon {
+  transition: transform 200ms ease;
+}
+.pc-arrow-link:hover span {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.pc-arrow-link:hover .pc-icon {
+  transform: translateX(4px);
+}
+.pc-button-light {
+  background: var(--white);
+  color: var(--dark-blue);
+}
+.pc-button-light:hover {
+  background: var(--light-blue);
+  color: var(--dark-blue);
+}
+.pc-button-large {
+  padding: 16px 30px;
+  font-size: 16px;
+}
+
+/* Hand-drawn accents */
+.pc-underline,
+.pc-circled {
+  position: relative;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+.pc-underline svg {
+  position: absolute;
+  left: -2px;
+  bottom: -0.22em;
+  width: calc(100% + 4px);
+  height: 0.3em;
+  min-height: 10px;
+  max-height: 14px;
+  overflow: visible;
+  pointer-events: none;
+}
+.pc-circled svg {
+  position: absolute;
+  left: -0.28em;
+  top: -0.08em;
+  width: calc(100% + 0.56em);
+  height: calc(100% + 0.12em);
+  overflow: visible;
+  pointer-events: none;
+}
+.pc-underline path,
+.pc-circled path {
+  fill: none;
+  stroke: var(--light-blue);
+  stroke-linecap: round;
+}
+.pc-underline path { stroke-width: 5; }
+.pc-circled path { stroke-width: 4; }
+[data-accent='pending'] path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+[data-accent='visible'] path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 900ms cubic-bezier(0.77, 0, 0.175, 1) 140ms;
+}
+
+/* ---------- Photo hero with boxed headline (St Christopher’s pattern) ---------- */
+.pc-photo-hero {
+  position: relative;
+  min-height: 620px;
+  overflow: hidden;
+  background: var(--dark-blue);
+}
+.pc-manifesto {
+  min-height: 540px;
+}
+.pc-photo-hero-bg {
+  object-fit: cover;
+}
+.pc-photo-hero-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-block: 135px 64px;
+}
+.pc-manifesto .pc-photo-hero-content {
+  padding-top: 120px;
+}
+.pc-boxed-headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: clamp(2.125rem, 4.1vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.pc-boxed-headline span {
+  padding: 6px 18px 8px;
+  background: var(--white);
+}
+.pc-text-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 540px;
+  margin-top: 20px;
+  padding: 16px 20px 18px;
+  background: var(--white);
+}
+.pc-text-box p {
+  margin: 0;
+  color: rgb(16 21 102 / 0.9);
+  font-size: 18px;
+  line-height: 1.5;
+}
+.pc-photo-hero .pc-button {
+  margin-top: 32px;
+}
+
+/* ---------- Key facts band ---------- */
+.pc-facts-band {
+  padding-block: 52px 60px;
+  border-radius: 0 0 64px 64px;
+  background: var(--dark-blue);
+  color: var(--white);
+}
+.pc-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+}
+.pc-fact {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.pc-fact p {
+  margin: 0;
+}
+.pc-fact-value {
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.pc-fact-label {
+  max-width: 250px;
+  margin-top: 4px !important;
+  color: rgb(255 255 255 / 0.85);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* ---------- Service cards ---------- */
+.pc-service-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 56px;
+}
+.pc-service-card {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 560px;
+  padding: 32px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--dark-blue);
+  isolation: isolate;
+}
+.pc-service-card img {
+  z-index: -2;
+  object-fit: cover;
+  transition: transform 400ms ease;
+}
+.pc-service-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0) 60%, rgb(0 0 0 / 0.65));
+}
+.pc-service-card:hover img {
+  transform: scale(1.03);
+}
+.pc-service-card:focus-visible {
+  outline-offset: 4px;
+}
+.pc-service-card-title {
+  max-width: 310px;
+  color: var(--white);
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 29.44px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+/* ---------- Split: photo + text ---------- */
+.pc-split {
+  padding-block: 104px;
+}
+.pc-split.pc-white {
+  padding-block: 112px;
+}
+.pc-split-inner {
+  display: flex;
+  align-items: center;
+  gap: 72px;
+}
+.pc-split-inner.reverse {
+  justify-content: space-between;
+  gap: 32px;
+}
+.pc-split-text {
+  flex: 1;
+  min-width: 0;
+}
+.pc-split-text > .pc-arrow-link {
+  margin-top: 36px;
+}
+.pc-offset-photo {
+  position: relative;
+  flex: 0 0 var(--photo-w, 524px);
+}
+.pc-split-inner.reverse .pc-offset-photo {
+  flex-basis: var(--photo-w, 484px);
+}
+.pc-offset-photo.outline-left {
+  padding: 0 0 24px 24px;
+}
+.pc-offset-photo.outline-right {
+  padding: 0 24px 24px 0;
+}
+.pc-offset-photo::before {
+  content: '';
+  position: absolute;
+  border: 3px solid var(--light-blue);
+  border-radius: 28px;
+}
+.pc-offset-photo.outline-left::before {
+  inset: 24px 24px 0 0;
+}
+.pc-offset-photo.outline-right::before {
+  inset: 24px 0 0 24px;
+}
+.pc-offset-photo img {
+  position: relative;
+  width: 100%;
+  height: var(--photo-h, 560px);
+  border-radius: 28px;
+  object-fit: cover;
+}
+
+/* Numbered steps */
+.pc-numbered {
+  display: grid;
+  gap: 26px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-numbered li {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.pc-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--light-blue);
+  color: var(--dark-blue);
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+}
+.pc-numbered h3,
+.pc-icon-list h3 {
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.pc-numbered p,
+.pc-icon-list p {
+  max-width: 500px;
+  margin: 6px 0 0;
+  color: rgb(16 21 102 / 0.8);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Icon list */
+.pc-icon-list {
+  display: grid;
+  gap: 28px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-icon-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.pc-icon-list li > .pc-icon {
+  margin-top: 2px;
+}
+
+/* Pills with arrows */
+.pc-pill-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-pill-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pc-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--pale-blue);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+/* Three columns with icons */
+.pc-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 40px;
+}
+.pc-col-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.pc-col-item > .pc-icon {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+.pc-col-item h3 {
+  font-size: 24px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+.pc-col-item p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+/* ---------- CQC registration ---------- */
+.pc-cqc {
+  padding-bottom: 104px;
+}
+.pc-cqc-card {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 40px;
+  border-radius: 24px;
+  background: var(--pale-blue);
+}
+.pc-cqc-logo {
+  flex: none;
+  width: 280px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--white);
+}
+.pc-cqc-logo img {
+  width: 240px;
+  height: auto;
+}
+.pc-cqc-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+.pc-cqc-copy h2 {
+  font-size: 30px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+.pc-cqc-copy p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .pc-offset-photo,
+  .pc-split-inner.reverse .pc-offset-photo {
+    flex-basis: 42%;
+  }
+}
+
+@media (max-width: 900px) {
+  .shell {
+    width: calc(100% - 40px);
+  }
+  .pc-section {
+    padding-block: 64px;
+  }
+  .pc-split,
+  .pc-split.pc-white {
+    padding-block: 64px;
+  }
+  .pc-photo-hero,
+  .pc-manifesto {
+    min-height: 620px;
+  }
+  .pc-photo-hero-content,
+  .pc-manifesto .pc-photo-hero-content {
+    padding-block: 72px 48px;
+  }
+  .pc-text-box p {
+    font-size: 16px;
+  }
+  .pc-facts-band {
+    padding-block: 40px 48px;
+    border-radius: 0 0 40px 40px;
+  }
+  .pc-facts-grid,
+  .pc-service-cards,
+  .pc-three-col {
+    grid-template-columns: 1fr;
+  }
+  .pc-facts-grid {
+    gap: 24px;
+  }
+  .pc-service-cards {
+    margin-top: 32px;
+    gap: 20px;
+  }
+  .pc-service-card {
+    height: 420px;
+    padding: 24px;
+  }
+  .pc-three-col {
+    gap: 40px;
+  }
+  .pc-split-inner,
+  .pc-split-inner.reverse {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 40px;
+  }
+  .pc-offset-photo,
+  .pc-split-inner.reverse .pc-offset-photo {
+    flex-basis: auto;
+    width: 100%;
+  }
+  .pc-offset-photo img {
+    height: auto;
+    aspect-ratio: 500 / 520;
+    border-radius: 20px;
+  }
+  .pc-offset-photo::before {
+    border-radius: 20px;
+  }
+  .pc-cqc {
+    padding-bottom: 64px;
+  }
+  .pc-cqc-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+    padding: 24px;
+  }
+  .pc-cqc-logo {
+    width: 100%;
+  }
+  .pc-cqc-copy h2 {
+    font-size: 26px;
+  }
+}

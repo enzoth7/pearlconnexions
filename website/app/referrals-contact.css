@@ -1,0 +1,335 @@
+/* Referrals and Contact pages, from the PC-WEBSITE Figma file. */
+
+/* ---------- Referrals hero ---------- */
+.pc-referral-hero {
+  position: relative;
+  padding-block: 72px 112px;
+  background: var(--pale-blue);
+  overflow: hidden;
+}
+.pc-referral-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 408px;
+  align-items: end;
+  gap: 56px;
+}
+.pc-referral-title {
+  padding-top: 10px;
+  font-size: clamp(2.75rem, 5.6vw, 4.48rem);
+}
+.pc-speak-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 36px;
+  border-radius: 24px;
+  background: var(--white);
+}
+.pc-speak-card h2 {
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+.pc-speak-card p {
+  margin: 18px 0 28px;
+  color: var(--navy-75);
+  font-size: 15px;
+  line-height: 1.65;
+}
+.pc-speak-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-block: 8px;
+  font-size: 14px;
+  line-height: 23.1px;
+}
+.pc-speak-card a:hover {
+  color: var(--light-blue);
+}
+
+/* ---------- Referral journey ---------- */
+.pc-journey {
+  padding-block: 96px;
+}
+.pc-journey-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 80px;
+}
+.pc-journey-intro {
+  display: flex;
+  flex: 0 0 440px;
+  flex-direction: column;
+  gap: 28px;
+}
+.pc-journey-intro h2 {
+  font-size: clamp(2.25rem, 3.8vw, 3rem);
+  font-weight: 700;
+  line-height: 1.12;
+}
+.pc-journey-intro p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.5;
+}
+.pc-journey-photo {
+  --photo-h: 360px;
+  flex: none;
+  padding: 0 20px 20px 0;
+}
+.pc-journey-photo.outline-right::before {
+  inset: 20px 0 0 20px;
+}
+.pc-journey-steps {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-journey-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding-block: 24px;
+  border-top: 1px solid rgb(16 21 102 / 0.25);
+}
+.pc-journey-number {
+  flex: 0 0 44px;
+  color: var(--light-blue);
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.12;
+}
+.pc-journey-steps h3 {
+  font-size: 25px;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+.pc-journey-steps p {
+  margin: 8px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+/* ---------- What to send first (dark band) ---------- */
+.pc-send-first {
+  padding-block: 100px;
+  background: var(--dark-blue);
+  color: var(--white);
+}
+.pc-send-first p {
+  max-width: 534px;
+  margin: 24px 0 0;
+  font-size: 16.8px;
+  line-height: 1.8;
+}
+.pc-tick-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-tick-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-block: 18px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.25);
+  font-size: 16px;
+  line-height: 26.4px;
+}
+.pc-tick-list li:first-child {
+  padding-top: 0;
+}
+.pc-tick-list .pc-icon {
+  margin-top: 7px;
+}
+
+/* ---------- Contact ---------- */
+.pc-contact-hero {
+  padding-bottom: 96px;
+}
+.pc-contact-photo {
+  --photo-w: 444px;
+  --photo-h: 420px;
+}
+.pc-contact-hero h1 {
+  font-size: clamp(2.75rem, 5.3vw, 4.25rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+.pc-contact-intro {
+  max-width: 660px;
+  margin-top: 28px;
+  color: var(--navy-75);
+  line-height: 1.63;
+}
+.pc-contact-details {
+  padding-block: 72px 104px;
+}
+.pc-contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 587px) minmax(0, 481px);
+  justify-content: space-between;
+  align-items: start;
+  gap: 100px;
+}
+.pc-contact-heading {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: normal;
+  letter-spacing: -0.01em;
+}
+.pc-contact-list {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid rgb(16 21 102 / 0.15);
+}
+.pc-contact-list a,
+.pc-contact-office {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-block: 22px;
+}
+.pc-contact-list a:hover .pc-contact-value {
+  color: var(--light-blue);
+}
+.pc-contact-label {
+  display: block;
+  color: var(--navy-75);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 21.45px;
+}
+.pc-contact-value {
+  display: block;
+  margin-top: 4px;
+  font-size: 17.6px;
+  line-height: 29px;
+}
+.pc-contact-list .contact-copy-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pc-contact-list .contact-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--dark-blue);
+}
+.pc-contact-list .contact-copy-button:hover {
+  background: var(--pale-blue);
+}
+.pc-contact-list .contact-copy-status {
+  color: var(--navy-75);
+  font-size: 13px;
+}
+.pc-enquiry-card {
+  padding: 40px;
+  border-radius: 24px;
+  background: var(--dark-blue);
+  color: var(--white);
+}
+.pc-enquiry-card h2 {
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+.pc-enquiry-card p {
+  margin: 24px 0 0;
+  color: rgb(255 255 255 / 0.88);
+  font-size: 15px;
+  line-height: 1.85;
+}
+.pc-enquiry-card a {
+  display: inline-block;
+  margin-top: 28px;
+  padding-block: 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.6);
+  font-size: 14px;
+  font-weight: 600;
+}
+.pc-enquiry-card a:hover {
+  border-color: var(--white);
+}
+.pc-enquiry-card a:focus-visible {
+  outline-color: var(--white);
+}
+
+@media (max-width: 1100px) {
+  .pc-referral-hero-grid,
+  .pc-contact-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .pc-journey-grid {
+    flex-direction: column;
+    gap: 40px;
+  }
+  .pc-journey-intro {
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .pc-referral-hero {
+    padding-block: 40px 64px;
+  }
+  .pc-speak-card {
+    padding: 28px 24px;
+  }
+  .pc-journey,
+  .pc-send-first {
+    padding-block: 64px;
+  }
+  .pc-journey-photo {
+    --photo-h: auto;
+  }
+  .pc-journey-photo img {
+    aspect-ratio: 420 / 360;
+  }
+  .pc-journey-steps h3 {
+    font-size: 22px;
+  }
+  .pc-journey-steps p {
+    font-size: 16px;
+  }
+  .pc-journey-number {
+    flex-basis: 36px;
+    font-size: 24px;
+  }
+  .pc-send-first .pc-two-col {
+    gap: 32px;
+  }
+  .pc-contact-photo img {
+    aspect-ratio: 1;
+  }
+  .pc-contact-details {
+    padding-block: 48px 64px;
+  }
+  .pc-contact-heading {
+    font-size: 30px;
+  }
+  .pc-contact-value {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+  .pc-enquiry-card {
+    padding: 28px 24px;
+  }
+}

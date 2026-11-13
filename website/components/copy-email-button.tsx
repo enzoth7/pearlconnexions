@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 type CopyStatus = 'idle' | 'copied' | 'error';
 
@@ -39,7 +39,11 @@ export function CopyEmailButton({ email }: { email: string }) {
         aria-label={label}
         title={label}
       >
-        {status === 'copied' ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+        {status === 'copied' ? (
+          <Check aria-hidden="true" />
+        ) : (
+          <img src="/icons/copy.svg" alt="" width={19} height={22} aria-hidden="true" />
+        )}
       </button>
       <span className="contact-copy-status" role="status">
         {status === 'idle' ? '' : label}

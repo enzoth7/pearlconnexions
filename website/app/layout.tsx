@@ -4,6 +4,14 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import ScrollEffects from '@/components/ScrollEffects';
 import './globals.css';
+import './chrome.css';
+import './sections.css';
+import './pages.css';
+import './blocks.css';
+import './referrals-contact.css';
+import './services.css';
+import './homes.css';
+import './legal.css';
 
 export const metadata: Metadata = {
   title: { default: 'Pearl Connexions', template: '%s | Pearl Connexions' },

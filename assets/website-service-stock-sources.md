@@ -4,8 +4,10 @@ Las imágenes ilustran conceptos generales; **no muestran hogares, residentes ni
 
 | Servicio | Foto | Autor |
 | --- | --- | --- |
-| Supported Living | Imagen proporcionada por Enzo el 3 de noviembre de 2026 | Fuente no indicada |
-| Supported Accommodation | [Interior de una sala de estar](https://www.pexels.com/photo/living-room-interior-with-furniture-near-window-in-house-5825564/) | Charlotte May |
-| Children’s Home | [Casa con jardín](https://www.pexels.com/photo/a-house-with-a-flower-garden-in-front-of-it-27200896/) | cami |
+| Supported Living | [Dos jóvenes en el sillón de casa, una en silla de ruedas](https://www.pexels.com/photo/woman-in-wheelchair-playing-video-game-beside-a-young-man-sitting-on-couch-7172099/) | Pexels 7172099 |
+| Supported Accommodation | [Joven desempacando cajas en su cuarto nuevo](https://www.pexels.com/photo/man-in-gray-hoodie-sitting-at-the-table-4554371/) | Pexels 4554371 |
+| Children’s Home | [Casa de ladrillo con seto y jardín](https://www.pexels.com/photo/vintage-house-in-village-20000557/) | Pexels 20000557 |
 
-Pexels indica que sus fotos pueden usarse gratuitamente para fines personales y comerciales, sin atribución obligatoria: [licencia de Pexels](https://help.pexels.com/hc/en-us/articles/360042295174-What-is-the-license-of-the-photos-and-videos-on-Pexels). Archivos web: `website/public/services/`.
+Reemplazadas el 12 de noviembre de 2026 por versiones de 1200 px de ancho, porque las anteriores (640 px) se veían pixeladas en las tarjetas de Inicio.
+
+Pexels indica que sus fotos pueden usarse gratuitamente para fines personales y comerciales, sin atribución obligatoria: [licencia de Pexels](https://help.pexels.com/hc/en-us/articles/360042295174-What-is-the-license-of-the-photos-and-videos-on-Pexels). Archivos web: `website/public/images/home/card-*.webp`.

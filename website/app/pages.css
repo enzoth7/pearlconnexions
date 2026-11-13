@@ -1,0 +1,511 @@
+/*
+ * Page-level layouts: About, Who we are, Referrals, Contact.
+ * Built from the PC-WEBSITE Figma file.
+ */
+.pc-h1 {
+  font-size: clamp(3rem, 6.2vw, 4.96rem);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+.pc-h2-large {
+  font-size: clamp(2.25rem, 4.2vw, 3.375rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.pc-lede {
+  max-width: 720px;
+  margin: 28px 0 0;
+  color: var(--navy-75);
+  font-size: 19.2px;
+  line-height: 1.7;
+}
+.pc-muted-copy p {
+  margin: 0;
+  color: var(--navy-75);
+  font-size: 16.8px;
+  line-height: 1.85;
+}
+.pc-muted-copy p + p {
+  margin-top: 24px;
+}
+
+/* Page hero with circular photo */
+.pc-page-hero {
+  padding-block: 88px 100px;
+}
+.pc-page-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 630px) 466px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 72px;
+}
+.pc-circle-photo {
+  width: 466px;
+  aspect-ratio: 1;
+  padding: 12px;
+  border-radius: 50%;
+  background: var(--light-blue);
+}
+.pc-circle-photo img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Two-column statement */
+.pc-two-col-statement {
+  padding-block: 120px;
+}
+.pc-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+}
+
+/* Team */
+.pc-team {
+  padding-block: 120px;
+}
+.pc-team-intro {
+  max-width: 660px;
+  margin: 24px 0 0;
+  color: var(--navy-75);
+  font-size: 16.8px;
+  line-height: 1.8;
+}
+.pc-team-grid {
+  display: flex;
+  align-items: center;
+  gap: 72px;
+  margin-top: 56px;
+}
+.pc-team-photo {
+  flex: 0 0 584px;
+  margin: 0;
+}
+.pc-team-photo .pc-offset-photo img {
+  height: 440px;
+}
+.pc-team-photo figcaption {
+  display: grid;
+  gap: 2px;
+  padding: 22px 0 0;
+}
+.pc-team-photo figcaption strong {
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.pc-team-photo figcaption small {
+  color: var(--muted);
+  font-size: 15px;
+}
+.pc-team-selected-description {
+  display: none;
+}
+.pc-roles {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-roles > li {
+  border-top: 1px solid var(--navy-12);
+}
+.pc-roles > li:first-child {
+  border-top: 0;
+}
+.pc-roles button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--dark-blue);
+  text-align: left;
+}
+.pc-roles button:hover,
+.pc-roles button[aria-pressed='true'] {
+  border-left-color: var(--light-blue);
+  background: rgb(8 164 190 / 0.08);
+}
+.pc-roles button strong {
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.pc-roles button small {
+  color: rgb(16 21 102 / 0.8);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Progress (dark band) */
+.pc-progress {
+  padding-block: 96px;
+  background: var(--dark-blue);
+  color: var(--white);
+}
+.pc-progress-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 64px;
+}
+.pc-progress-intro {
+  flex: 0 0 440px;
+}
+.pc-progress-intro h2 {
+  font-size: clamp(2.5rem, 4.7vw, 3.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.pc-progress-intro p {
+  max-width: 408px;
+  margin: 24px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.pc-progress-intro .pc-progress-lead {
+  font-size: 22px;
+}
+.pc-progress-gallery {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+.pc-shape-a {
+  width: 400px;
+  height: 450px;
+  border-radius: 24px 100px 24px 24px;
+  object-fit: cover;
+}
+.pc-shape-b {
+  width: 240px;
+  height: 338px;
+  margin-top: 112px;
+  border-radius: 24px 24px 24px 80px;
+  object-fit: cover;
+}
+.pc-progress-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin: 64px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-progress-steps li {
+  padding-top: 16px;
+  border-top: 1px solid rgb(255 255 255 / 0.25);
+}
+.pc-step-number {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.pc-progress-steps h3 {
+  margin-top: 16px;
+  font-size: 26px;
+  line-height: 1.12;
+}
+.pc-progress-steps p,
+.pc-progress-footer p {
+  margin: 16px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.pc-progress-footer {
+  margin-top: 64px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.25);
+}
+.pc-progress-footer h3 {
+  font-size: 32px;
+  line-height: 1.12;
+}
+.pc-progress-footer p {
+  max-width: 950px;
+  margin-top: 12px;
+}
+
+/* Workforce */
+.pc-workforce {
+  padding-block: 96px;
+}
+.pc-workforce-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 64px;
+  margin-top: 64px;
+}
+.pc-shape-c {
+  flex: 0 0 480px;
+  width: 480px;
+  height: 624px;
+  border-radius: 100px 24px 100px 24px;
+  object-fit: cover;
+}
+.pc-practice {
+  flex: 1;
+  margin: 0;
+}
+.pc-practice > div {
+  padding-block: 18px;
+  border-bottom: 1px solid rgb(16 21 102 / 0.25);
+}
+.pc-practice dt {
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.12;
+}
+.pc-practice dd {
+  margin: 10px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+/* Testimonials */
+.pc-testimonials {
+  padding-block: 96px 72px;
+}
+.pc-quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px 64px;
+  margin-top: 56px;
+}
+.pc-quote {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.pc-quote-mark {
+  height: 54px;
+  color: var(--light-blue);
+  font-family: 'Nunito', Arial, sans-serif;
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+}
+.pc-quote blockquote {
+  flex: 1;
+  margin: 8px 0 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.pc-quote figcaption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--navy-12);
+}
+.pc-quote figcaption img {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.pc-quote figcaption strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.pc-quote figcaption span span {
+  display: block;
+  color: var(--navy-75);
+  font-size: 14px;
+}
+
+/* Rounded tint card before the footer */
+.pc-card-section {
+  padding-block: 16px 112px;
+}
+.pc-card-section-balanced {
+  padding-block: 64px;
+}
+.pc-rounded-card {
+  padding: 64px 56px;
+  border-radius: 32px;
+  background: var(--pale-blue);
+}
+.pc-network-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 80px;
+}
+.pc-network-card p {
+  margin: 0;
+  color: rgb(16 21 102 / 0.85);
+  font-size: 16.8px;
+  line-height: 1.85;
+}
+.pc-network-card h2 + p {
+  margin-top: 32px;
+}
+.pc-network-card p + p {
+  margin-top: 24px;
+}
+.pc-network-photo {
+  width: 100%;
+  height: 408px;
+  border-radius: 20px;
+  object-fit: cover;
+}
+
+@media (max-width: 1100px) {
+  .pc-page-hero-grid {
+    grid-template-columns: 1fr 360px;
+  }
+  .pc-circle-photo {
+    width: 360px;
+  }
+  .pc-progress-top,
+  .pc-workforce-grid,
+  .pc-team-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pc-progress-intro,
+  .pc-team-photo {
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .pc-page-hero {
+    padding-block: 48px 64px;
+  }
+  .pc-page-hero-grid,
+  .pc-two-col,
+  .pc-network-card,
+  .pc-quote-grid,
+  .pc-progress-steps {
+    grid-template-columns: 1fr;
+  }
+  .pc-page-hero-grid {
+    gap: 40px;
+  }
+  .pc-circle-photo {
+    width: min(100%, 340px);
+    justify-self: center;
+  }
+  .pc-two-col-statement,
+  .pc-team,
+  .pc-progress,
+  .pc-workforce {
+    padding-block: 64px;
+  }
+  .pc-two-col {
+    gap: 24px;
+  }
+  .pc-team-grid,
+  .pc-workforce-grid {
+    gap: 32px;
+    margin-top: 32px;
+  }
+  .pc-team-photo .pc-offset-photo img {
+    height: auto;
+    aspect-ratio: 560 / 440;
+  }
+  .pc-team-photo {
+    order: 2;
+  }
+  .pc-roles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    order: 1;
+  }
+  .pc-roles > li,
+  .pc-roles > li:first-child {
+    border: 1px solid var(--navy-12);
+    border-radius: 12px;
+  }
+  .pc-roles button {
+    height: 100%;
+    border-radius: 12px;
+    align-content: center;
+    min-height: 76px;
+  }
+  .pc-roles button strong {
+    font-size: 18px;
+  }
+  .pc-roles button small {
+    display: none;
+  }
+  .pc-team-photo figcaption .pc-team-selected-description {
+    display: block;
+    margin-top: 6px;
+  }
+  .pc-progress-gallery {
+    gap: 12px;
+  }
+  .pc-shape-a {
+    width: 60%;
+    height: 280px;
+    border-radius: 20px 64px 20px 20px;
+  }
+  .pc-shape-b {
+    width: 40%;
+    height: 220px;
+    margin-top: 60px;
+    border-radius: 20px 20px 20px 56px;
+  }
+  .pc-progress-steps {
+    gap: 28px;
+    margin-top: 40px;
+  }
+  .pc-progress-footer {
+    margin-top: 40px;
+  }
+  .pc-progress-footer h3 {
+    font-size: 26px;
+  }
+  .pc-shape-c {
+    flex-basis: auto;
+    width: 100%;
+    height: 420px;
+    border-radius: 64px 20px 64px 20px;
+  }
+  .pc-practice dt {
+    font-size: 22px;
+  }
+  .pc-testimonials {
+    padding-block: 56px 40px;
+  }
+  .pc-quote-grid {
+    gap: 32px;
+    margin-top: 32px;
+  }
+  .pc-quote blockquote {
+    font-size: 17px;
+  }
+  .pc-card-section {
+    padding-block: 8px 64px;
+  }
+  .pc-card-section-balanced {
+    padding-block: 36px;
+  }
+  .pc-rounded-card {
+    padding: 32px 24px;
+    border-radius: 24px;
+  }
+  .pc-network-card {
+    gap: 32px;
+  }
+  .pc-network-photo {
+    height: 260px;
+  }
+}

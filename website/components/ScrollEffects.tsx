@@ -4,31 +4,50 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 const revealTargets = [
-  '.hero-photo',
-  '.hero-copy-block > *',
-  '.provision-hero-grid > div > *',
-  '.referral-hero-grid > div > *',
-  '.contact-page-copy > *',
-  '.contact-card > *',
-  '.home-detail-copy > *',
-  '.home-detail-media',
-  '.section-heading > *',
-  '.about-intro > *',
-  '.service-card',
-  '.pillar-grid > *',
-  '.training-grid > *',
-  '.steps-grid > *',
-  '.home-card',
-  '.home-detail-facts > *',
-  '.home-detail-content > h2',
-  '.home-support-grid > *',
-  '.referral-details-grid > *',
-  '.home-detail-contact > *',
-  '.contact-guide > *',
-  '.approach-link',
-  '.footer-grid > *',
-  '.footer-bottom > *',
+  '.pc-photo-hero-content > *',
+  '.pc-fact',
+  '.pc-section > .shell > h2',
+  '.pc-split-text > *',
+  '.pc-offset-photo',
+  '.pc-service-card',
+  '.pc-col-item',
+  '.pc-statement-inner > *',
+  '.pc-values > .shell > h2',
+  '.pc-value',
+  '.pc-headed-columns > .shell > h2',
+  '.pc-headed-subtitle',
+  '.pc-ruled-item',
+  '.pc-tint-hero-text > *',
+  '.pc-page-hero-grid > *',
+  '.pc-two-col-statement .pc-two-col > *',
+  '.pc-team .shell > h2',
+  '.pc-team-intro',
+  '.pc-team-photo',
+  '.pc-progress-intro > *',
+  '.pc-progress-gallery > *',
+  '.pc-journey-steps li',
+  '.pc-progress-steps li',
+  '.pc-progress-footer',
+  '.pc-workforce > .shell > h2',
+  '.pc-workforce-grid > img',
+  '.pc-testimonials > .shell > h2',
+  '.pc-quote',
+  '.pc-practice > div',
+  '.pc-roles > li',
+  '.pc-rounded-card',
+  '.pc-cqc-card',
+  '.pc-referral-hero-grid > *',
+  '.pc-journey-intro > *',
+  '.pc-send-first .pc-two-col > *',
+  '.pc-contact-grid > *',
+  '.pc-home-intro .shell > h1',
+  '.pc-gallery',
+  '.pc-homes > .shell > h2',
+  '.pc-home-card',
+  '.pc-home-details > section',
+  '.pc-other-grid article',
 ].join(', ');
+const accentTargets = '.pc-underline, .pc-circled';
 
 export default function ScrollEffects() {
   const pathname = usePathname();
@@ -42,12 +61,20 @@ export default function ScrollEffects() {
     const elements = Array.from(
       document.querySelectorAll<HTMLElement>(revealTargets),
     );
+    const accents = Array.from(
+      document.querySelectorAll<HTMLElement>(accentTargets),
+    );
     const entranceAnimations: Animation[] = [];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
-          (entry.target as HTMLElement).dataset.reveal = 'visible';
+          const element = entry.target as HTMLElement;
+          if (element.matches(accentTargets)) {
+            element.dataset.accent = 'visible';
+          } else {
+            element.dataset.reveal = 'visible';
+          }
           observer.unobserve(entry.target);
         });
       },
@@ -87,6 +114,26 @@ export default function ScrollEffects() {
       observer.observe(element);
     });
 
+    accents.forEach((element) => {
+      const bounds = element.getBoundingClientRect();
+      if (bounds.bottom <= 0) return;
+      if (bounds.top < window.innerHeight) {
+        const path = element.querySelector('path');
+        if (path) {
+          entranceAnimations.push(path.animate(
+            [
+              { strokeDasharray: '1', strokeDashoffset: '1' },
+              { strokeDasharray: '1', strokeDashoffset: '0' },
+            ],
+            { duration: 900, delay: 200, easing: 'cubic-bezier(0.77, 0, 0.175, 1)', fill: 'backwards' },
+          ));
+        }
+        return;
+      }
+      element.dataset.accent = 'pending';
+      observer.observe(element);
+    });
+
     function clearReveals() {
       observer.disconnect();
       entranceAnimations.forEach((animation) => animation.cancel());
@@ -94,6 +141,7 @@ export default function ScrollEffects() {
         delete element.dataset.reveal;
         element.style.removeProperty('--reveal-delay');
       });
+      accents.forEach((element) => { delete element.dataset.accent; });
     }
 
     motionPreference.addEventListener('change', clearReveals);

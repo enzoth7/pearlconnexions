@@ -1,0 +1,128 @@
+/* Privacy notice and Accessibility pages, from the PC-WEBSITE Figma file. */
+
+.pc-legal-header {
+  padding-block: 72px 64px;
+  background: var(--pale-blue);
+}
+.pc-legal-header h1 {
+  font-size: clamp(2.375rem, 4.4vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.pc-legal-intro {
+  max-width: 720px;
+  margin: 18px 0 0;
+  font-size: 19px;
+  line-height: 1.55;
+}
+.pc-legal-updated {
+  margin: 18px 0 0;
+  color: var(--navy-75);
+  font-size: 14px;
+}
+.pc-to-confirm {
+  color: var(--light-blue);
+  font-weight: 600;
+}
+.pc-legal-body {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 80px;
+  padding-block: 64px 112px;
+}
+.pc-legal-index {
+  position: sticky;
+  top: 120px;
+  align-self: start;
+}
+.pc-legal-index p {
+  margin: 0 0 10px;
+  color: rgb(16 21 102 / 0.7);
+  font-size: 13px;
+  font-weight: 600;
+}
+.pc-legal-index ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--light-blue);
+  list-style: none;
+}
+.pc-legal-index a {
+  font-size: 15px;
+  font-weight: 500;
+}
+.pc-legal-index a:hover {
+  color: var(--light-blue);
+}
+.pc-legal-content {
+  display: grid;
+  gap: 44px;
+}
+.pc-legal-content section {
+  scroll-margin-top: 120px;
+}
+.pc-legal-content h2 {
+  font-size: 26px;
+  letter-spacing: -0.01em;
+}
+.pc-legal-content p {
+  margin: 12px 0 0;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.pc-legal-content ul {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-legal-content li {
+  position: relative;
+  padding-left: 19px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.pc-legal-content li::before {
+  content: '';
+  position: absolute;
+  top: 0.62em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--light-blue);
+}
+
+@media (max-width: 900px) {
+  .pc-legal-header {
+    padding-block: 40px 36px;
+  }
+  .pc-legal-intro {
+    font-size: 16px;
+  }
+  .pc-legal-body {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-block: 32px 64px;
+  }
+  .pc-legal-index {
+    position: static;
+    padding: 18px 20px;
+    border-radius: 16px;
+    background: var(--pale-blue);
+  }
+  .pc-legal-content {
+    gap: 32px;
+  }
+  .pc-legal-content h2 {
+    font-size: 22px;
+  }
+  .pc-legal-content p,
+  .pc-legal-content li {
+    font-size: 16px;
+  }
+}
