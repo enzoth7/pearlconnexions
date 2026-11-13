@@ -10,6 +10,10 @@ No representan personal ni instalaciones de Pearl Connexions.
 
 Las tres fotos reales principales de las casas en `website/public/properties/` tienen originales locales de aproximadamente 800 px de ancho. Se mantienen como fotos reales; para mejorar su nitidez sin alterar el aspecto de las propiedades hacen falta archivos originales de mayor resolución.
 
+## Hero de Inicio, 13/11/2026
+
+La foto principal es la misma escena del archivo `C:\Orchestrator\Projects\4. STOCK\young-multi-ethnic-group-people-watching-movie-poof-open-air-cinema.jpg`. El original mide 4256 × 2832 px. Se reemplazó la versión web de 1800 × 1197 px por `website/public/images/home/hero-webp.webp` de 3600 × 2395 px, con una ruta nueva para evitar la caché del navegador. La versión WebP pesa cerca de 1 MB y se sirve directamente para preservar la calidad del archivo.
+
 ## Cinco fotos reemplazadas el 13/11/2026
 
 Se descargaron los originales de Pexels para conservar las escenas que eligió Enzo y generar archivos WebP nuevos con más detalle. Las rutas nuevas evitan que el navegador use las versiones anteriores guardadas en caché.

@@ -80,11 +80,12 @@ export default function Home() {
       <section className="pc-photo-hero">
         <Image
           className="pc-photo pc-photo-hero-bg"
-          src="/images/home/hero.webp"
+          src="/images/home/hero-webp.webp"
           alt="Young people laughing together on the grass"
           fill
           priority
           sizes="100vw"
+          unoptimized
         />
         <div className="shell pc-photo-hero-content">
           <h1 className="pc-boxed-headline">
