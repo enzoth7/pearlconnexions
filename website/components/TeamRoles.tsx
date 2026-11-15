@@ -65,10 +65,8 @@ const roles: Role[] = [
   },
 ];
 
-const chisomIndex = roles.findIndex((role) => role.name === 'Chisom');
-
 export default function TeamRoles() {
-  const [selected, setSelected] = useState(chisomIndex);
+  const [selected, setSelected] = useState(0);
   const member = roles[selected];
 
   return (
