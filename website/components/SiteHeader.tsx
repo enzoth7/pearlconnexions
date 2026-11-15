@@ -142,6 +142,7 @@ function MobileGroup({
 const mobileAboutNav: NavItem[] = [
   { href: '/about', label: 'About us' },
   { href: '/about/who-we-are', label: 'Who we are' },
+  { href: '/faqs', label: 'FAQs' },
 ];
 
 export default function SiteHeader() {
@@ -149,10 +150,9 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const menuButton = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const servicesActive =
-    serviceNav.some((item) => item.href === pathname) ||
-    pathname.startsWith('/homes/');
-  const aboutActive = pathname === '/about' || pathname.startsWith('/about/');
+  const servicesActive = serviceNav.some((item) => item.href === pathname);
+  const homesActive = pathname === '/homes' || pathname.startsWith('/homes/');
+  const aboutActive = aboutNav.some((item) => item.href === pathname) || pathname.startsWith('/about/');
 
   useEffect(() => {
     setOpen(false);
@@ -198,9 +198,14 @@ export default function SiteHeader() {
               <span className="pc-utility-email-short">Email us</span>
             </a>
           </div>
-          <Link className="pc-utility-link" href="/contact">
-            Contact
-          </Link>
+          <div className="pc-utility-links">
+            <Link className="pc-utility-link" href="/careers">
+              Careers
+            </Link>
+            <Link className="pc-utility-link" href="/contact">
+              Contact
+            </Link>
+          </div>
         </div>
       </div>
       <header className="pc-header" ref={headerRef}>
@@ -220,6 +225,13 @@ export default function SiteHeader() {
               items={serviceNav}
               active={servicesActive}
             />
+            <Link
+              className={`pc-nav-trigger ${homesActive ? 'active' : ''}`}
+              href="/homes"
+              aria-current={pathname === '/homes' ? 'page' : undefined}
+            >
+              Our homes
+            </Link>
             <DesktopDropdown
               label="About us"
               items={aboutNav}
@@ -257,11 +269,21 @@ export default function SiteHeader() {
               items={serviceNav}
               onNavigate={closeMenu}
             />
+            <div className="pc-mobile-group">
+              <Link className="pc-mobile-toggle" href="/homes" onClick={closeMenu}>
+                Our homes
+              </Link>
+            </div>
             <MobileGroup
               label="About us"
               items={mobileAboutNav}
               onNavigate={closeMenu}
             />
+            <div className="pc-mobile-group">
+              <Link className="pc-mobile-toggle" href="/careers" onClick={closeMenu}>
+                Careers
+              </Link>
+            </div>
             <div className="pc-mobile-group">
               <Link className="pc-mobile-toggle" href="/contact" onClick={closeMenu}>
                 Contact

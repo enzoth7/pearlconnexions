@@ -19,8 +19,17 @@ const practice = [
   ['Autism practice', 'Accessible communication, sensory adjustments and predictable routines.'],
   ['Trauma-informed practice', 'Understand experience, relationships and what helps the person feel safe.'],
   ['Safeguarding', 'Recognise contextual risks, share concerns and escalate early.'],
-  ['Mental health and risk', 'De-escalation and planning tailored to the person and their placement.'],
-  ['Reflective practice', 'Professional boundaries, supervision and management oversight.'],
+  ['Mental health and risk', 'De-escalation and PMVA training, with planning tailored to the person and their placement.'],
+  ['Reflective practice', 'Care Certificate induction, professional boundaries, supervision and management oversight.'],
+];
+
+// Illustrative Charting Your Path record. Not a real resident's outcome.
+const progressExample = [
+  ['Personal goal', 'Prepare an evening meal with less support.'],
+  ['Starting point', 'Cooks with step-by-step prompts from staff and does not yet feel confident using the oven alone.'],
+  ['Agreed work', 'Choose a meal, write a shopping list, shop and cook with the keyworker twice a week.'],
+  ['Review', 'After six weeks, plans and cooks a simple meal with one check-in, and says cooking feels less stressful.'],
+  ['Next goal', 'Cook a meal for a housemate, then try a new recipe each month.'],
 ];
 
 // Placeholder portraits are stock photos, not the people quoted.
@@ -164,6 +173,29 @@ export default function AboutPage() {
               relationships and community confidence.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="pc-progress-example" aria-labelledby="progress-example-heading">
+        <div className="shell pc-progress-example-grid">
+          <div className="pc-progress-example-head">
+            <h2 className="pc-h2" id="progress-example-heading">
+              How we recognise progress.
+            </h2>
+            <p>
+              Charting Your Path supports a structured conversation about goals
+              and change over time. This example shows the format. It is not a
+              real resident’s outcome.
+            </p>
+          </div>
+          <dl className="pc-progress-record">
+            {progressExample.map(([label, text]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{text}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 

@@ -59,6 +59,16 @@
 .pc-gallery-main {
   grid-row: 1 / span 2;
 }
+.pc-gallery-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--navy-75);
+  font-size: 15px;
+  font-weight: 500;
+}
 .pc-gallery-grid img {
   object-fit: cover;
 }

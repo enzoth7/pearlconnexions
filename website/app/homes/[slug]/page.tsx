@@ -38,13 +38,13 @@ export default async function HomePage({ params }: HomePageProps) {
 
   if (slug === 'victoria-road') redirect('/supported-accommodation');
   if (slug === 'brambles-acre') redirect('/childrens-home');
-  if (slug === 'friday-road') redirect('/supported-living');
+  if (slug === 'onyx') redirect('/homes/friday-road');
 
   const home = homeBySlug(slug);
   const detail = homeDetails[slug];
   if (!home || !detail) notFound();
 
-  const others = homes.filter((other) => other.slug !== home.slug);
+  const others = homes.filter((other) => other.slug !== home.slug).slice(0, 3);
   const { lat, lon } = detail.mapCenter;
   const mapBounds = [lon - 0.02, lat - 0.012, lon + 0.02, lat + 0.012]
     .map((coordinate) => coordinate.toFixed(4))

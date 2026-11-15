@@ -8,7 +8,7 @@ export const serviceNav: NavItem[] = [
   {
     href: '/supported-living',
     label: 'Supported Living',
-    description: 'Adults 18+ across four South London homes',
+    description: 'Adults 18+ across five South London homes',
   },
   {
     href: '/supported-accommodation',
@@ -33,15 +33,23 @@ export const aboutNav: NavItem[] = [
     label: 'Our approach and team',
     description: 'How we match, support and review progress',
   },
+  {
+    href: '/faqs',
+    label: 'FAQs',
+    description: 'Answers about support, referrals and daily life',
+  },
 ];
 
 export const footerExploreNav: NavItem[] = [
-  { href: '/supported-living', label: 'Supported Living' },
-  { href: '/supported-accommodation', label: 'Supported Accommodation' },
-  { href: '/childrens-home', label: 'Children’s Home' },
+  { href: '/homes', label: 'Our homes' },
+  { href: '/faqs', label: 'FAQs' },
+  { href: '/careers', label: 'Careers' },
+  { href: '/feedback', label: 'Feedback and complaints' },
   { href: '/privacy-notice', label: 'Privacy notice' },
   { href: '/accessibility', label: 'Accessibility' },
 ];
+
+export const footerServicesNav: NavItem[] = serviceNav.map(({ href, label }) => ({ href, label }));
 
 // Official sources only. Each opens in a new tab.
 export const officialBadges = [

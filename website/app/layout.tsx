@@ -12,6 +12,7 @@ import './referrals-contact.css';
 import './services.css';
 import './homes.css';
 import './legal.css';
+import './resources.css';
 
 export const metadata: Metadata = {
   title: { default: 'Pearl Connexions', template: '%s | Pearl Connexions' },

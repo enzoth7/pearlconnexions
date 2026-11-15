@@ -84,7 +84,7 @@ export default function PrivacyNoticePage() {
         {
           title: 'Contact and complaints',
           body: [
-            'Email admin@pearlconnexions.co.uk or call 07470 906740.',
+            'Email admin@pearlconnexions.com or call 07470 906740.',
             'If you are unhappy with how we have handled your information, you can complain to the Information Commissioner’s Office at ico.org.uk or on 0303 123 1113.',
           ],
         },

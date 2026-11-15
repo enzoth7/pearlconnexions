@@ -2,10 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CopyEmailButton } from '@/components/copy-email-button';
+import { EnquiryForm } from '@/components/EnquiryForm';
 import { Icon } from '@/components/pc';
 import { BrushedEdge } from '@/components/pc-blocks';
 import {
+  financeEmail,
+  hrEmail,
   officeAddress,
+  operationsEmail,
   referralEmail,
   referralPhone,
   referralPhoneHref,
@@ -16,6 +20,25 @@ export const metadata: Metadata = {
   description:
     'Contact Pearl Connexions about supported living, a placement discussion or future services in South London.',
 };
+
+const teams = [
+  {
+    title: 'Placement enquiries',
+    text: 'Talk to us about a person and the home they need.',
+    email: operationsEmail,
+  },
+  {
+    title: 'General enquiries',
+    text: 'Questions about Pearl, our homes or this website.',
+    email: referralEmail,
+  },
+  {
+    title: 'HR',
+    text: 'Recruitment, complaints, employment and workforce matters.',
+    email: hrEmail,
+  },
+  { title: 'Finance', text: 'Invoicing and contracts.', email: financeEmail },
+];
 
 export default function ContactPage() {
   return (
@@ -97,6 +120,52 @@ export default function ContactPage() {
             </p>
             <Link href="/referrals">See the referral process</Link>
           </aside>
+        </div>
+      </section>
+
+      <section className="pc-teams" aria-labelledby="teams-heading">
+        <div className="shell">
+          <h2 className="pc-contact-heading" id="teams-heading">
+            Contact the right team.
+          </h2>
+          <ul className="pc-team-cards">
+            {teams.map((team) => (
+              <li className="pc-team-card" key={team.email}>
+                <h3>{team.title}</h3>
+                <div className="pc-team-card-text">{team.text}</div>
+                <div className="pc-team-card-email">
+                  <a href={`mailto:${team.email}`}>
+                    <Icon name="mail-c" width={18} height={14} />
+                    {team.email}
+                  </a>
+                  <CopyEmailButton email={team.email} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="pc-enquiry" id="enquiry" aria-labelledby="enquiry-heading">
+        <div className="shell pc-enquiry-grid">
+          <div className="pc-enquiry-intro">
+            <h2 className="pc-h2" id="enquiry-heading">
+              Start an enquiry.
+            </h2>
+            <div className="pc-enquiry-lead">
+              Tell us who you are and what kind of support you are looking for.
+              We will reply to talk through options, suitability and current
+              availability.
+            </div>
+            <div className="pc-enquiry-secure">
+              Please do not include the person’s name, date of birth or other
+              identifying details here. We will agree a secure route before you
+              share assessments or sensitive documents.
+            </div>
+          </div>
+          <div className="pc-enquiry-form-card">
+            <EnquiryForm />
+          </div>
         </div>
       </section>
     </main>

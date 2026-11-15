@@ -42,7 +42,7 @@ export default function AccessibilityPage() {
         {
           title: 'Feedback and contact',
           body: [
-            'If something on this website is hard to use, please tell us. Email admin@pearlconnexions.co.uk or call 07470 906740.',
+            'If something on this website is hard to use, please tell us. Email admin@pearlconnexions.com or call 07470 906740.',
           ],
         },
       ]}

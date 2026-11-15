@@ -6,7 +6,7 @@ import {
   referralPhone,
   referralPhoneHref,
 } from '@/lib/contact';
-import { footerExploreNav, officialBadges } from '@/lib/navigation';
+import { footerExploreNav, footerServicesNav, officialBadges } from '@/lib/navigation';
 
 export default function SiteFooter() {
   return (
@@ -66,6 +66,12 @@ export default function SiteFooter() {
               <span className="pc-break">{officeAddress.cityAndPostcode}</span>
             </span>
           </address>
+          <h2 className="pc-footer-subheading">Our services</h2>
+          {footerServicesNav.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.label}
+            </Link>
+          ))}
         </div>
       </div>
       <div className="shell pc-footer-bottom">

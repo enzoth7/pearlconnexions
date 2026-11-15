@@ -30,6 +30,11 @@ body.pc-menu-open {
   font-weight: 500;
   line-height: normal;
 }
+.pc-utility-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
 .pc-utility-contact {
   display: flex;
   align-items: center;
@@ -309,6 +314,9 @@ body.pc-menu-open {
 }
 .pc-footer-column > a {
   padding-block: 5px;
+}
+.pc-footer-column .pc-footer-subheading {
+  padding-top: 36px;
 }
 .pc-footer-column > a:hover {
   color: var(--light-blue);

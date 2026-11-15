@@ -1,6 +1,7 @@
 // Booking-style detail for each supported living home.
 // Facilities marked in the notes below are placeholders until Joel confirms them.
-// Photos other than the main Pearl photograph are illustrative (Pexels).
+// Photos are Pearl's own (November 2026 folders and house guides). A home with
+// fewer than five photos shows placeholders in the remaining gallery slots.
 
 export type IconRef = { name: string; ratio: number };
 
@@ -26,6 +27,8 @@ export type Photo = { src: string; alt: string; illustrative: boolean };
 
 export type HomeDetail = {
   area: string;
+  /** Photo used on home cards (Our homes, Other homes). Defaults to the first gallery photo. */
+  card?: Photo;
   gallery: Photo[];
   facts: { icon: IconRef; title: string; text: string }[];
   offers: { icon: IconRef; label: string }[];
@@ -47,11 +50,11 @@ export const homeDetails: Record<string, HomeDetail> = {
   crimsworth: {
     area: 'Vauxhall',
     gallery: [
-      { src: '/properties/crimsworth-kitchen.jpg', alt: 'Shared kitchen at Sapphire House', illustrative: false },
-      { src: '/images/homes/sapphire-bedroom.webp', alt: 'A bedroom (illustrative)', illustrative: true },
-      { src: '/images/homes/sapphire-bathroom.webp', alt: 'A bathroom (illustrative)', illustrative: true },
-      { src: '/images/homes/sapphire-living.webp', alt: 'A living room (illustrative)', illustrative: true },
-      { src: '/images/homes/sapphire-street.webp', alt: 'A London residential street (illustrative)', illustrative: true },
+      { src: '/images/homes/card-sapphire.webp', alt: 'Street and front garden of Sapphire House', illustrative: false },
+      { src: '/images/homes/sapphire-bedroom.webp', alt: 'A bedroom at Sapphire House', illustrative: false },
+      { src: '/images/homes/sapphire-bathroom.webp', alt: 'Bathroom with a bath at Sapphire House', illustrative: false },
+      { src: '/images/homes/sapphire-living.webp', alt: 'Living room at Sapphire House', illustrative: false },
+      { src: '/images/homes/sapphire-kitchen.webp', alt: 'Kitchen at Sapphire House', illustrative: false },
     ],
     facts: [
       { icon: ICON.home, title: '3 bedrooms', text: 'Shared setting' },
@@ -80,11 +83,11 @@ export const homeDetails: Record<string, HomeDetail> = {
   coulsdon: {
     area: 'Coulsdon',
     gallery: [
-      { src: '/properties/coulsdon-bedroom.jpg', alt: 'Bedroom at Coulsdon', illustrative: false },
-      { src: '/images/homes/coulsdon-kitchen.webp', alt: 'A kitchen (illustrative)', illustrative: true },
-      { src: '/images/homes/coulsdon-bathroom.webp', alt: 'A bathroom (illustrative)', illustrative: true },
-      { src: '/images/homes/coulsdon-living.webp', alt: 'A living room (illustrative)', illustrative: true },
-      { src: '/images/homes/coulsdon-front-door.webp', alt: 'A front door (illustrative)', illustrative: true },
+      { src: '/images/homes/card-garnet.webp', alt: 'Open-plan kitchen and living area at Garnet House', illustrative: false },
+      { src: '/images/homes/garnet-bedroom.webp', alt: 'A bedroom at Garnet House', illustrative: false },
+      { src: '/images/homes/garnet-bathroom.webp', alt: 'Shower room at Garnet House', illustrative: false },
+      { src: '/images/homes/homes-hero-lounge.webp', alt: 'Lounge at Garnet House', illustrative: false },
+      { src: '/images/homes/garnet-high-street.webp', alt: 'Shops and a bus stop on Coulsdon high street', illustrative: false },
     ],
     facts: [
       { icon: ICON.home, title: '3 bedrooms', text: 'Shared setting' },
@@ -113,11 +116,11 @@ export const homeDetails: Record<string, HomeDetail> = {
   heathfields: {
     area: 'South Croydon',
     gallery: [
-      { src: '/properties/heathfields-living-room.jpg', alt: 'Living room at Ruby House', illustrative: false },
-      { src: '/images/homes/ruby-bedroom.webp', alt: 'A bedroom (illustrative)', illustrative: true },
-      { src: '/images/homes/ruby-bathroom.webp', alt: 'A bathroom (illustrative)', illustrative: true },
-      { src: '/images/homes/ruby-kitchen.webp', alt: 'A kitchen (illustrative)', illustrative: true },
-      { src: '/images/homes/ruby-street.webp', alt: 'A residential street (illustrative)', illustrative: true },
+      { src: '/images/homes/card-ruby.webp', alt: 'Living room with a bay window at Ruby House', illustrative: false },
+      { src: '/images/homes/ruby-bedroom.webp', alt: 'A bedroom at Ruby House', illustrative: false },
+      { src: '/images/homes/ruby-garden.webp', alt: 'Garden at Ruby House', illustrative: false },
+      { src: '/images/homes/ruby-kitchen.webp', alt: 'Kitchen at Ruby House', illustrative: false },
+      { src: '/images/homes/ruby-front.webp', alt: 'Front of Ruby House', illustrative: false },
     ],
     facts: [
       { icon: ICON.user, title: 'Female-only', text: 'Women aged 18+' },
@@ -151,11 +154,11 @@ export const homeDetails: Record<string, HomeDetail> = {
   'milne-park': {
     area: 'New Addington',
     gallery: [
-      { src: '/images/homes/milne-house-front.webp', alt: 'A house front (illustrative)', illustrative: true },
-      { src: '/images/homes/milne-bedroom.webp', alt: 'A bedroom (illustrative)', illustrative: true },
-      { src: '/images/homes/milne-kitchen.webp', alt: 'A kitchen (illustrative)', illustrative: true },
-      { src: '/images/homes/milne-living.webp', alt: 'A living room (illustrative)', illustrative: true },
-      { src: '/images/homes/milne-bathroom.webp', alt: 'A bathroom (illustrative)', illustrative: true },
+      { src: '/images/homes/card-emerald.webp', alt: 'Front of Emerald House', illustrative: false },
+      { src: '/images/homes/emerald-bedroom.webp', alt: 'A bedroom at Emerald House', illustrative: false },
+      { src: '/images/homes/emerald-kitchen.webp', alt: 'Kitchen at Emerald House', illustrative: false },
+      { src: '/images/homes/emerald-lounge.webp', alt: 'Lounge at Emerald House', illustrative: false },
+      { src: '/images/homes/emerald-garden.webp', alt: 'Garden at Emerald House', illustrative: false },
     ],
     facts: [
       { icon: ICON.home, title: 'Shared setting', text: 'Own bedroom' },
@@ -181,9 +184,48 @@ export const homeDetails: Record<string, HomeDetail> = {
     mapCenter: { lat: 51.343, lon: -0.016 },
     nearby: nearbyCommon('New Addington tram stop and local buses.'),
   },
+  'friday-road': {
+    area: 'Mitcham',
+    gallery: [
+      { src: '/images/homes/onyx-living.webp', alt: 'Living room at Onyx House', illustrative: false },
+      { src: '/images/homes/onyx-bedroom.webp', alt: 'A bedroom at Onyx House', illustrative: false },
+      { src: '/images/homes/onyx-bathroom.webp', alt: 'Bathroom with a bath at Onyx House', illustrative: false },
+      { src: '/images/homes/onyx-kitchen.webp', alt: 'Kitchen and dining table at Onyx House', illustrative: false },
+      { src: '/images/homes/onyx-front.webp', alt: 'Front of Onyx House', illustrative: false },
+    ],
+    facts: [
+      { icon: ICON.user, title: 'Female-only', text: 'Women aged 18+' },
+      { icon: ICON.water, title: 'Own bedroom', text: 'Personal space' },
+      { icon: ICON.tree, title: 'Good transport links', text: 'Residential area' },
+      supportedLivingFact,
+    ],
+    offers: [
+      { icon: ICON.key, label: 'Your own bedroom' },
+      { icon: ICON.water, label: 'Bathroom with bath' },
+      { icon: ICON.cutlery, label: 'Fully equipped kitchen' },
+      { icon: ICON.sofa, label: 'Shared living room' },
+      { icon: ICON.user, label: 'Female-only home' },
+      { icon: ICON.cutlery, label: 'Dining space' },
+      { icon: ICON.tree, label: 'Outdoor garden' },
+      { icon: ICON.shield, label: 'Support planned around you' },
+    ],
+    living: [
+      { title: 'Personal space', text: 'A female-only home with private bedrooms and a shared living room, kitchen and dining space.' },
+      { title: 'Connected to the area', text: 'A residential street in Mitcham, with buses to Tooting, Croydon and Sutton and Morden Hall Park nearby.' },
+      { title: 'The right fit', text: 'Preferences, personal space and support needs guide matching and the individual support plan.' },
+    ],
+    mapCenter: { lat: 51.414, lon: -0.157 },
+    nearby: nearbyCommon(
+      'Buses from London Road and Gorringe Park Avenue; Tooting station about 10–15 minutes’ walk.',
+      'Tesco, Sainsbury’s, Lidl and Aldi, plus Morden Hall Park nearby.',
+      'Local GP surgeries and pharmacies within walking distance.',
+      'Jobcentre Plus Mitcham, Merton’s employment service and local libraries.',
+    ),
+  },
 };
 
-/** Card photo for "Other homes": the main gallery photo. */
+/** Card photo for "Our homes" and "Other homes". */
 export function cardPhoto(slug: string) {
-  return homeDetails[slug]?.gallery[0];
+  const detail = homeDetails[slug];
+  return detail?.card ?? detail?.gallery[0];
 }

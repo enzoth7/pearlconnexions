@@ -5,6 +5,9 @@ type ContactPayload = {
   email?: unknown;
   subject?: unknown;
   description?: unknown;
+  phone?: unknown;
+  service?: unknown;
+  area?: unknown;
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,6 +30,10 @@ export async function POST(request: Request) {
     typeof payload.subject === 'string' ? payload.subject.trim() : '';
   const description =
     typeof payload.description === 'string' ? payload.description.trim() : '';
+  // Optional fields from the Contact page enquiry form.
+  const phone = typeof payload.phone === 'string' ? payload.phone.trim() : '';
+  const service = typeof payload.service === 'string' ? payload.service.trim() : '';
+  const area = typeof payload.area === 'string' ? payload.area.trim() : '';
 
   if (
     !name ||
@@ -36,7 +43,10 @@ export async function POST(request: Request) {
     !subject ||
     subject.length > 160 ||
     !description ||
-    description.length > 5000
+    description.length > 5000 ||
+    phone.length > 40 ||
+    service.length > 60 ||
+    area.length > 100
   ) {
     return NextResponse.json(
       { ok: false, error: 'Please check the submitted fields.' },

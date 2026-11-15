@@ -6,12 +6,12 @@ export type LegalSection = {
   body: string[];
 };
 
-function slug(text: string) {
+export function slug(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
 /** Text in [square brackets] is still to be confirmed by Pearl. */
-function withPlaceholders(text: string): ReactNode[] {
+export function withPlaceholders(text: string): ReactNode[] {
   return text.split(/(\[[^\]]+\])/g).map((part, index) =>
     part.startsWith('[') ? (
       <span className="pc-to-confirm" key={index}>

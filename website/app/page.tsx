@@ -24,7 +24,7 @@ const services = [
 ];
 
 const facts = [
-  { icon: 'home', w: 51, h: 52, value: '4', label: 'supported living homes across South London' },
+  { icon: 'home', w: 51, h: 52, value: '5', label: 'supported living homes across South London' },
   { icon: 'user', w: 52, h: 47, value: '18+', label: 'adults in supported living, building independence' },
   { icon: 'checklist', w: 52, h: 52, value: '6 steps', label: 'from first referral to an early review' },
 ];

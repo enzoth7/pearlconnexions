@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { ArrowLink, Icon, OffsetPhoto, Underline } from '@/components/pc';
 import { CtaCard, RuledColumns, TintHero } from '@/components/pc-blocks';
+import { homes } from '@/lib/homes';
+import { homeDetails } from '@/lib/home-details';
 
 export const metadata: Metadata = {
   title: 'Who we are',
@@ -14,21 +17,20 @@ const facts = [
   { icon: 'shield-44', w: 48, h: 48, value: 'CQC', label: 'registered for personal care' },
 ];
 
+// Values from Pearl's manifesto artwork (assets/Manifesto.png), worded by Joel.
 const values = [
-  { icon: 'shield-44', w: 44, h: 44, title: 'Resilience', text: 'Helping people cope with setbacks and keep working towards their goals.' },
-  { icon: 'heart', w: 44, h: 40, title: 'Self-care', text: 'Building routines for health, rest and wellbeing that the person can keep up.' },
-  { icon: 'navigation', w: 44, h: 44, title: 'Guidance', text: 'Clear information and consistent boundaries, so people can make informed choices.' },
-  { icon: 'folded-hands', w: 39, h: 44, title: 'Restorative', text: 'When things go wrong, we talk it through and work to repair relationships.' },
-  { icon: 'tree', w: 44, h: 39, title: 'Nurturing', text: 'Warm, consistent relationships that give confidence room to grow.' },
-  { icon: 'hand', w: 35, h: 44, title: 'Healing', text: 'Trauma-informed support that recognises what people have been through.' },
+  { icon: 'shield-44', w: 44, h: 44, title: 'Resilience', text: 'Encouragement to build confidence and keep working towards personal goals.' },
+  { icon: 'heart', w: 44, h: 40, title: 'Self-care', text: 'Support to develop routines that promote wellbeing.' },
+  { icon: 'navigation', w: 44, h: 44, title: 'Guidance', text: 'Clear information and support to make choices.' },
+  { icon: 'folded-hands', w: 39, h: 44, title: 'Restorative practice', text: 'Listening, reflection and support to rebuild relationships.' },
+  { icon: 'tree', w: 44, h: 39, title: 'Nurturing', text: 'Consistent relationships and a welcoming environment.' },
+  { icon: 'hand', w: 35, h: 44, title: 'Healing', text: 'Time, understanding and space to move forward.' },
 ];
 
+// House name first, then the neighbourhood. Exact addresses stay private.
 const locations = [
   ['Office', '24 Totterdown Street, Tooting SW17'],
-  ['Sapphire House', 'Vauxhall'],
-  ['Coulsdon', 'South London'],
-  ['Ruby House', 'South Croydon'],
-  ['Milne Park', 'New Addington'],
+  ...homes.map((home) => [home.name, homeDetails[home.slug]?.area ?? home.location]),
 ];
 
 const companiesHouse =
@@ -56,8 +58,8 @@ export default function WhoWeArePage() {
           <div className="pc-statement-copy">
             <p>
               We support adults with learning disabilities, autism, mental health
-              or complex support needs, as well as care leavers preparing for
-              adulthood.
+              or complex support needs, as well as experienced care leavers and
+              people who have experienced homelessness.
             </p>
             <p>
               Our job is to get the basics right: a safe and settled home, people
@@ -85,19 +87,33 @@ export default function WhoWeArePage() {
 
       <section className="pc-values">
         <div className="shell">
-          <h2 className="pc-h2-display">
-            Our <Underline>values.</Underline>
-          </h2>
-          <div className="pc-values-grid">
-            {values.map((value) => (
-              <div className="pc-value" key={value.title}>
-                <div className="pc-icon-slot pc-icon-slot-44">
-                  <Icon name={value.icon} width={value.w} height={value.h} />
+          <div className="pc-values-head">
+            <h2 className="pc-h2-display">
+              Our <Underline>values.</Underline>
+            </h2>
+            <p>The experience we want people to have when they live with Pearl.</p>
+          </div>
+          <div className="pc-values-layout">
+            <div className="pc-manifesto">
+              <Image
+                src="/images/who-we-are/manifesto-values.webp"
+                alt="Pearl Connexions values around the Pearl logo: Resilience, Self-care, Guidance, Restorative, Nurturing and Healing"
+                width={1162}
+                height={1003}
+                sizes="(max-width: 900px) 100vw, 500px"
+              />
+            </div>
+            <div className="pc-values-grid">
+              {values.map((value) => (
+                <div className="pc-value" key={value.title}>
+                  <div className="pc-icon-slot pc-icon-slot-44">
+                    <Icon name={value.icon} width={value.w} height={value.h} />
+                  </div>
+                  <h3>{value.title}</h3>
+                  <p>{value.text}</p>
                 </div>
-                <h3>{value.title}</h3>
-                <p>{value.text}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>

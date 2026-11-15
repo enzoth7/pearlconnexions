@@ -11,11 +11,12 @@ import {
   TintSplit,
 } from '@/components/service-blocks';
 import { homes } from '@/lib/homes';
+import { cardPhoto } from '@/lib/home-details';
 
 export const metadata: Metadata = {
   title: 'Supported Living',
   description:
-    'Supported living for adults aged 18+ across four South London homes, with support planned around the person.',
+    'Supported living for adults aged 18+ across five South London homes, with support planned around the person.',
 };
 
 const support = [
@@ -32,7 +33,7 @@ export default function SupportedLivingPage() {
     <main id="content">
       <TintHero
         title="Supported living."
-        intro="Supported living for adults aged 18+ across four South London homes. We consider the person, the home and the people already living there before confirming a placement."
+        intro="Supported living for adults aged 18+ across five South London homes. We consider the person, the home and the people already living there before confirming a placement."
         photo={{
           src: '/images/services/sl-hero-friends.webp',
           alt: 'Three friends walking and talking in the city',
@@ -71,44 +72,49 @@ export default function SupportedLivingPage() {
 
       <section className="pc-homes" id="homes">
         <div className="shell">
-          <h2 className="pc-h2">Four homes across South London.</h2>
+          <h2 className="pc-h2">Five homes across South London.</h2>
           <p className="pc-team-intro">
             Each home has a different feel and suits different people.
-            Availability and fit are confirmed through assessment and a placement
-            discussion.
+            Availability and fit are confirmed through assessment and a
+            placement discussion.
           </p>
-          <div className="pc-home-cards">
-            {homes.map((home) => (
-              <article className="pc-home-card" key={home.slug}>
-                <Link
-                  className="pc-home-card-media"
-                  href={`/homes/${home.slug}`}
-                  tabIndex={-1}
-                  aria-hidden="true"
-                >
-                  {home.image ? (
-                    <Image
-                      className="pc-photo"
-                      src={home.image}
-                      alt=""
-                      fill
-                      sizes="(max-width: 900px) 100vw, 570px"
-                    />
-                  ) : (
-                    <span className="pc-photo-placeholder">
-                      <Icon name="home-navy" width={47} height={48} />
-                      Photos coming soon
-                    </span>
-                  )}
-                </Link>
-                <h3>{home.name}</h3>
-                <p className="pc-home-location">
-                  <Icon name="location-navy-11" width={11} height={18} />
-                  {home.location}
-                </p>
-                <ArrowLink href={`/homes/${home.slug}`}>View {home.name}</ArrowLink>
-              </article>
-            ))}
+          <div className="pc-home-cards pc-home-cards-3">
+            {homes.map((home) => {
+              const photo = cardPhoto(home.slug);
+              return (
+                <article className="pc-home-card" key={home.slug}>
+                  <Link
+                    className="pc-home-card-media"
+                    href={`/homes/${home.slug}`}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  >
+                    {photo ? (
+                      <Image
+                        className="pc-photo"
+                        src={photo.src}
+                        alt=""
+                        fill
+                        sizes="(max-width: 900px) 100vw, 370px"
+                      />
+                    ) : (
+                      <span className="pc-photo-placeholder">
+                        <Icon name="home-navy" width={47} height={48} />
+                        Photos coming soon
+                      </span>
+                    )}
+                  </Link>
+                  <h3>{home.name}</h3>
+                  <p className="pc-home-location">
+                    <Icon name="location-navy-11" width={11} height={18} />
+                    {home.location}
+                  </p>
+                  <ArrowLink href={`/homes/${home.slug}`}>
+                    View {home.name}
+                  </ArrowLink>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>

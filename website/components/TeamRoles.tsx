@@ -1,11 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { OffsetPhoto } from '@/components/pc';
+import type React from 'react';
+import { ArrowLink, OffsetPhoto } from '@/components/pc';
 
-// These are temporary stock portraits. Replace each label and image together
-// once Pearl confirms the team member's public name and approved photograph.
-const roles = [
+type Role = {
+  title: string;
+  description: string;
+  name: string;
+  photo: string;
+  /** Crop anchor for the portrait, when the face sits low in the photo. */
+  position?: string;
+  /** Only for team members with their own website. */
+  link?: { href: string; label: string };
+};
+
+// Roles 01 to 06 use temporary stock portraits. Replace each label and image
+// together once Pearl confirms the team member's public name and photograph.
+// Chisom's photo comes from her own site, crystalearcounselling.com.
+const roles: Role[] = [
   {
     title: 'Director & Operations',
     description: 'Leads the organisation, quality and day-to-day operations.',
@@ -42,28 +55,48 @@ const roles = [
     name: 'Team member 06',
     photo: '/images/team/role-06.webp',
   },
+  {
+    title: 'Counselling & Wellbeing',
+    description: 'Counselling for the people we support, with Chisom.',
+    name: 'Chisom',
+    photo: '/images/team/chisom.webp',
+    position: 'center bottom',
+    link: { href: 'https://crystalearcounselling.com/', label: 'Visit Crystal ’ear Counselling' },
+  },
 ];
 
+const chisomIndex = roles.findIndex((role) => role.name === 'Chisom');
+
 export default function TeamRoles() {
-  const [selected, setSelected] = useState(0);
+  const [selected, setSelected] = useState(chisomIndex);
   const member = roles[selected];
 
   return (
     <div className="pc-team-grid">
-      <figure className="pc-team-photo">
+      <figure
+        className="pc-team-photo"
+        style={member.position ? ({ '--team-photo-position': member.position } as React.CSSProperties) : undefined}
+      >
         <OffsetPhoto
           src={member.photo}
-          alt={`Reference portrait for ${member.title}`}
+          alt={member.link ? `${member.name}, ${member.title}` : `Reference portrait for ${member.title}`}
           width={1120}
           height={1120}
           outline="right"
           sizes="(max-width: 900px) 100vw, 560px"
-          priority={selected === 0}
+          priority
         />
         <figcaption aria-live="polite" aria-atomic="true">
           <strong>{member.name}</strong>
           <small>{member.title}</small>
           <small className="pc-team-selected-description">{member.description}</small>
+          {member.link ? (
+            <div className="pc-team-link">
+              <ArrowLink href={member.link.href} external>
+                {member.link.label}
+              </ArrowLink>
+            </div>
+          ) : null}
         </figcaption>
       </figure>
       <ul className="pc-roles" aria-label="Team roles">

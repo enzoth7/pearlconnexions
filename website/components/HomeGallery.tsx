@@ -2,27 +2,44 @@
 
 import Image from 'next/image';
 import { useRef } from 'react';
+import { Icon } from '@/components/pc';
 import type { Photo } from '@/lib/home-details';
+
+/** Tile shown where a home does not have a photo yet. */
+function PhotoPlaceholder({ className }: { className: string }) {
+  return (
+    <div className={`${className} pc-gallery-placeholder`}>
+      <Icon name="home-navy" width={47} height={48} />
+      <small>Photo coming soon</small>
+    </div>
+  );
+}
 
 /** One large photo and four small ones, with a dialog that shows them all. */
 export function HomeGallery({ name, photos }: { name: string; photos: Photo[] }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [main, ...rest] = photos;
+  const thumbs = rest.slice(0, 4);
+  const missing = 4 - thumbs.length;
 
   return (
     <div className="pc-gallery">
       <div className="pc-gallery-grid">
-        <div className="pc-gallery-main">
-          <Image
-            className={main.illustrative ? 'pc-photo' : undefined}
-            src={main.src}
-            alt={main.alt}
-            fill
-            priority
-            sizes="(max-width: 900px) 100vw, 580px"
-          />
-        </div>
-        {rest.slice(0, 4).map((photo) => (
+        {main ? (
+          <div className="pc-gallery-main">
+            <Image
+              className={main.illustrative ? 'pc-photo' : undefined}
+              src={main.src}
+              alt={main.alt}
+              fill
+              priority
+              sizes="(max-width: 900px) 100vw, 580px"
+            />
+          </div>
+        ) : (
+          <PhotoPlaceholder className="pc-gallery-main" />
+        )}
+        {thumbs.map((photo) => (
           <div className="pc-gallery-thumb" key={photo.src}>
             <Image
               className="pc-photo"
@@ -33,13 +50,18 @@ export function HomeGallery({ name, photos }: { name: string; photos: Photo[] })
             />
           </div>
         ))}
-        <button
-          type="button"
-          className="pc-gallery-button"
-          onClick={() => dialog.current?.showModal()}
-        >
-          Show all photos
-        </button>
+        {Array.from({ length: missing }, (_, index) => (
+          <PhotoPlaceholder className="pc-gallery-thumb" key={`placeholder-${index}`} />
+        ))}
+        {photos.length ? (
+          <button
+            type="button"
+            className="pc-gallery-button"
+            onClick={() => dialog.current?.showModal()}
+          >
+            Show all photos
+          </button>
+        ) : null}
       </div>
       <dialog
         ref={dialog}
