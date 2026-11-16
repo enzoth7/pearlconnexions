@@ -9,6 +9,7 @@ export type Home = {
   code: string;
   name: string;
   address: string | null;
+  neighbourhood?: string | null;
   provision: "Children's Home" | "Supported Living" | "Supported Accommodation";
   total_beds: number | null;
   active: boolean;

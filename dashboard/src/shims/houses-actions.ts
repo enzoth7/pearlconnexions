@@ -7,6 +7,7 @@ import { requireWorkspaceAdmin } from "@/lib/auth";
 const houseSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(2).max(120),
+  neighbourhood: z.string().trim().max(120).refine(value => value.length === 0 || value.length >= 2),
   address: z.string().trim().max(300).refine(value => value.length === 0 || value.length >= 5),
   provision: z.enum(["Children's Home", "Supported Living", "Supported Accommodation"]),
   active: z.boolean(),
@@ -16,6 +17,7 @@ export async function saveHouse(formData: FormData): Promise<{ ok: boolean; mess
   const parsed = houseSchema.safeParse({
     id: formData.get("id") || undefined,
     name: formData.get("name"),
+    neighbourhood: formData.get("neighbourhood") ?? "",
     address: formData.get("address"),
     provision: formData.get("provision"),
     active: formData.get("active") === "on",
@@ -26,7 +28,7 @@ export async function saveHouse(formData: FormData): Promise<{ ok: boolean; mess
 
   const { supabase } = await requireWorkspaceAdmin();
   const { id, ...fields } = parsed.data;
-  const values = { ...fields, address: fields.address || null };
+  const values = { ...fields, neighbourhood: fields.neighbourhood || null, address: fields.address || null };
   if (id) {
     const result = await supabase.from("qa_homes").update(values).eq("id", id).select("id").maybeSingle();
     if (result.error || !result.data) return { ok: false, message: result.error?.code === "23505" ? "A house with this name already exists." : result.error?.message || "House unavailable." };

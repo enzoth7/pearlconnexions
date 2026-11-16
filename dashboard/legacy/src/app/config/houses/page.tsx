@@ -4,7 +4,7 @@ import type { Home } from "@/lib/types";
 
 export default async function HousesPage() {
   const { context, supabase } = await requireSection("settings.houses");
-  const result = await supabase.from("qa_homes").select("id,code,name,address,provision,total_beds,active").order("name");
+  const result = await supabase.from("qa_homes").select("id,code,name,neighbourhood,address,provision,total_beds,active").order("name");
   if (result.error) throw new Error(result.error.message);
   return <div className="space-y-7">
     <header>

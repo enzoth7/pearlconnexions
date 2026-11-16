@@ -42,7 +42,7 @@ describe("house management", () => {
 
   it("allocates the next code and saves the address and status", async () => {
     expect(await saveHouse(houseForm())).toMatchObject({ ok: true, message: "House added." });
-    expect(insert).toHaveBeenCalledWith({ code: "CH8", name: "New house", address: "10 Example Road", provision: "Supported Living", active: true });
+    expect(insert).toHaveBeenCalledWith({ code: "CH8", name: "New house", neighbourhood: null, address: "10 Example Road", provision: "Supported Living", active: true });
     expect(revalidatePath).toHaveBeenCalledWith("/config/houses");
   });
 });
