@@ -77,7 +77,7 @@ const approach = [
 export default function Home() {
   return (
     <main id="content">
-      <section className="pc-photo-hero">
+      <section className="pc-photo-hero pc-hero-home">
         <Image
           className="pc-photo pc-photo-hero-bg"
           src="/images/home/hero-webp.webp"

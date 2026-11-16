@@ -169,6 +169,44 @@
   margin-top: 32px;
 }
 
+/* Home hero: no boxes, white copy on the photo, dark scrim, header overlays the top. */
+.pc-hero-home {
+  min-height: 759px;
+}
+.pc-hero-home::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(5 8 31 / 0.27),
+    rgb(5 8 31 / 0.19) 35%,
+    rgb(5 8 31 / 0.21)
+  );
+  pointer-events: none;
+}
+.pc-hero-home .pc-photo-hero-content {
+  z-index: 1;
+  padding-block: 185px 64px;
+  color: var(--white);
+}
+.pc-hero-home .pc-boxed-headline span {
+  padding: 0;
+  background: none;
+  color: var(--white);
+}
+.pc-hero-home .pc-text-box {
+  padding: 0;
+  background: none;
+}
+.pc-hero-home .pc-text-box p,
+.pc-hero-home .pc-arrow-link {
+  color: var(--white);
+}
+.pc-hero-home .pc-arrow-link .pc-icon {
+  filter: brightness(0) invert(1);
+}
+
 /* ---------- Key facts band ---------- */
 .pc-facts-band {
   padding-block: 52px 60px;
@@ -483,6 +521,12 @@
   .pc-photo-hero-content,
   .pc-manifesto .pc-photo-hero-content {
     padding-block: 72px 48px;
+  }
+  .pc-hero-home {
+    min-height: 731px;
+  }
+  .pc-hero-home .pc-photo-hero-content {
+    padding-block: 205px 48px;
   }
   .pc-text-box p {
     font-size: 16px;

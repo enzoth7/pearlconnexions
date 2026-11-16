@@ -147,7 +147,12 @@ const mobileAboutNav: NavItem[] = [
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const isHome = pathname === '/';
+  // Home only: header floats transparent over the hero until the page scrolls
+  // past the utility bar or the mobile menu opens.
+  const overlay = isHome && !scrolled && !open;
   const menuButton = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const servicesActive = serviceNav.some((item) => item.href === pathname);
@@ -157,6 +162,19 @@ export default function SiteHeader() {
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isHome) {
+      setScrolled(false);
+      return;
+    }
+    function onScroll() {
+      setScrolled(window.scrollY > 36);
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isHome]);
 
   useEffect(() => {
     if (open && headerRef.current) {
@@ -185,6 +203,9 @@ export default function SiteHeader() {
       <a className="skip-link" href="#content">
         Skip to main content
       </a>
+      <div
+        className={`pc-top${isHome ? ' is-home' : ''}${overlay ? ' is-overlay' : ''}`}
+      >
       <div className="pc-utility-bar">
         <div className="shell pc-utility-inner">
           <div className="pc-utility-contact">
@@ -212,12 +233,24 @@ export default function SiteHeader() {
         <div className="shell pc-header-inner">
           <Link className="pc-brand" href="/" aria-label="Pearl Connexions home">
             <Image
-              src="/brand/pearl-logo-colour.jpg"
+              className="pc-brand-colour"
+              src="/brand/pearl-logo-colour.png"
               alt="Pearl Connexions"
-              width={1080}
-              height={678}
+              width={982}
+              height={386}
               priority
             />
+            {isHome ? (
+              <Image
+                className="pc-brand-white"
+                src="/brand/pearl-logo-white.png"
+                alt=""
+                aria-hidden="true"
+                width={688}
+                height={274}
+                priority
+              />
+            ) : null}
           </Link>
           <nav className="pc-desktop-nav" aria-label="Main navigation">
             <DesktopDropdown
@@ -306,6 +339,7 @@ export default function SiteHeader() {
           </div>
         </nav>
       </header>
+      </div>
     </>
   );
 }

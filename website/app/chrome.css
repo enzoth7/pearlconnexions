@@ -57,6 +57,64 @@ body.pc-menu-open {
   display: none;
 }
 
+/* ---------- Home: header floats over the hero (Figma 82:2 / 91:2) ---------- */
+.pc-top {
+  display: contents;
+}
+.pc-brand-white {
+  display: none;
+}
+.pc-top.is-home {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 80;
+  display: block;
+}
+.pc-top.is-home .pc-utility-bar {
+  background: transparent;
+  border-bottom: 1px solid rgb(255 255 255 / 0.18);
+}
+.pc-top.is-home .pc-header {
+  position: static;
+  border-bottom: 0;
+  background: transparent;
+}
+/* Scrolled (or menu open): solid white bar pinned to the top. */
+.pc-top.is-home:not(.is-overlay) .pc-header {
+  position: fixed;
+  inset: 0 0 auto;
+  border-bottom: 1px solid var(--navy-10);
+  background: var(--white);
+}
+.pc-top.is-overlay .pc-brand-colour {
+  display: none;
+}
+.pc-top.is-overlay .pc-brand-white {
+  display: block;
+}
+.pc-top.is-overlay .pc-nav-trigger {
+  color: var(--white);
+}
+.pc-top.is-overlay .pc-nav-trigger:hover {
+  color: var(--white);
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.pc-top.is-overlay .pc-chevron {
+  filter: brightness(0) invert(1);
+}
+.pc-top.is-overlay .pc-desktop-nav .pc-button {
+  background: var(--white);
+  color: var(--dark-blue);
+}
+.pc-top.is-overlay .pc-desktop-nav .pc-button:hover {
+  background: var(--light-blue);
+}
+.pc-top.is-overlay .pc-menu-button {
+  border: 1px solid rgb(255 255 255 / 0.6);
+  background: rgb(255 255 255 / 0.2);
+}
+
 /* ---------- Main bar ---------- */
 .pc-header {
   position: sticky;
