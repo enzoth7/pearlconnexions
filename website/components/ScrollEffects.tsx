@@ -12,6 +12,7 @@ const revealTargets = [
   '.pc-service-card',
   '.pc-col-item',
   '.pc-statement-inner > *',
+  '.pc-who-inner > *',
   '.pc-values > .shell > h2',
   '.pc-value',
   '.pc-headed-columns > .shell > h2',

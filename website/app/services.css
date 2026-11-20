@@ -25,9 +25,25 @@
   margin-top: 56px;
 }
 .pc-home-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+/* Type of home (Supported living, Supported accommodation, Children’s home): white box with navy text over the photo. */
+.pc-home-tag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--dark-blue);
+  box-shadow: 0 1px 6px rgb(16 21 102 / 0.14);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
 }
 .pc-home-card-media {
   position: relative;
@@ -70,6 +86,72 @@
   font-size: 14px;
 }
 
+/* Service overview cards (Our services) */
+.pc-home-card-text {
+  margin: 10px 0 18px;
+  color: var(--navy-75);
+  font-size: 16.8px;
+  line-height: 1.6;
+}
+/* Keep the three links on one line even when a title wraps. */
+.pc-home-card-text + .pc-arrow-link {
+  margin-top: auto;
+}
+
+/* Who we support (Our services) */
+.pc-who {
+  padding-block: 72px 24px;
+}
+.pc-who-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 80px;
+}
+.pc-who-head {
+  flex: 0 0 408px;
+}
+.pc-who-intro {
+  margin: 20px 0 0;
+  color: rgb(16 21 102 / 0.88);
+  font-size: 18px;
+  line-height: 1.6;
+}
+.pc-who-body {
+  flex: 1;
+  min-width: 0;
+}
+.pc-who-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pc-who-groups li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+.pc-who-note {
+  max-width: 680px;
+  margin: 28px 0 0;
+  color: var(--navy-75);
+  font-size: 16.8px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1100px) {
+  .pc-who-inner {
+    gap: 48px;
+  }
+  .pc-who-head {
+    flex-basis: 300px;
+  }
+}
+
 /* Ofsted note */
 .pc-ofsted-note {
   display: flex;
@@ -98,6 +180,19 @@
   }
   .pc-homes {
     padding-block: 64px;
+  }
+  .pc-who {
+    padding-block: 48px 8px;
+  }
+  .pc-who-inner {
+    flex-direction: column;
+    gap: 28px;
+  }
+  .pc-who-head {
+    flex-basis: auto;
+  }
+  .pc-who-groups {
+    grid-template-columns: 1fr;
   }
   .pc-home-cards {
     grid-template-columns: 1fr;

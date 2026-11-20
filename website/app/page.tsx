@@ -98,11 +98,15 @@ export default function Home() {
               adults, with careful matching, practical life skills and progress
               reviewed together.
             </p>
-            <ArrowLink href="/supported-living">Explore supported living</ArrowLink>
           </div>
-          <Link className="pc-button pc-button-light pc-button-large" href="/referrals">
-            Discuss a placement
-          </Link>
+          <div className="pc-hero-actions">
+            <Link className="pc-button pc-button-outline-light pc-button-large" href="/homes">
+              Explore our homes
+            </Link>
+            <Link className="pc-button pc-button-light pc-button-large" href="/referrals">
+              Discuss a referral
+            </Link>
+          </div>
         </div>
       </section>
 

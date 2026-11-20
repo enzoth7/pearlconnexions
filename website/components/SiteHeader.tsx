@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { aboutNav, serviceNav, type NavItem } from '@/lib/navigation';
+import { aboutNav, serviceMenuNav, type NavItem } from '@/lib/navigation';
 import { referralEmail, referralPhone, referralPhoneHref } from '@/lib/contact';
 
 function isActive(pathname: string, href: string) {
@@ -155,7 +155,7 @@ export default function SiteHeader() {
   const overlay = isHome && !scrolled && !open;
   const menuButton = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const servicesActive = serviceNav.some((item) => item.href === pathname);
+  const servicesActive = serviceMenuNav.some((item) => item.href === pathname);
   const homesActive = pathname === '/homes' || pathname.startsWith('/homes/');
   const aboutActive = aboutNav.some((item) => item.href === pathname) || pathname.startsWith('/about/');
 
@@ -255,7 +255,7 @@ export default function SiteHeader() {
           <nav className="pc-desktop-nav" aria-label="Main navigation">
             <DesktopDropdown
               label="Our services"
-              items={serviceNav}
+              items={serviceMenuNav}
               active={servicesActive}
             />
             <Link
@@ -299,7 +299,7 @@ export default function SiteHeader() {
           <div className="pc-mobile-panel">
             <MobileGroup
               label="Our services"
-              items={serviceNav}
+              items={serviceMenuNav}
               onNavigate={closeMenu}
             />
             <div className="pc-mobile-group">

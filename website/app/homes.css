@@ -164,6 +164,23 @@
   font-size: 18px;
   line-height: 1.5;
 }
+/* Home guide download and file information. */
+.pc-home-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 24px;
+}
+.pc-home-guide-meta {
+  color: var(--navy-75);
+  font-size: 14px;
+}
+.pc-home-guide-actions .pc-button {
+  padding: 16px 28px;
+  font-size: 15px;
+  font-weight: 600;
+}
 .pc-home-facts {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -420,6 +437,12 @@
   }
   .pc-home-overview {
     font-size: 16px;
+  }
+  .pc-home-guide-actions .pc-button {
+    padding-block: 15px;
+  }
+  .pc-home-guide-meta {
+    font-size: 13px;
   }
   .pc-home-facts {
     grid-template-columns: 1fr 1fr;

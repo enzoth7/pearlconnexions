@@ -13,13 +13,23 @@ export const serviceNav: NavItem[] = [
   {
     href: '/supported-accommodation',
     label: 'Supported Accommodation',
-    description: 'Victoria Road · information',
+    description: 'Information about Victoria Road',
   },
   {
     href: '/childrens-home',
     label: 'Children’s Home',
-    description: 'Planned · subject to Ofsted registration',
+    description: 'Planned, subject to Ofsted registration',
   },
+];
+
+// Header menus list the overview page first; the footer lists only the services.
+export const serviceMenuNav: NavItem[] = [
+  {
+    href: '/services',
+    label: 'All services',
+    description: 'Compare our services and how our team is prepared',
+  },
+  ...serviceNav,
 ];
 
 export const aboutNav: NavItem[] = [
@@ -44,6 +54,7 @@ export const footerExploreNav: NavItem[] = [
   { href: '/homes', label: 'Our homes' },
   { href: '/faqs', label: 'FAQs' },
   { href: '/careers', label: 'Careers' },
+  { href: '/contact', label: 'Contact' },
   { href: '/feedback', label: 'Feedback and complaints' },
   { href: '/privacy-notice', label: 'Privacy notice' },
   { href: '/accessibility', label: 'Accessibility' },

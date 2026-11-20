@@ -102,6 +102,12 @@ export const homes: Home[] = [
   },
 ];
 
+/** Sentence-case label for the type of home, e.g. "Supported living". */
+export function provisionLabel(home: Home) {
+  const title = home.provisionTitle;
+  return title.charAt(0) + title.slice(1).toLowerCase();
+}
+
 export function homesFor(provision: ProvisionKey) {
   return homes.filter((home) => home.provision === provision);
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { HomeGallery } from '@/components/HomeGallery';
 import { ArrowLink, Icon } from '@/components/pc';
+import { guideFor } from '@/lib/home-guides';
 import { homeBySlug, homes } from '@/lib/homes';
 import { cardPhoto, homeDetails, type IconRef } from '@/lib/home-details';
 import { referralPhone, referralPhoneHref } from '@/lib/contact';
@@ -44,6 +45,7 @@ export default async function HomePage({ params }: HomePageProps) {
   const detail = homeDetails[slug];
   if (!home || !detail) notFound();
 
+  const guide = guideFor(slug);
   const others = homes.filter((other) => other.slug !== home.slug).slice(0, 3);
   const { lat, lon } = detail.mapCenter;
   const mapBounds = [lon - 0.02, lat - 0.012, lon + 0.02, lat + 0.012]
@@ -60,16 +62,13 @@ export default async function HomePage({ params }: HomePageProps) {
             Back to {home.provisionTitle}
           </Link>
           <h1>{home.name}</h1>
-          <p className="pc-home-meta">
-            <span className="pc-home-meta-location">
+          <div className="pc-home-meta">
+            <div className="pc-home-meta-location">
               <Icon name="location-navy-11" width={11} height={18} />
               {home.location}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>{home.provisionTitle}</span>
-            <span aria-hidden="true">·</span>
-            <span>{home.audience}</span>
-          </p>
+            </div>
+            <div>{home.provisionTitle}, {home.audience}</div>
+          </div>
           <HomeGallery name={home.name} photos={detail.gallery} />
         </div>
       </section>
@@ -116,6 +115,24 @@ export default async function HomePage({ params }: HomePageProps) {
                 ))}
               </div>
             </section>
+
+            {guide ? (
+              <section className="pc-home-guide" aria-labelledby="home-guide-heading">
+                <h2 id="home-guide-heading">Home guide</h2>
+                <p className="pc-home-overview">
+                  Download the guide for {home.name}, including what to expect
+                  and who to contact.
+                </p>
+                <div className="pc-home-guide-actions">
+                  <a className="pc-button" href={guide.url} rel="noopener noreferrer">
+                    Download resource
+                  </a>
+                  <div className="pc-home-guide-meta">
+                    PDF, {guide.size}, Reviewed {guide.reviewed}
+                  </div>
+                </div>
+              </section>
+            ) : null}
 
             <section>
               <h2>Where you’ll be</h2>

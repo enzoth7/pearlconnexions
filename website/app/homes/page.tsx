@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowLink, Icon } from '@/components/pc';
 import { TintHero } from '@/components/pc-blocks';
 import { HeadedColumns, HeroActions } from '@/components/service-blocks';
-import { homes } from '@/lib/homes';
+import { homes, provisionLabel } from '@/lib/homes';
 import { cardPhoto, homeDetails } from '@/lib/home-details';
 
 export const metadata: Metadata = {
@@ -47,6 +47,7 @@ export default function OurHomesPage() {
               const area = homeDetails[home.slug]?.area ?? home.location;
               return (
                 <article className="pc-home-card" key={home.slug}>
+                  <div className="pc-home-tag">{provisionLabel(home)}</div>
                   <Link
                     className="pc-home-card-media"
                     href={`/homes/${home.slug}`}
@@ -71,7 +72,7 @@ export default function OurHomesPage() {
                   <h3>{home.name}</h3>
                   <div className="pc-home-location">
                     <Icon name="location-navy-11" width={11} height={18} />
-                    {area} · {home.audience}
+                    {area}, {home.audience}
                   </div>
                   <ArrowLink href={`/homes/${home.slug}`}>View home and enquire</ArrowLink>
                 </article>

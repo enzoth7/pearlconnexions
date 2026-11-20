@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import TeamRoles from '@/components/TeamRoles';
+import WorkforceSection from '@/components/WorkforceSection';
 
 export const metadata: Metadata = {
   title: 'Our Approach',
@@ -12,15 +13,6 @@ const progressSteps = [
   ['01', 'Start with the person', 'Establish a starting point and agree goals that matter to the individual.'],
   ['02', 'Build skills in daily life', 'Plan practical work and record changes in everyday skills and engagement.'],
   ['03', 'Review together', 'Discuss what changed, adapt the support and choose the next useful goal.'],
-];
-
-const practice = [
-  ['Learning disability', 'Oliver McGowan training and preparation for the person’s support needs.'],
-  ['Autism practice', 'Accessible communication, sensory adjustments and predictable routines.'],
-  ['Trauma-informed practice', 'Understand experience, relationships and what helps the person feel safe.'],
-  ['Safeguarding', 'Recognise contextual risks, share concerns and escalate early.'],
-  ['Mental health and risk', 'De-escalation and PMVA training, with planning tailored to the person and their placement.'],
-  ['Reflective practice', 'Care Certificate induction, professional boundaries, supervision and management oversight.'],
 ];
 
 // Illustrative Charting Your Path record. Not a real resident's outcome.
@@ -199,34 +191,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="pc-workforce">
-        <div className="shell">
-          <h2 className="pc-h2-large">
-            A workforce prepared
-            <br />
-            for the person.
-          </h2>
-          <div className="pc-workforce-grid">
-            <Image
-              className="pc-photo pc-shape-c"
-              src="/images/about/workforce-training-hd.webp"
-              alt="A group of staff in a training session"
-              width={3200}
-              height={2133}
-              unoptimized
-              sizes="(max-width: 900px) 100vw, 480px"
-            />
-            <dl className="pc-practice">
-              {practice.map(([title, text]) => (
-                <div key={title}>
-                  <dt>{title}</dt>
-                  <dd>{text}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
-      </section>
+      <WorkforceSection />
 
       <section className="pc-testimonials" aria-labelledby="testimonials-heading">
         <div className="shell">
