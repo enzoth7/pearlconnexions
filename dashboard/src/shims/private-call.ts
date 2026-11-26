@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-export type PrivateResult = { ok: boolean; message?: string; managerId?: string };
+export type PrivateResult = { ok: boolean; message?: string; managerId?: string; notConfigured?: boolean };
 export async function privateCall(operation: string, form: FormData): Promise<PrivateResult> {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();

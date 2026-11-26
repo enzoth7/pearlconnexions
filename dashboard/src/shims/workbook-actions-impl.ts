@@ -34,7 +34,8 @@ const createActionSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   responsibility_text: z.string().trim().optional(),
-});
+  recurrence: z.enum(["monthly", ""]).optional().transform((v) => v || null),
+}).refine((v) => !v.recurrence || v.deadline, { message: "A monthly task needs a first deadline", path: ["deadline"] });
 
 export type FormState = { ok?: boolean; message?: string; errors?: Record<string, string[]> };
 
@@ -43,6 +44,11 @@ function actionFormValues(formData: FormData) {
     ...Object.fromEntries(formData),
     owner_manager_ids: formData.getAll("owner_manager_ids"),
   };
+}
+
+function recurrenceFields(recurrence: "monthly" | null, deadline: string | null) {
+  if (recurrence !== "monthly" || !deadline) return {};
+  return { recurrence, recurrence_day: Number(deadline.slice(8, 10)), period_month: `${deadline.slice(0, 7)}-01` };
 }
 
 export async function createAction(_: FormState, formData: FormData): Promise<FormState> {
@@ -93,6 +99,7 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
         base_status: "Not Started",
         date_added: today,
         deadline: parsed.data.deadline,
+        ...recurrenceFields(parsed.data.recurrence, parsed.data.deadline),
       })
       .select("id, reference")
       .single();
@@ -145,9 +152,10 @@ export async function createAction(_: FormState, formData: FormData): Promise<Fo
     }
   }
 
+  if (parsed.data.recurrence) await supabase.rpc("generate_recurring_actions");
   revalidatePath("/workbook");
   revalidatePath("/workbook/actions");
-  return { ok: true, message: `Action ${newAction.reference} created successfully.` };
+  return { ok: true, message: parsed.data.recurrence ? `Monthly task ${newAction.reference} created. It will appear on its own every month.` : `Action ${newAction.reference} created successfully.` };
 }
 
 export async function updateAction(_: FormState, formData: FormData): Promise<FormState> {
@@ -163,7 +171,8 @@ export async function updateAction(_: FormState, formData: FormData): Promise<Fo
   const { id, owner_manager_ids, support_manager_id, ...values } = parsed.data;
   const payload: Record<string, unknown> = { ...values };
   if (!payload.workstream_id) delete payload.workstream_id;
-  if (!auth.canSignOffActions) delete payload.completed_at;
+  // Managers may mark a recurring occurrence completed; it still needs sign-off (enforced in the database).
+  if (!auth.canSignOffActions && formData.get("recurrence") !== "monthly") delete payload.completed_at;
   const { data: updatedAction, error } = await supabase
     .from("actions")
     .update(payload)
@@ -434,6 +443,8 @@ export async function signOffAction(_: FormState, formData: FormData): Promise<F
       .maybeSingle();
     if (completedError) return { ok: false, message: completedError.message };
     if (!completedAction) return { ok: false, message: "You do not have permission to complete this action." };
+    // A signed-off recurring month opens next month's occurrence straight away.
+    await supabase.rpc("generate_recurring_actions");
 
     revalidatePath("/workbook");
     revalidatePath("/workbook/actions");
@@ -924,4 +935,26 @@ export async function setManagerPermission(
   } catch (err: unknown) {
     return { ok: false, message: err instanceof Error ? err.message : "Failed to update manager permission" };
   }
+}
+
+export async function setRecurrenceActive(formData: FormData): Promise<{ ok: boolean; message?: string }> {
+  const id = z.string().uuid().safeParse(formData.get("series_id"));
+  if (!id.success) return { ok: false, message: "Unknown recurring task." };
+  const active = formData.get("active") === "true";
+  const auth = await requireEditor();
+  if (!auth.canEditActions) return { ok: false, message: "You do not have permission to edit actions." };
+  const { data, error } = await auth.supabase
+    .from("actions")
+    .update({ recurrence_active: active })
+    .eq("id", id.data)
+    .is("series_id", null)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, message: error.message };
+  if (!data) return { ok: false, message: "You do not have permission to edit this task." };
+  if (active) await auth.supabase.rpc("generate_recurring_actions");
+  revalidatePath("/workbook");
+  revalidatePath("/workbook/actions");
+  revalidatePath(`/workbook/actions/${id.data}`);
+  return { ok: true, message: active ? "The task repeats every month again." : "The task no longer repeats. Past months are kept." };
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveHouse } from "@/app/config/houses/actions";
 import type { Home } from "@/lib/types";
 
+import { HouseRegulator, HouseStatusBadge } from "./house-status-badge";
 const services = ["Children's Home", "Supported Living", "Supported Accommodation"] as const;
 const inputClass = "mt-1 block min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950";
 
@@ -44,7 +45,7 @@ export function ConfigHouses({ houses, canEdit }: { houses: Home[]; canEdit: boo
     </form>}
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <table className="w-full table-fixed text-left text-sm"><thead className="bg-[#102c39] text-white"><tr><th scope="col" className="w-[17%] px-5 py-4 font-semibold">House</th><th scope="col" className="w-[14%] px-5 py-4 font-semibold">Neighbourhood</th><th scope="col" className="w-[20%] px-5 py-4 font-semibold">Services</th><th scope="col" className="w-[24%] px-5 py-4 font-semibold">Address</th><th scope="col" className="w-[15%] px-5 py-4 font-semibold">Status</th>{canEdit && <th scope="col" className="w-[13%] px-5 py-4 font-semibold">Actions</th>}</tr></thead><tbody>
-        {houses.map(house => <tr key={house.id} className="border-t border-slate-200"><td className="break-words px-5 py-4 font-semibold text-slate-950">{house.name}</td><td className="break-words px-5 py-4 text-slate-700">{house.neighbourhood || <small className="text-sm text-slate-500">Not set</small>}</td><td className="break-words px-5 py-4 text-slate-700">{house.provision}</td><td className="break-words px-5 py-4 text-slate-700">{house.address || <small className="text-sm text-slate-500">Address not set</small>}</td><td className="px-5 py-4"><strong className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${house.active ? "bg-emerald-100 text-emerald-900" : "bg-slate-100 text-slate-700"}`}>{house.active ? "Active" : "Inactive"}</strong></td>{canEdit && <td className="px-5 py-4"><button type="button" onClick={() => { setEditing(house); setFeedback(""); }} className="min-h-11 font-semibold text-teal-800 underline">Edit<small className="sr-only"> {house.name}</small></button></td>}</tr>)}
+        {houses.map(house => <tr key={house.id} className="border-t border-slate-200"><td className="break-words px-5 py-4 font-semibold text-slate-950">{house.name}</td><td className="break-words px-5 py-4 text-slate-700">{house.neighbourhood || <small className="text-sm text-slate-500">Not set</small>}</td><td className="break-words px-5 py-4 text-slate-700">{house.provision}<HouseRegulator provision={house.provision} /></td><td className="break-words px-5 py-4 text-slate-700">{house.address || <small className="text-sm text-slate-500">Address not set</small>}</td><td className="px-5 py-4"><HouseStatusBadge active={house.active} /></td>{canEdit && <td className="px-5 py-4"><button type="button" onClick={() => { setEditing(house); setFeedback(""); }} className="min-h-11 font-semibold text-teal-800 underline">Edit<small className="sr-only"> {house.name}</small></button></td>}</tr>)}
       </tbody></table>
       {houses.length === 0 && <div className="p-6 text-sm text-slate-600">No houses have been added yet.</div>}
     </div>

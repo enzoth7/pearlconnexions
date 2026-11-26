@@ -9,17 +9,19 @@ import {
   UpdateForm,
 } from "@/workbook/components/action-forms";
 import { PageHeader } from "@/components/app-shell";
-import { StatusBadge } from "@/workbook/components/status-badge";
-import { getActionById, getManagers, getWorkstreams, requireAuth } from "@/workbook/lib/data";
+import { RecurrenceBadge, StatusBadge } from "@/workbook/components/status-badge";
+import { RecurringHistory } from "@/workbook/components/recurring-history";
+import { getActionById, getActions, getManagers, getWorkstreams, requireAuth } from "@/workbook/lib/data";
 import { formatDate } from "@/workbook/lib/utils";
 
 export default async function ActionDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [auth, action, managers, workstreams] = await Promise.all([
+  const [auth, action, managers, workstreams, allActions] = await Promise.all([
     requireAuth(),
     getActionById(id),
     getManagers(),
     getWorkstreams(),
+    getActions(),
   ]);
 
   if (!action) notFound();
@@ -37,6 +39,12 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
   const canReassign = auth.isDirector || (auth.canReassignActions && isInManagerScope);
   const canSignOff = auth.isDirector || (auth.canSignOffActions && isInManagerScope);
   const readOnly = !canEdit;
+  const seriesRootId = action.recurrence ? action.series_id ?? action.id : null;
+  const occurrences = seriesRootId
+    ? allActions
+        .filter((item) => item.id === seriesRootId || item.series_id === seriesRootId)
+        .sort((a, b) => (b.period_month ?? "").localeCompare(a.period_month ?? ""))
+    : [];
   const latestNextReview = action.updates?.find((u) => u.next_review_at)?.next_review_at;
 
   return (
@@ -51,7 +59,7 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
       <PageHeader
         title={action.title}
         description="Review ownership, deadlines and delivery evidence."
-        action={<StatusBadge action={action} />}
+        action={<span className="flex items-center gap-2"><RecurrenceBadge action={action} showMonth /><StatusBadge action={action} /></span>}
       />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)]">
@@ -92,6 +100,12 @@ export default async function ActionDetail({ params }: { params: Promise<{ id: s
           <SignOffCard action={action} readOnly={!canSignOff} />
         </aside>
       </div>
+
+      {seriesRootId && (
+        <div className="mt-5">
+          <RecurringHistory occurrences={occurrences} currentId={action.id} canEdit={canEdit} />
+        </div>
+      )}
 
       <ReviewHistoryList action={action} readOnly={readOnly} />
     </>

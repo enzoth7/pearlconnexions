@@ -27,7 +27,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const filteredActions = selectedManager
     ? actions.filter((action) => action.participants.some((participant) => participant.manager.id === selectedManager.id))
     : actions;
-  const status = filteredActions.map(effectiveStatus);
+  const status = filteredActions.map(a => effectiveStatus(a));
   const highPriority = filteredActions.filter((a) => a.priority?.trim().toLowerCase() === "high").length;
   const mediumPriority = filteredActions.filter((a) => a.priority?.trim().toLowerCase() === "medium").length;
   const lowPriority = filteredActions.filter((a) => a.priority?.trim().toLowerCase() === "low").length;

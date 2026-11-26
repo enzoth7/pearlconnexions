@@ -232,9 +232,10 @@ export function ActionForm({
               defaultValue={action.extended_deadline || ""}
             />
           </div>
-          {canSignOff ? <div>
+          {action.recurrence && <input type="hidden" name="recurrence" value={action.recurrence} />}
+          {canSignOff || action.recurrence ? <div>
             <label className="label" htmlFor="completed_at">
-              Date completed
+              {action.recurrence && !canSignOff ? "Date completed (needs sign-off)" : "Date completed"}
             </label>
             <input
               className="field"
@@ -876,7 +877,7 @@ export function SignOffCard({
   action: ActionRecord;
   readOnly?: boolean;
 }) {
-  const signed = Boolean(action.signoffs?.length || action.completed_at);
+  const signed = action.recurrence ? Boolean(action.signoffs?.length) : Boolean(action.signoffs?.length || action.completed_at);
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(signOffAction, initial);
 

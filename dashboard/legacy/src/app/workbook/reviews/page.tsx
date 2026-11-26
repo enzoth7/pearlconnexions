@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/app-shell";
 import { ReviewFilters } from "@/workbook/components/review-filters";
 import { StatusBadge } from "@/workbook/components/status-badge";
 import { getActions, requireAuth } from "@/workbook/lib/data";
-import { effectiveStatus, formatDate } from "@/workbook/lib/utils";
+import { effectiveStatus, formatDate, isActionClosed } from "@/workbook/lib/utils";
 
 type ReviewSearchParams = {
   q?: string | string[];
@@ -41,7 +41,7 @@ export default async function ReviewsPage({
   const hasFilters = Boolean(query || managerId || workstreamId || status || priorityFilter || timing);
   const allActions = await getActions();
   const activeActions = allActions.filter(
-    (a) => !a.completed_at && !a.signoffs?.length && effectiveStatus(a) !== "Completed"
+    (a) => !isActionClosed(a)
   );
   const updates = activeActions
     .flatMap((a) => (a.updates || []).map((u) => ({ ...u, action: a })))

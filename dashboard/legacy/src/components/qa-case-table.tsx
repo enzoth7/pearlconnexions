@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Paperclip, Plus } from "lucide-react";
+import { supabase } from "../../../src/shims/supabase";
 import { HrFilterHeader } from "@/components/hr-register-controls";
 import { caseStates, incidentCategories, londonToday, riskCategories, riskLevels, type CaseRecord, type Person } from "@/lib/qa-capture";
 import type { Home } from "@/lib/types";
@@ -39,6 +40,22 @@ export function QaCaseTable({ kind, homes, records, people, onOpen, initialSafeg
   useEffect(() => {
     setFilters(current => ({ ...current, safeguarding: ["yes", "no", "pending"].includes(initialSafeguardingFilter) ? initialSafeguardingFilter : "" }));
   }, [initialSafeguardingFilter]);
+  // Files attached to each incident, so the list shows a clip before opening a record.
+  const [fileCounts, setFileCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (kind !== "incidents") return;
+    let live = true;
+    async function loadCounts() {
+      const { data } = await supabase.from("record_attachments").select("entity_id").eq("entity", "incident");
+      if (!live) return;
+      const counts: Record<string, number> = {};
+      for (const file of data ?? []) counts[file.entity_id] = (counts[file.entity_id] ?? 0) + 1;
+      setFileCounts(counts);
+    }
+    void loadCounts();
+    window.addEventListener("pearl:attachments", loadCounts);
+    return () => { live = false; window.removeEventListener("pearl:attachments", loadCounts); };
+  }, [kind, records]);
   const setFilter = (key: keyof Filters, value: string) => setFilters(current => ({ ...current, [key]: value }));
   const personName = (row: CaseRecord) => (row.data.person_name ?? "").split(/\r?\n/).map(name => name.trim()).filter(Boolean).join(", ")
     || row.data.person_ids.map(id => people.find(person => person.id === id)?.alias ?? "Person").join(", ")
@@ -77,7 +94,7 @@ export function QaCaseTable({ kind, homes, records, people, onOpen, initialSafeg
         {kind === "risks" && <th scope="col" className="w-[9%] px-2 py-2">{header("review", "Review", undefined, "date")}</th>}
         {kind === "incidents" && <th scope="col" className="w-[13%] px-2 py-2">{header("safeguarding", "Safeguarding", [{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "pending", label: "Pending assessment" }])}</th>}
         <th scope="col" className={`${kind === "risks" ? "w-[7%]" : "w-[9%]"} px-2 py-2`}>{header("status", "Status", ["Draft", ...caseStates[kind]])}</th>
-        <th scope="col" className="w-12 px-1 py-2"><div className="sr-only">Details</div></th>
+        <th scope="col" className="w-20 px-1 py-2"><div className="sr-only">Attachments and details</div></th>
       </tr></thead>
       <tbody className="divide-y divide-slate-200">{shown.map(row => {
         const reviewOverdue = kind === "risks" && !row.is_draft && row.status !== "Closed" && row.data.due_on && row.data.due_on < today;
@@ -92,7 +109,7 @@ export function QaCaseTable({ kind, homes, records, people, onOpen, initialSafeg
           {kind === "risks" && <td className={`px-2 py-3 ${reviewOverdue ? "font-semibold text-red-800" : ""}`}>{dateLabel(row.data.due_on)}</td>}
           {kind === "incidents" && <td className="px-2 py-3"><strong className={`inline-block rounded-full px-2.5 py-1 font-semibold ${row.is_draft ? "bg-slate-100 text-slate-700" : row.data.safeguarding === "yes" ? "bg-red-100 text-red-900" : row.data.safeguarding === "pending" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{row.is_draft ? "—" : row.data.safeguarding === "yes" ? "Yes" : row.data.safeguarding === "pending" ? "Pending" : "No"}</strong></td>}
           <td className="px-2 py-3"><strong className={`inline-block rounded-full px-2.5 py-1 font-semibold ${statusTone(row.status, row.is_draft)}`}>{row.is_draft ? "Draft" : row.status}</strong></td>
-          <td className="px-1 py-3"><button type="button" aria-label={`Open ${row.title || "record"}`} title="Open details" className="inline-flex size-9 items-center justify-center rounded-lg border border-slate-300 text-teal-800 focus-visible:outline-2 focus-visible:outline-teal-700" onClick={() => onOpen(row)}><Plus size={18} aria-hidden /></button></td>
+          <td className="px-1 py-3"><div className="flex items-center justify-end gap-1.5">{(fileCounts[row.id] ?? 0) > 0 && <small className="inline-flex items-center gap-0.5 text-sm font-semibold text-slate-700" title={`${fileCounts[row.id]} attached ${fileCounts[row.id] === 1 ? "file" : "files"}`}><Paperclip size={18} aria-hidden="true" />{fileCounts[row.id]}<small className="sr-only"> attached {fileCounts[row.id] === 1 ? "file" : "files"}</small></small>}<button type="button" aria-label={`Open ${row.title || "record"}`} title="Open details" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 text-teal-800 focus-visible:outline-2 focus-visible:outline-teal-700" onClick={() => onOpen(row)}><Plus size={18} aria-hidden /></button></div></td>
         </tr>;
       })}</tbody>
     </table>

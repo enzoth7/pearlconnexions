@@ -12,7 +12,7 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { ArrowUpDown, Pencil, Plus, Search } from "lucide-react";
-import { StatusBadge } from "@/workbook/components/status-badge";
+import { RecurrenceBadge, StatusBadge } from "@/workbook/components/status-badge";
 import { QuickEditDrawer } from "@/workbook/components/quick-edit-drawer";
 import { NewActionDialog } from "@/workbook/components/new-action-dialog";
 import {
@@ -84,6 +84,7 @@ export function ActionsTable({
   const [status, setStatus] = useState(cleanStatus);
   const [responsibility, setResponsibility] = useState(cleanResponsibility);
   const [deadlineWindow, setDeadlineWindow] = useState<DeadlineWindow>(cleanDeadlineWindow);
+  const [kind, setKind] = useState<"" | "one-off" | "recurring">("");
   const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
   const [isNewActionOpen, setIsNewActionOpen] = useState(false);
   const editableActionIdSet = useMemo(
@@ -119,13 +120,14 @@ export function ActionsTable({
               ? a.participants.some((p) => (!manager || p.manager.id === manager) && p.responsibility_type === "Support")
               : a.participants.some((p) => (!manager || p.manager.id === manager) && p.responsibility_type !== "Support"))) &&
           matchesDeadlineWindow(a, deadlineWindow, todayInLondon) &&
+          (!kind || (kind === "recurring") === (a.recurrence === "monthly")) &&
           (status.toLowerCase() === "all"
             ? true
             : status
             ? effectiveStatus(a).trim().toLowerCase() === status.trim().toLowerCase()
             : effectiveStatus(a) !== "Completed")
       ),
-    [actions, query, manager, priority, status, responsibility, deadlineWindow, todayInLondon]
+    [actions, query, manager, priority, status, responsibility, deadlineWindow, kind, todayInLondon]
   );
 
   const columns = useMemo<ColumnDef<ActionRecord>[]>(
@@ -160,7 +162,7 @@ export function ActionsTable({
             >
               {row.original.title}
             </Link>
-            <p className="mt-1 text-xs text-slate-500">{row.original.workstream?.name}</p>
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">{row.original.workstream?.name}<RecurrenceBadge action={row.original} showMonth /></p>
           </div>
         ),
       },
@@ -330,7 +332,7 @@ export function ActionsTable({
           className="field"
           aria-label="Filter by status"
           value={
-            ["Not Started", "In Progress", "At Risk", "Overdue", "Extended", "Completed"].find(
+            ["Not Started", "In Progress", "At Risk", "Overdue", "Extended", "Awaiting sign-off", "Completed"].find(
               (x) => x.toLowerCase() === status.toLowerCase()
             ) || (status.toLowerCase() === "all" ? "All" : "")
           }
@@ -338,7 +340,7 @@ export function ActionsTable({
         >
           <option value="">Active actions</option>
           <option value="All">All statuses (including completed)</option>
-          {["Not Started", "In Progress", "At Risk", "Overdue", "Extended", "Completed"].map(
+          {["Not Started", "In Progress", "At Risk", "Overdue", "Extended", "Awaiting sign-off", "Completed"].map(
             (x) => (
               <option key={x} value={x}>{x}</option>
             )
@@ -353,6 +355,16 @@ export function ActionsTable({
           {(Object.entries(DEADLINE_WINDOW_LABELS) as [DeadlineWindow, string][]).map(([value, label]) => (
             <option key={value || "all"} value={value}>{label}</option>
           ))}
+        </select>
+        <select
+          className="field"
+          aria-label="Filter by action type"
+          value={kind}
+          onChange={(e) => setKind(e.target.value as "" | "one-off" | "recurring")}
+        >
+          <option value="">One-off and recurring</option>
+          <option value="one-off">One-off actions</option>
+          <option value="recurring">Recurring tasks</option>
         </select>
         {canAddActions && (
           <button

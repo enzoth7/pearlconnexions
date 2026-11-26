@@ -9,6 +9,7 @@ import { canOpenSection } from "@/lib/workspace-sections";
 import { QaRating } from "@/components/qa-rating";
 import { QaOverviewFilters } from "@/components/qa-overview-filters";
 import type { Home } from "@/lib/types";
+import { effectiveStatus, normalizeSignoffs, signedOffLate, type ActionRecord } from "@/workbook/lib/utils";
 
 type OverviewCase = { id: string; kind: string; home_id: string; title: string; occurred_on: string; status: string; created_at: string };
 type CaseDetail = { id: string; kind: string; data: { due_on?: string } | null };
@@ -104,7 +105,21 @@ export default async function Page({ searchParams = Promise.resolve({}) }: { sea
   if (actionsResult.error) throw new Error(actionsResult.error.message);
   const actions = (actionsResult.data ?? []) as CaseAction[];
   const today = londonToday();
+  // Recurring workbook tasks for the current month (they are live work, not monthly reports, so the
+  // report-month filter does not apply); RLS limits them to what this user may see.
+  const recurringMonth = today.slice(0, 7);
+  let recurring: ActionRecord[] = [];
+  try {
+    const recurringResult = await supabase.from("actions")
+    .select("id,reference,title,base_status,deadline,extended_deadline,completed_at,recurrence,recurrence_day,series_id,period_month,participants:action_participants(responsibility_type,manager:managers(id,name)),signoffs:action_signoffs(id,signed_off_at,signed_off_by_name)")
+    .eq("recurrence", "monthly").eq("period_month", `${recurringMonth}-01`);
+    recurring = recurringResult.error ? [] : ((recurringResult.data ?? []) as unknown as ActionRecord[]).map(normalizeSignoffs);
+  } catch {
+    recurring = [];
+  }
   const attention = [
+    { label: "Recurring tasks overdue", count: recurring.filter(item => effectiveStatus(item) === "Overdue").length, href: "/workbook/actions?status=Overdue", visible: recurring.length > 0, color: "bg-red-100 text-red-900" },
+    { label: "Recurring tasks awaiting sign-off", count: recurring.filter(item => effectiveStatus(item) === "Awaiting sign-off").length, href: "/workbook/actions?status=Awaiting%20sign-off", visible: recurring.length > 0, color: "bg-sky-100 text-sky-900" },
     { label: "Safeguarding concerns", count: safeguarding.filter(item => item.data?.safeguarding === "yes").length, href: "/qa/incidents?safeguarding=yes", visible: access.incidents, color: "bg-red-100 text-red-900" },
     { label: "Safeguarding awaiting assessment", count: safeguarding.filter(item => item.data?.safeguarding === "pending").length, href: "/qa/incidents?safeguarding=pending", visible: access.incidents, color: "bg-amber-100 text-amber-900" },
     { label: "Risk actions overdue", count: actions.filter(item => item.data?.status !== "Completed" && overdueDate(item.data?.due_on, today)).length, href: "/qa/risks", visible: access.risks, color: "bg-rose-100 text-rose-900" },
@@ -124,6 +139,7 @@ export default async function Page({ searchParams = Promise.resolve({}) }: { sea
     <AreaCompletion totals={totals} canOpenReports={access.reports} />
     <HouseSnapshot rows={current} bodies={bodies} cases={cases} access={access} />
     <QuickStats totals={totals} canOpenReports={access.reports} />
+    {recurring.length > 0 && <RecurringCompliance tasks={recurring} />}
     <div className="grid items-start gap-4 xl:grid-cols-2">
       <Attention items={attention} gaps={totals.filter(item => item.expected > item.completed)} showReports={access.reports} />
       <RecentCases cases={cases.slice(0, 5)} homes={homes} />
@@ -242,5 +258,35 @@ function RecentCases({ cases, homes }: { cases: OverviewCase[]; homes: { id: str
       <div className="text-sm font-semibold text-[#102c39]">{item.title}</div>
       <div className="mt-1 text-xs text-slate-600">{homes.find(home => home.id === item.home_id)?.name ?? "Home"} · {item.occurred_on} · {item.status}</div>
     </div>)}</div> : <div className="px-5 py-6 text-sm text-slate-600">No cases in the available registers.</div>}
+  </Panel>;
+}
+
+/** Monthly compliance tasks from the workbook: done means completed and signed off. */
+function RecurringCompliance({ tasks }: { tasks: ActionRecord[] }) {
+  // Signed off on time, signed off after the deadline (late), still open, and past the deadline unsigned.
+  const byManager = new Map<string, { name: string; completed: number; late: number; pending: number; overdue: number }>();
+  for (const task of tasks) {
+    const status = effectiveStatus(task);
+    const owners = task.participants?.filter(p => p.responsibility_type !== "Support" && p.manager) ?? [];
+    for (const owner of owners.length ? owners.map(p => p.manager) : [{ id: "unassigned", name: "Unassigned" }]) {
+      const row = byManager.get(owner.id) ?? { name: owner.name, completed: 0, late: 0, pending: 0, overdue: 0 };
+      if (status === "Completed") { if (signedOffLate(task)) row.late += 1; else row.completed += 1; }
+      else if (status === "Overdue") row.overdue += 1; else row.pending += 1;
+      byManager.set(owner.id, row);
+    }
+  }
+  const rows = [...byManager.values()].sort((a, b) => b.overdue - a.overdue || b.late - a.late || a.name.localeCompare(b.name));
+  return <Panel title="Recurring compliance tasks">
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm">
+      <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-600"><tr><th className="px-5 py-3">Manager</th><th className="px-5 py-3">Signed off</th><th className="px-5 py-3">Late</th><th className="px-5 py-3">Pending</th><th className="px-5 py-3">Overdue</th></tr></thead>
+      <tbody className="divide-y divide-slate-200">{rows.map(row => <tr key={row.name}>
+        <td className="px-5 py-3 font-semibold text-[#102c39]">{row.name}</td>
+        <td className="px-5 py-3 tabular-nums">{row.completed}</td>
+        <td className={`px-5 py-3 tabular-nums ${row.late ? "font-bold text-amber-800" : ""}`}>{row.late}</td>
+        <td className="px-5 py-3 tabular-nums">{row.pending}</td>
+        <td className={`px-5 py-3 tabular-nums ${row.overdue ? "font-bold text-red-700" : ""}`}>{row.overdue}</td>
+      </tr>)}</tbody>
+    </table></div>
+    <div className="border-t border-slate-200 px-5 py-3 text-sm"><Link className="font-semibold text-teal-800 underline" href="/workbook/actions">Open the workbook</Link></div>
   </Panel>;
 }

@@ -132,8 +132,11 @@
 }
 .metric-segments i { display: block; height: 100%; }
 
+/* "backwards", not "both": a transform left on the page after the animation would make
+   every position: fixed dialog inside it (New action, quick edit, calendar) anchor to
+   the page content instead of the screen. */
 .workspace-view-enter {
-  animation: workspace-view-enter 240ms cubic-bezier(.22, 1, .36, 1) both;
+  animation: workspace-view-enter 240ms cubic-bezier(.22, 1, .36, 1) backwards;
 }
 @keyframes workspace-view-enter {
   from { opacity: .85; transform: translateY(6px); }

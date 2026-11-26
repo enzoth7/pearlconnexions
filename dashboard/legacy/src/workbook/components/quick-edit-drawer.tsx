@@ -284,7 +284,8 @@ function QuickEditForm({
         </div>
       </div>
 
-      {canSignOffAction ? <div>
+      {action.recurrence && <input type="hidden" name="recurrence" value={action.recurrence} />}
+      {canSignOffAction || action.recurrence ? <div>
         <label className="label" htmlFor="quick-completed-at">
           Date completed
         </label>

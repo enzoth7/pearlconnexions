@@ -221,7 +221,7 @@ export function ActionCalendar({
   const monthEvents = events.filter((event) => event.date.startsWith(monthPrefix));
   const overdueDeadlines = filteredActions.filter((action) => {
     const deadline = isoDate(action.extended_deadline || action.deadline);
-    const completed = Boolean(action.completed_at || relationRows(action.signoffs).length);
+    const completed = action.recurrence ? Boolean(action.completed_at && relationRows(action.signoffs).length) : Boolean(action.completed_at || relationRows(action.signoffs).length);
     return Boolean(deadline && deadline < today && !completed);
   }).length;
   const firstDayOffset =

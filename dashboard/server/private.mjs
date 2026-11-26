@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { collectExpenses, emailConfigured, expenseEmail, markSent, sendEmail } from "./expense-mail.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -178,7 +179,37 @@ async function inviteMember(actor, fields, origin) {
   return assigned.error ? fail(assigned.error.message) : success("Invitation sent and homes assigned.");
 }
 
-const operations = { "create-manager": createManager, "update-manager": updateManager, "delete-manager": deleteManager, "save-qa-account": saveQaAccount, "invite-member": inviteMember };
+async function canUseFinance(actor) {
+  if (actor.role === "director") return true;
+  const { data } = await admin.from("workspace_access").select("finance,visible_sections").eq("user_id", actor.id).maybeSingle();
+  return Boolean(data?.finance && (data.visible_sections ?? []).some((key) => key === "finance.expenses" || key === "finance.overview"));
+}
+
+// Sends one expense, with its attached files, to the neighbourhood controller.
+async function sendExpense(actor, fields) {
+  const input = z.object({ expense_id: id, to: email, note: text(1000).optional(), remember: z.enum(["true", "false"]).optional() }).safeParse(fields);
+  if (!input.success) return fail("Enter a valid email address.");
+  if (!(await canUseFinance(actor))) return fail("You do not have access to expenses.");
+  if (!emailConfigured()) return { ok: false, notConfigured: true, message: "Email sending is not set up yet." };
+  const bundle = await collectExpenses(admin, [input.data.expense_id]);
+  if (!bundle.expenses.length) return fail("Expense not found.");
+  const { subject, html } = expenseEmail({ ...bundle, note: input.data.note });
+  await sendEmail({ to: input.data.to, subject, html, attachments: bundle.attachments });
+  await markSent(admin, bundle.expenses, input.data.to);
+  const homeId = bundle.expenses[0].home_id;
+  if (input.data.remember === "true" && homeId) await admin.from("qa_homes").update({ controller_email: input.data.to }).eq("id", homeId);
+  return success(`Sent to ${input.data.to}.`);
+}
+
+async function saveControllerEmail(actor, fields) {
+  const input = z.object({ home_id: id, to: email }).safeParse(fields);
+  if (!input.success) return fail("Enter a valid email address.");
+  if (!(await canUseFinance(actor))) return fail("You do not have access to expenses.");
+  const { error } = await admin.from("qa_homes").update({ controller_email: input.data.to }).eq("id", input.data.home_id);
+  return error ? fail(error.message) : success("Controller email saved for this home.");
+}
+
+const operations = { "create-manager": createManager, "update-manager": updateManager, "delete-manager": deleteManager, "save-qa-account": saveQaAccount, "invite-member": inviteMember, "send-expense": sendExpense, "save-controller-email": saveControllerEmail };
 
 async function parseInput(request) {
   const declaredLength = Number(request.headers["content-length"] || 0);

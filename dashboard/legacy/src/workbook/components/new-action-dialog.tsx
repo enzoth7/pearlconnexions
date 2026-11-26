@@ -168,6 +168,19 @@ function NewActionForm({
           </label>
           <input className="field" id="new-deadline" type="date" name="deadline" />
         </div>
+
+        <div className="sm:col-span-2">
+          <label className="label" htmlFor="new-recurrence">
+            Repeats
+          </label>
+          <select className="field" id="new-recurrence" name="recurrence" defaultValue="">
+            <option value="">One-off action</option>
+            <option value="monthly">Monthly compliance task (same day every month)</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            A monthly task appears on its own each month with the deadline&apos;s day of the month. Each month only counts as done once it is signed off.
+          </p>
+        </div>
       </div>
 
       {canReassignAction ? <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">

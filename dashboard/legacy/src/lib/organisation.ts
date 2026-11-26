@@ -4,14 +4,15 @@ export function organisationGroups(people:OrgPerson[]){
  return {visible,roots:visible.filter(p=>p.director&&!p.parent_manager_id),unassigned:visible.filter(p=>!p.director&&(!p.parent_manager_id||!ids.has(p.parent_manager_id)))};
 }
 
-export type OrganisationNode = OrgPerson & { children: OrganisationNode[] };
-export type OrganisationArea = { id: string; label: string; people: OrganisationNode[] };
+export type OrganisationNode = OrgPerson & { children: OrganisationNode[]; house?: string };
+export type OrganisationArea = { id: string; label: string; people: OrganisationNode[]; houses: OrganisationNode[] };
+/** The home a team member manages (from team_chart_homes). */
+export type OrgHome = { manager_id: string; home_name: string; provision: string };
 
 // Responsibilities from the supplied team reference; names and visibility come from real accounts.
 const referenceRoles: Record<string, { area: string; role: string }> = {
   "mike wright": { area: "childrens-home", role: "Children’s Home" },
   "renee minott": { area: "supported-living", role: "Business Development · Supported Living" },
-  "richard ayodele": { area: "supported-accommodation", role: "Supported Accommodation" },
   "ruben purmah": { area: "finance", role: "Finance" },
   "shabana haroon": { area: "office", role: "Office Coordinator" },
   "simmone reid": { area: "hr", role: "HR" },
@@ -20,7 +21,7 @@ const referenceRoles: Record<string, { area: string; role: string }> = {
 const areaDefinitions = [
   ["childrens-home", "Children’s Home"], ["supported-living", "Supported Living"],
   ["supported-accommodation", "Supported Accommodation"], ["finance", "Finance"],
-  ["office", "Office coordination"], ["hr", "HR"], ["other", "Other responsibilities"],
+  ["hr", "HR"], ["office", "Office coordination"], ["other", "Team"],
 ] as const;
 
 function referenceRole(person: OrgPerson) { return referenceRoles[person.name.trim().toLocaleLowerCase("en-GB")]; }
@@ -29,7 +30,14 @@ export function organisationRole(person: OrgPerson) {
   return referenceRole(person)?.role || person.role_title || (person.director ? "Director" : "Team member");
 }
 
-export function organisationByArea(people: OrgPerson[]) {
+const provisionArea: Record<string, string> = {
+  "Supported Living": "supported-living",
+  "Supported Accommodation": "supported-accommodation",
+  "Children's Home": "childrens-home",
+};
+
+export function organisationByArea(people: OrgPerson[], homes: OrgHome[] = []) {
+  const homeByManager = new Map(homes.map(home => [home.manager_id, home]));
   const visible = people.filter(person => person.include_in_org_chart !== false);
   const directors = visible.filter(person => person.director);
   const nodes = new Map(visible.filter(person => !person.director).map(person => [person.id, { ...person, children: [] } as OrganisationNode]));
@@ -46,8 +54,14 @@ export function organisationByArea(people: OrgPerson[]) {
     if (parent && !ancestor) parent.children.push(node);
     else roots.push(node);
   }
-  const areas: OrganisationArea[] = areaDefinitions.map(([id, label]) => ({ id, label, people: [] }));
+  const areas: OrganisationArea[] = areaDefinitions.map(([id, label]) => ({ id, label, people: [], houses: [] }));
   for (const person of roots) {
+    // House managers sit under the service their house provides.
+    const home = referenceRole(person) ? undefined : homeByManager.get(person.id);
+    if (home && provisionArea[home.provision]) {
+      areas.find(item => item.id === provisionArea[home.provision])!.houses.push({ ...person, house: home.home_name });
+      continue;
+    }
     const role = (person.role_title ?? "").toLowerCase();
     const area = referenceRole(person)?.area ?? (
       role.includes("finance") ? "finance" : role.includes("office") ? "office" :
@@ -56,5 +70,6 @@ export function organisationByArea(people: OrgPerson[]) {
     );
     areas.find(item => item.id === area)!.people.push(person);
   }
-  return { directors, areas: areas.filter(area => area.people.length), visible };
+  for (const area of areas) area.houses.sort((a, b) => (a.house ?? "").localeCompare(b.house ?? ""));
+  return { directors, areas: areas.filter(area => area.people.length || area.houses.length), visible };
 }

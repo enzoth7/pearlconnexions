@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { ActionRecord, Manager, Workstream } from "@/workbook/lib/utils";
+import { normalizeSignoffs, type ActionRecord, type Manager, type Workstream } from "@/workbook/lib/utils";
 
 export type Profile = {
   id: string;
@@ -176,6 +176,8 @@ export async function requireTeamAdmin() {
 
 export async function getActions(managerIdFilter?: string): Promise<ActionRecord[]> {
   const { supabase, isDirector } = await requireAuth();
+  // Create any monthly occurrences that are due (idempotent; failures only delay them).
+  await supabase.rpc("generate_recurring_actions").then(() => undefined, () => undefined);
   const { data, error } = await supabase
     .from("actions")
     .select(
@@ -185,7 +187,7 @@ export async function getActions(managerIdFilter?: string): Promise<ActionRecord
 
   if (error) throw new Error(error.message);
 
-  const actions = (data ?? []) as unknown as ActionRecord[];
+  const actions = ((data ?? []) as unknown as ActionRecord[]).map(normalizeSignoffs);
 
   if (isDirector && managerIdFilter) {
     return actions.filter((action) =>
@@ -209,7 +211,7 @@ export async function getActionById(id: string): Promise<ActionRecord | null> {
   if (error) throw new Error(error.message);
   if (!data) return null;
 
-  return data as unknown as ActionRecord;
+  return normalizeSignoffs(data as unknown as ActionRecord);
 }
 
 export async function getWorkstreams(): Promise<Workstream[]> {

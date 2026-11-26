@@ -1,15 +1,18 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Paperclip, Pencil, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HrFilterHeader, hrDate, hrFieldClass, londonToday } from "@/components/hr-register-controls";
 import { MaintenanceSelectField } from "@/components/maintenance-select";
 import { supabase } from "../../../src/shims/supabase";
+import { RecordAttachments, type Attachment, type AttachmentEntity } from "@/components/record-attachments";
+import { ExpenseSend } from "@/components/expense-send";
 
 export type FinanceRegister = "expenses" | "payroll" | "invoices";
+const attachmentEntity: Record<FinanceRegister, AttachmentEntity> = { expenses: "expense", payroll: "payroll", invoices: "invoice" };
 type Row = Record<string, unknown> & { id: string; version: number };
-type Home = { id: string; name: string };
+type Home = { id: string; name: string; controller_email?: string | null };
 type Field = { key: string; label: string; kind: "text" | "date" | "month" | "money" | "integer" | "select" | "textarea"; required?: boolean; options?: string[]; hint?: string };
 type Column = { key: string; label: string; kind?: "date" | "month" | "money" | "status"; choices?: string[]; hidden?: string };
 
@@ -121,17 +124,31 @@ export function FinanceRegisterWorkspace({ mode }: { mode: FinanceRegister }) {
   const [form, setForm] = useState<Record<string, string>>(() => blank(mode));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [detailFiles, setDetailFiles] = useState<Attachment[]>([]);
+  // Number of files attached to each record, so the list shows a clip before opening it.
+  const [fileCounts, setFileCounts] = useState<Record<string, number>>({});
   const load = useCallback(async () => {
-    const [records, houses] = await Promise.all([
+    const [records, houses, files] = await Promise.all([
       supabase.from(config.table).select("*").order(config.order, { ascending: false }),
-      supabase.from("qa_homes").select("id,name").eq("active", true).order("name"),
+      supabase.from("qa_homes").select(mode === "expenses" ? "id,name,controller_email" : "id,name").eq("active", true).order("name"),
+      supabase.from("record_attachments").select("entity_id").eq("entity", attachmentEntity[mode]),
     ]);
+    const counts: Record<string, number> = {};
+    for (const file of (files.data ?? []) as { entity_id: string }[]) counts[file.entity_id] = (counts[file.entity_id] ?? 0) + 1;
+    setFileCounts(counts);
     setRows((records.data ?? []) as Row[]);
-    setHomes((houses.data ?? []) as Home[]);
+    setHomes((houses.data ?? []) as unknown as Home[]);
     setError(records.error?.message ?? houses.error?.message ?? "");
     setLoading(false);
-  }, [config.order, config.table]);
+  }, [config.order, config.table, mode]);
   useEffect(() => { void load(); }, [load]);
+  const detailId = details?.id;
+  const onDetailFiles = useCallback((next: Attachment[]) => {
+    setDetailFiles(next);
+    if (detailId) setFileCounts(current => current[detailId] === next.length ? current : { ...current, [detailId]: next.length });
+  }, [detailId]);
+  // Keep the open record in step with reloads (for example after sending it).
+  useEffect(() => { setDetails(current => current ? rows.find(row => row.id === current.id) ?? current : current); }, [rows]);
   const visible = rows.filter(row => config.columns.every(column => {
     const filter = filters[column.key];
     if (!filter) return true;
@@ -186,12 +203,14 @@ export function FinanceRegisterWorkspace({ mode }: { mode: FinanceRegister }) {
     setBusy(false);
     if (result.error || !result.data) { setError(result.error?.message ?? "This record changed. Reload and try again."); return; }
     setEditing(null); setError(""); await load();
+    // A new record opens straight away so its file (receipt, invoice, payroll report) can be attached.
+    if (editing === "new") setDetails(result.data as Row);
   }
   return <div className="space-y-6">
     <header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-semibold text-[#102c39]">{config.title}</h1><div className="mt-2 text-sm text-slate-600">{config.description}</div></div><button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-teal-800 px-5 font-semibold text-white" onClick={() => open()}><Plus size={18} aria-hidden />Add {config.item}</button></header>
     {error && !editing && <div role="alert" className="rounded-xl border border-rose-200 bg-white p-4 text-sm text-rose-800">{error}</div>}
-    {loading ? <div role="status" className="rounded-2xl border border-slate-200 bg-white p-6">Loading {config.title.toLowerCase()}…</div> : <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><table className="w-full table-fixed border-collapse text-left text-sm"><caption className="sr-only">{config.title} register</caption><thead><tr>{config.columns.map(column => <th scope="col" key={column.key} className={`min-w-0 px-2 py-2 sm:px-3 ${column.hidden ?? ""}`}><HrFilterHeader id={`finance-${mode}-${column.key}`} label={column.label} value={filters[column.key] ?? ""} options={column.choices ?? (column.key === "home_id" ? homes.map(home => home.name) : undefined)} type={column.kind === "date" || column.kind === "month" ? column.kind : "text"} onChange={value => setFilters(current => ({ ...current, [column.key]: value }))} /></th>)}<th scope="col" className="w-14 px-2 py-2"><div className="sr-only">Details</div></th></tr></thead><tbody className="divide-y divide-slate-200">{visible.map(row => <tr key={row.id}>{config.columns.map(column => { const value = fieldValue(row, column.key, homes); return <td key={column.key} className={`min-w-0 break-words px-2 py-2.5 sm:px-3 ${column.hidden ?? ""}`}>{column.kind === "status" ? <strong className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusTone(String(value))}`}>{String(value)}</strong> : showValue(value, column.kind)}</td>; })}<td className="px-2 py-2"><button type="button" aria-label={`Show ${config.item} details`} className="inline-flex size-10 items-center justify-center rounded-xl border border-slate-300 text-teal-800" onClick={() => setDetails(row)}><Plus size={18} aria-hidden /></button></td></tr>)}</tbody></table>{!visible.length && <div className="p-8 text-center text-sm text-slate-600">{rows.length ? "No records match these filters." : `No ${config.title.toLowerCase()} recorded yet.`}</div>}</div>}
-    <Dialog open={Boolean(details)} onOpenChange={value => { if (!value) setDetails(null); }}><DialogContent><DialogHeader><DialogTitle>{details ? String(details.invoice_number ?? details.description ?? monthLabel(String(details.period_month ?? ""))) : "Record details"}</DialogTitle></DialogHeader>{details && <><dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">{config.fields.filter(field => field.key !== "notes").map(field => <div key={field.key} className="min-w-0 border-b border-slate-200 pb-2"><dt className="text-xs font-semibold text-slate-500">{field.label}</dt><dd className="mt-1 break-words text-sm font-medium text-[#102c39]">{showValue(fieldValue(details, field.key, homes), field.kind)}</dd></div>)}</dl>{Boolean(details.notes) && <div><h3 className="text-sm font-semibold text-[#102c39]">Notes</h3><div className="mt-1 whitespace-pre-wrap text-sm">{String(details.notes)}</div></div>}<div className="flex justify-end border-t border-slate-200 pt-4"><button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-4 text-teal-800" onClick={() => { const row = details; setDetails(null); open(row); }}><Pencil size={17} aria-hidden />Edit</button></div></>}</DialogContent></Dialog>
+    {loading ? <div role="status" className="rounded-2xl border border-slate-200 bg-white p-6">Loading {config.title.toLowerCase()}…</div> : <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><table className="w-full table-fixed border-collapse text-left text-sm"><caption className="sr-only">{config.title} register</caption><thead><tr>{config.columns.map(column => <th scope="col" key={column.key} className={`min-w-0 px-2 py-2 sm:px-3 ${column.hidden ?? ""}`}><HrFilterHeader id={`finance-${mode}-${column.key}`} label={column.label} value={filters[column.key] ?? ""} options={column.choices ?? (column.key === "home_id" ? homes.map(home => home.name) : undefined)} type={column.kind === "date" || column.kind === "month" ? column.kind : "text"} onChange={value => setFilters(current => ({ ...current, [column.key]: value }))} /></th>)}<th scope="col" className="w-24 px-2 py-2"><div className="sr-only">Attachments and details</div></th></tr></thead><tbody className="divide-y divide-slate-200">{visible.map(row => <tr key={row.id}>{config.columns.map(column => { const value = fieldValue(row, column.key, homes); return <td key={column.key} className={`min-w-0 break-words px-2 py-2.5 sm:px-3 ${column.hidden ?? ""}`}>{column.kind === "status" ? <strong className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusTone(String(value))}`}>{String(value)}</strong> : showValue(value, column.kind)}</td>; })}<td className="px-2 py-2"><div className="flex items-center justify-end gap-2">{(fileCounts[row.id] ?? 0) > 0 && <small className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700" title={`${fileCounts[row.id]} attached ${fileCounts[row.id] === 1 ? "file" : "files"}`}><Paperclip size={20} aria-hidden="true" />{fileCounts[row.id]}<small className="sr-only"> attached {fileCounts[row.id] === 1 ? "file" : "files"}</small></small>}<button type="button" aria-label={`Show ${config.item} details`} className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-300 text-teal-800" onClick={() => setDetails(row)}><Plus size={18} aria-hidden /></button></div></td></tr>)}</tbody></table>{!visible.length && <div className="p-8 text-center text-sm text-slate-600">{rows.length ? "No records match these filters." : `No ${config.title.toLowerCase()} recorded yet.`}</div>}</div>}
+    <Dialog open={Boolean(details)} onOpenChange={value => { if (!value) setDetails(null); }}><DialogContent><DialogHeader><DialogTitle>{details ? String(details.invoice_number ?? details.description ?? monthLabel(String(details.period_month ?? ""))) : "Record details"}</DialogTitle></DialogHeader>{details && <><dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">{config.fields.filter(field => field.key !== "notes").map(field => <div key={field.key} className="min-w-0 border-b border-slate-200 pb-2"><dt className="text-xs font-semibold text-slate-500">{field.label}</dt><dd className="mt-1 break-words text-sm font-medium text-[#102c39]">{showValue(fieldValue(details, field.key, homes), field.kind)}</dd></div>)}</dl>{Boolean(details.notes) && <div><h3 className="text-sm font-semibold text-[#102c39]">Notes</h3><div className="mt-1 whitespace-pre-wrap text-sm">{String(details.notes)}</div></div>}<RecordAttachments entity={attachmentEntity[mode]} entityId={details.id} onChange={onDetailFiles} />{mode === "expenses" && <><ExpenseSend key={details.id} expense={details} homes={homes} files={detailFiles} onSent={() => void load()} /></>}<div className="flex justify-end border-t border-slate-200 pt-4"><button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-4 text-teal-800" onClick={() => { const row = details; setDetails(null); open(row); }}><Pencil size={17} aria-hidden />Edit</button></div></>}</DialogContent></Dialog>
     <Dialog open={Boolean(editing)} onOpenChange={value => { if (!value && !busy) { setEditing(null); setError(""); } }}><DialogContent><DialogHeader><DialogTitle>{editing === "new" ? `Add ${config.item}` : `Edit ${config.item}`}</DialogTitle></DialogHeader><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{config.fields.filter(field => field.kind !== "textarea").map(field => field.kind === "select" ? <MaintenanceSelectField key={field.key} name={`finance-${mode}-${field.key}`} label={field.label} value={form[field.key] || "__none__"} options={field.key === "home_id" ? [{ value: "__none__", label: "Not assigned" }, ...homes.map(home => ({ value: home.id, label: home.name }))] : field.options ?? []} onChange={value => setForm(current => ({ ...current, [field.key]: value === "__none__" ? "" : value }))} error={errors[field.key]} /> : <label key={field.key} className="text-sm font-medium">{field.label}<input className={hrFieldClass} type={field.kind === "money" || field.kind === "integer" ? "number" : field.kind} min={field.kind === "money" || field.kind === "integer" ? "0" : undefined} step={field.kind === "money" ? "0.01" : field.kind === "integer" ? "1" : undefined} value={form[field.key] ?? ""} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))} />{field.hint && <div className="mt-1 text-xs font-normal text-slate-600">{field.hint}</div>}{errors[field.key] && <div className="mt-1 text-sm text-rose-800">{errors[field.key]}</div>}</label>)}</div>{config.fields.some(field => field.key === "notes") && <label className="text-sm font-medium">Notes<textarea className={hrFieldClass} rows={3} maxLength={4000} value={form.notes ?? ""} onChange={event => setForm(current => ({ ...current, notes: event.target.value }))} /></label>}{error && <div role="alert" className="text-sm text-rose-800">{error}</div>}<div className="flex justify-end gap-3"><button type="button" className="min-h-11 rounded-xl border border-slate-300 px-4" onClick={() => setEditing(null)}>Cancel</button><button type="button" className="min-h-11 rounded-xl bg-teal-800 px-5 font-semibold text-white disabled:opacity-50" disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : `Save ${config.item}`}</button></div></DialogContent></Dialog>
   </div>;
 }

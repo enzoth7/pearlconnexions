@@ -15,12 +15,57 @@ export function formatDate(value?: string | null) {
   }).format(new Date(`${value}T12:00:00Z`));
 }
 
-export function effectiveStatus(action: ActionRecord) {
-  if (action.completed_at) return "Completed";
+/** action_signoffs is one-to-one, so the API may return it as an object or null. */
+export function normalizeSignoffs<T extends { signoffs?: unknown }>(action: T): T {
+  const value = action.signoffs;
+  return { ...action, signoffs: Array.isArray(value) ? value : value ? [value] : [] };
+}
+
+export function isSignedOff(action: Pick<ActionRecord, "signoffs">) {
+  return Boolean(normalizeSignoffs(action).signoffs?.length);
+}
+
+export function isRecurring(action: Pick<ActionRecord, "recurrence">) {
+  return action.recurrence === "monthly";
+}
+
+/**
+ * One-off actions complete when they have a completion date. A recurring
+ * occurrence only completes once it is also signed off; if its deadline passes
+ * without both, it is Overdue even when marked completed.
+ */
+export function effectiveStatus(action: ActionRecord, now = new Date()) {
   const deadline = action.extended_deadline || action.deadline;
-  if (deadline && new Date(`${deadline}T23:59:59Z`) < new Date()) return "Overdue";
+  const pastDeadline = Boolean(deadline && new Date(`${deadline}T23:59:59Z`) < now);
+  if (isRecurring(action)) {
+    if (action.completed_at && isSignedOff(action)) return "Completed";
+    if (pastDeadline) return "Overdue";
+    if (action.completed_at) return "Awaiting sign-off";
+    if (action.extended_deadline) return "Extended";
+    return action.base_status;
+  }
+  if (action.completed_at) return "Completed";
+  if (pastDeadline) return "Overdue";
   if (action.extended_deadline) return "Extended";
   return action.base_status;
+}
+
+/** True when the action belongs in the archive rather than the live workbook. */
+export function isActionClosed(action: ActionRecord) {
+  if (isRecurring(action)) return effectiveStatus(action) === "Completed";
+  return Boolean(action.completed_at || action.signoffs?.length);
+}
+
+/** Signed off after its deadline: a late month in a recurring series. */
+export function signedOffLate(action: ActionRecord) {
+  const deadline = action.extended_deadline || action.deadline;
+  const signedAt = normalizeSignoffs(action).signoffs?.[0]?.signed_off_at?.slice(0, 10);
+  return Boolean(deadline && signedAt && signedAt > deadline);
+}
+
+export function formatPeriodMonth(value?: string | null) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${value}T12:00:00Z`));
 }
 
 export type DeadlineWindow =
@@ -170,6 +215,11 @@ export type ActionRecord = {
   deadline: string | null;
   extended_deadline: string | null;
   completed_at: string | null;
+  recurrence?: "monthly" | null;
+  recurrence_day?: number | null;
+  recurrence_active?: boolean | null;
+  series_id?: string | null;
+  period_month?: string | null;
   participants: Participant[];
   updates?: UpdateRecord[];
   signoffs?: { id: string; signed_off_at: string; signed_off_by_name: string }[];
