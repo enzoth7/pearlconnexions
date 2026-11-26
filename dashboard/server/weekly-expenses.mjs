@@ -22,7 +22,7 @@ export async function handleWeeklyExpenses(request, response) {
     const ids = [...new Set((withFiles ?? []).map((f) => f.entity_id))];
     if (!ids.length) continue;
     try {
-      const bundle = await collectExpenses(admin, ids);
+      const bundle = await collectExpenses(admin, admin, ids);
       const { subject, html } = expenseEmail({ ...bundle, note: `Weekly expenses for ${home.name}.` });
       await sendEmail({ to: home.controller_email, subject, html, attachments: bundle.attachments });
       await markSent(admin, bundle.expenses, home.controller_email);

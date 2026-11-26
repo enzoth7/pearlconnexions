@@ -1,7 +1,7 @@
-import { FinanceRegisterWorkspace } from "@/components/finance-register-workspace";
+import { FinanceInvoicesWorkspace } from "@/components/finance-invoices-workspace";
 import { requireSection } from "@/lib/auth";
 
 export default async function Page() {
   await requireSection("finance.invoices");
-  return <FinanceRegisterWorkspace mode="invoices" />;
+  return <FinanceInvoicesWorkspace />;
 }

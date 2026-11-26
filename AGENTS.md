@@ -12,6 +12,15 @@
 - Use styled, keyboard-accessible dropdown menus instead of the browser's native select menu in new or edited views. Keep a visible label and field-level error, and support a custom value when a fixed list cannot cover the input.
 - The project contains provisional records. Do not add "Demo data" labels or explanatory copy about sample data to the interface.
 
+# Finance data (sensitive)
+
+- Finance is visible only to the director and the people the director grants it to (today Joel and Ruben). Access is decided in the database by `private.can_use_finance()`; screens, server code and new finance tables must rely on it rather than re-implementing the rule. Managers cannot grant or remove Finance sections.
+- Never store staff bank details: no sort codes, account numbers, National Insurance numbers or similar, in tables, notes, attachments metadata, logs or test fixtures. When reading payroll spreadsheets, drop those columns before any data leaves the browser.
+- Pearl's own bank details for invoices live in a finance-only settings table, never in source code.
+- Young people on invoices are identified by initials and USN only, never their full name.
+- Every finance change must be audited (`private.log_activity` trigger); finance audit rows are shown only to the director.
+- Keep finance source spreadsheets out of Git (`assets/` holds working copies with personal data).
+
 # Public website colour balance (60/30/10)
 
 Applies to the public website (`website/`) and its Figma file (PC-WEBSITE). The dashboard keeps its own conventions above.

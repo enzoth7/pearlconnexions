@@ -10,21 +10,25 @@ export function emailConfigured() {
   return Boolean(process.env.RESEND_API_KEY && process.env.PEARL_EMAIL_FROM);
 }
 
-/** Loads expenses, their home and attachments, and downloads files to attach. */
-export async function collectExpenses(admin, expenseIds) {
-  const { data: expenses, error } = await admin.from("finance_expenses").select("*").in("id", expenseIds).order("expense_on");
+/**
+ * Loads expenses, their home and attachments, and downloads files to attach.
+ * `reader` reads the rows (the signed-in user, so database permissions apply; the
+ * weekly job passes the service client); `storage` downloads and signs the files.
+ */
+export async function collectExpenses(reader, storage, expenseIds) {
+  const { data: expenses, error } = await reader.from("finance_expenses").select("*").in("id", expenseIds).order("expense_on");
   if (error) throw error;
-  const { data: files, error: filesError } = await admin.from("record_attachments").select("*").eq("entity", "expense").in("entity_id", expenseIds).order("created_at");
+  const { data: files, error: filesError } = await reader.from("record_attachments").select("*").eq("entity", "expense").in("entity_id", expenseIds).order("created_at");
   if (filesError) throw filesError;
   const homeIds = [...new Set(expenses.map((e) => e.home_id).filter(Boolean))];
-  const { data: homes } = homeIds.length ? await admin.from("qa_homes").select("id,name,neighbourhood,controller_email").in("id", homeIds) : { data: [] };
+  const { data: homes } = homeIds.length ? await reader.from("qa_homes").select("id,name,neighbourhood,controller_email").in("id", homeIds) : { data: [] };
   let attachedBytes = 0;
   const attachments = [];
   const links = [];
   for (const file of files) {
     const fits = attachedBytes + Number(file.size_bytes ?? 0) <= MAX_ATTACHED_BYTES;
     if (fits) {
-      const download = await admin.storage.from("attachments").download(file.storage_path);
+      const download = await storage.storage.from("attachments").download(file.storage_path);
       if (!download.error) {
         const buffer = Buffer.from(await download.data.arrayBuffer());
         attachedBytes += buffer.length;
@@ -32,7 +36,7 @@ export async function collectExpenses(admin, expenseIds) {
         continue;
       }
     }
-    const signed = await admin.storage.from("attachments").createSignedUrl(file.storage_path, LINK_DAYS * 86400);
+    const signed = await storage.storage.from("attachments").createSignedUrl(file.storage_path, LINK_DAYS * 86400);
     if (!signed.error) links.push({ name: file.file_name, url: signed.data.signedUrl });
   }
   return { expenses, files, homes: homes ?? [], attachments, links };
@@ -52,20 +56,20 @@ ${links.length ? `<p>Files too large to attach (links valid for ${LINK_DAYS} day
   return { subject, html };
 }
 
-export async function sendEmail({ to, subject, html, attachments }) {
+export async function sendEmail({ to, cc, subject, html, attachments }) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.PEARL_EMAIL_FROM, to: [to], subject, html, attachments, reply_to: process.env.PEARL_EMAIL_REPLY_TO || undefined }),
+    body: JSON.stringify({ from: process.env.PEARL_EMAIL_FROM, to: [to], cc: cc ? [cc] : undefined, subject, html, attachments, reply_to: process.env.PEARL_EMAIL_REPLY_TO || cc || undefined }),
   });
   if (!response.ok) throw new Error(`The email could not be sent (${response.status}).`);
 }
 
 /** Records the send on each expense (finance registers bump their version on every update). */
-export async function markSent(admin, expenses, to) {
+export async function markSent(writer, expenses, to) {
   const sentAt = new Date().toISOString();
   for (const e of expenses) {
-    const { error } = await admin.from("finance_expenses").update({ sent_to: to, sent_at: sentAt, version: e.version + 1 }).eq("id", e.id).eq("version", e.version);
+    const { error } = await writer.from("finance_expenses").update({ sent_to: to, sent_at: sentAt, version: e.version + 1 }).eq("id", e.id).eq("version", e.version);
     if (error) throw error;
   }
 }

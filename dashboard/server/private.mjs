@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { collectExpenses, emailConfigured, expenseEmail, markSent, sendEmail } from "./expense-mail.mjs";
+import { buildInvoicePdf, invoiceFileName, ukDate } from "./invoice-pdf.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -8,6 +9,8 @@ const secret = process.env.SUPABASE_SECRET_KEY;
 if (!url || !publicKey || !secret) throw new Error("Supabase credentials are missing from the server environment.");
 const admin = createClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
 const authClient = createClient(url, publicKey, { auth: { autoRefreshToken: false, persistSession: false } });
+// Acts as the signed-in user, so database permissions and the audit log apply.
+const userClient = (token) => createClient(url, publicKey, { auth: { autoRefreshToken: false, persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } });
 const id = z.uuid();
 const email = z.email();
 const text = (max = 120) => z.string().trim().max(max);
@@ -25,7 +28,7 @@ async function actorFrom(request) {
   if (error || !profile || !["director", "manager"].includes(profile.role)) return null;
   const { data: manager } = profile.manager_id ? await admin.from("managers").select("can_manage_employees,can_manage_logins").eq("id", profile.manager_id).maybeSingle() : { data: null };
   const { data: access } = await admin.from("workspace_access").select("is_admin").eq("user_id", userId).maybeSingle();
-  return { id: userId, role: profile.role, managerId: profile.manager_id, isAdmin: Boolean(access?.is_admin), canManageEmployees: Boolean(manager?.can_manage_employees), canManageLogins: Boolean(manager?.can_manage_logins) };
+  return { token, id: userId, role: profile.role, managerId: profile.manager_id, isAdmin: Boolean(access?.is_admin), canManageEmployees: Boolean(manager?.can_manage_employees), canManageLogins: Boolean(manager?.can_manage_logins) };
 }
 
 async function linkedProfile(managerId) {
@@ -179,37 +182,80 @@ async function inviteMember(actor, fields, origin) {
   return assigned.error ? fail(assigned.error.message) : success("Invitation sent and homes assigned.");
 }
 
-async function canUseFinance(actor) {
-  if (actor.role === "director") return true;
-  const { data } = await admin.from("workspace_access").select("finance,visible_sections").eq("user_id", actor.id).maybeSingle();
-  return Boolean(data?.finance && (data.visible_sections ?? []).some((key) => key === "finance.expenses" || key === "finance.overview"));
+// Finance access is decided by the database (private.can_use_finance), never here.
+async function canUseFinance(db) {
+  const { data, error } = await db.rpc("my_finance_access");
+  return !error && data === true;
 }
 
 // Sends one expense, with its attached files, to the neighbourhood controller.
 async function sendExpense(actor, fields) {
   const input = z.object({ expense_id: id, to: email, note: text(1000).optional(), remember: z.enum(["true", "false"]).optional() }).safeParse(fields);
   if (!input.success) return fail("Enter a valid email address.");
-  if (!(await canUseFinance(actor))) return fail("You do not have access to expenses.");
+  const db = userClient(actor.token);
+  if (!(await canUseFinance(db))) return fail("You do not have access to expenses.");
   if (!emailConfigured()) return { ok: false, notConfigured: true, message: "Email sending is not set up yet." };
-  const bundle = await collectExpenses(admin, [input.data.expense_id]);
+  // Rows and file list come from the user's own permissions; the service client only reads the files they can already see.
+  const bundle = await collectExpenses(db, admin, [input.data.expense_id]);
   if (!bundle.expenses.length) return fail("Expense not found.");
   const { subject, html } = expenseEmail({ ...bundle, note: input.data.note });
   await sendEmail({ to: input.data.to, subject, html, attachments: bundle.attachments });
-  await markSent(admin, bundle.expenses, input.data.to);
+  await markSent(db, bundle.expenses, input.data.to);
   const homeId = bundle.expenses[0].home_id;
-  if (input.data.remember === "true" && homeId) await admin.from("qa_homes").update({ controller_email: input.data.to }).eq("id", homeId);
+  if (input.data.remember === "true" && homeId) await db.rpc("set_home_controller_email", { target_home: homeId, new_email: input.data.to });
   return success(`Sent to ${input.data.to}.`);
 }
 
-async function saveControllerEmail(actor, fields) {
-  const input = z.object({ home_id: id, to: email }).safeParse(fields);
-  if (!input.success) return fail("Enter a valid email address.");
-  if (!(await canUseFinance(actor))) return fail("You do not have access to expenses.");
-  const { error } = await admin.from("qa_homes").update({ controller_email: input.data.to }).eq("id", input.data.home_id);
-  return error ? fail(error.message) : success("Controller email saved for this home.");
+// Emails each approved council invoice to its council as a PDF, then marks it sent.
+// Everything is read with the user's own permissions; nothing is sent for invoices they cannot see.
+async function sendInvoices(actor, fields, origin) {
+  const ids = [fields.invoice_ids].flat().filter(Boolean);
+  if (!ids.length || ids.length > 50 || !ids.every((value) => id.safeParse(value).success)) return fail("Choose between 1 and 50 invoices.");
+  const db = userClient(actor.token);
+  if (!(await canUseFinance(db))) return fail("You do not have access to invoices.");
+  if (!emailConfigured()) return { ok: false, notConfigured: true, message: "Email sending is not set up yet." };
+  const [invoices, lines, settings] = await Promise.all([
+    db.from("finance_invoices").select("*").in("id", ids),
+    db.from("finance_invoice_lines").select("*").in("invoice_id", ids).order("position"),
+    db.from("finance_settings").select("*").maybeSingle(),
+  ]);
+  if (invoices.error || lines.error || settings.error || !settings.data) return fail("The invoices could not be loaded.");
+  const customerIds = [...new Set(invoices.data.map((row) => row.customer_id).filter(Boolean))];
+  const placementIds = [...new Set(invoices.data.map((row) => row.placement_id).filter(Boolean))];
+  const [customers, placements] = await Promise.all([
+    customerIds.length ? db.from("finance_customers").select("*").in("id", customerIds) : { data: [] },
+    placementIds.length ? db.from("finance_placements").select("*").in("id", placementIds) : { data: [] },
+  ]);
+  const logoResponse = await fetch(`${origin}/pearl-invoice-logo.png`).catch(() => null);
+  const logo = logoResponse?.ok ? new Uint8Array(await logoResponse.arrayBuffer()) : null;
+  let sent = 0;
+  const skipped = [];
+  for (const invoice of invoices.data) {
+    const customer = (customers.data ?? []).find((row) => row.id === invoice.customer_id) ?? null;
+    if (invoice.status !== "Approved") { skipped.push(`${invoice.invoice_number} (not approved)`); continue; }
+    if (!customer?.billing_email) { skipped.push(`${invoice.invoice_number} (no council email)`); continue; }
+    const pdf = await buildInvoicePdf({
+      invoice, customer, settings: settings.data, logo,
+      lines: lines.data.filter((line) => line.invoice_id === invoice.id),
+      placement: (placements.data ?? []).find((row) => row.id === invoice.placement_id) ?? null,
+    });
+    const period = invoice.period_start ? ` for ${ukDate(invoice.period_start)} to ${ukDate(invoice.period_end)}` : "";
+    const contact = settings.data.queries_email ? ` or contact ${settings.data.queries_email}` : "";
+    await sendEmail({
+      to: customer.billing_email,
+      cc: settings.data.queries_email || undefined,
+      subject: `Invoice ${invoice.invoice_number} from Pearl Connexions`,
+      html: `<p>Hello,</p><p>Please find attached invoice ${invoice.invoice_number}${period}.</p><p>Payment is due by ${ukDate(invoice.due_on)}. For any query, reply to this email${contact}.</p><p>Kind regards,<br>${settings.data.trading_name || settings.data.company_name}</p>`,
+      attachments: [{ filename: invoiceFileName(invoice), content: Buffer.from(pdf).toString("base64") }],
+    });
+    const marked = await db.from("finance_invoices").update({ status: "Sent", sent_at: new Date().toISOString(), sent_to: customer.billing_email, version: invoice.version + 1 }).eq("id", invoice.id).eq("version", invoice.version);
+    if (marked.error) skipped.push(`${invoice.invoice_number} (sent, but not marked as sent: ${marked.error.message})`);
+    else sent += 1;
+  }
+  return success(`${sent} ${sent === 1 ? "invoice" : "invoices"} sent.${skipped.length ? ` Not sent: ${skipped.join(", ")}.` : ""}`);
 }
 
-const operations = { "create-manager": createManager, "update-manager": updateManager, "delete-manager": deleteManager, "save-qa-account": saveQaAccount, "invite-member": inviteMember, "send-expense": sendExpense, "save-controller-email": saveControllerEmail };
+const operations = { "create-manager": createManager, "update-manager": updateManager, "delete-manager": deleteManager, "save-qa-account": saveQaAccount, "invite-member": inviteMember, "send-expense": sendExpense, "send-invoices": sendInvoices };
 
 async function parseInput(request) {
   const declaredLength = Number(request.headers["content-length"] || 0);

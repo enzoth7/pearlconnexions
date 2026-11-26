@@ -42,8 +42,8 @@ export function ExpenseSend({ expense, homes, files, onSent }: { expense: Expens
     window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     const marked = await supabase.from("finance_expenses").update({ sent_to: to, sent_at: new Date().toISOString(), version: expense.version + 1 }).eq("id", expense.id).eq("version", expense.version);
     if (remember && home && home.controller_email !== to) {
-      const form = new FormData(); form.set("home_id", home.id); form.set("to", to);
-      await privateCall("save-controller-email", form);
+      // Audited database function; only finance users can change a controller email.
+      await supabase.rpc("set_home_controller_email", { target_home: home.id, new_email: to });
     }
     setMessage(marked.error ? "Your email app opened. The send could not be recorded." : "Your email app opened with the expense and file links.");
   }
