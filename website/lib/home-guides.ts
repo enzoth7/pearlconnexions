@@ -7,7 +7,7 @@
 //
 // Size and review date come from each handbook's cover page. Emerald House has
 // no handbook yet, so it has no entry. See supabase-house-guides.sql and
-// assets/11-13 new sources/_para-supabase/ for the files and bucket setup.
+// assets/3-documentos-pearl/casas/handbooks-web/ for the files and bucket setup.
 
 export type HomeGuide = {
   /** File name inside the bucket. */

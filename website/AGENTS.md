@@ -20,7 +20,7 @@ Exception: `Caveat` 700 is used only for the footer phrase “Where every connex
 
 ## Colour palette
 
-Use exactly the three colours in `assets/brandbook-pearl-connexions-website.md`:
+Use exactly the three colours in `assets/1-marca/brandbook-pearl-connexions-website.md`:
 
 | Role | Token | Value |
 |---|---|---|

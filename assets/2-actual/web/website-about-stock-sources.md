@@ -97,7 +97,7 @@ Fotos de Pexels usadas solo como relleno. **No son las personas citadas.** Antes
 | Sgt Verity Haylett | [Pexels 34381970](https://www.pexels.com/photo/professional-portrait-of-smiling-businesswoman-34381970/) |
 | Sue Kale | [Pexels 30781747](https://www.pexels.com/photo/friendly-professional-woman-smiling-in-office-30781747/) |
 
-## Cambios del 13 de noviembre de 2026 (material de `11-13 new sources`, solo en Figma)
+## Cambios del 13 de noviembre de 2026 (material del 13/11, hoy en `assets/3-documentos-pearl/casas/` y `assets/4-historial/2026-11-ideas-web-joel/`, solo en Figma)
 
 - Nombres: Coulsdon pasa a **Garnet House** y Milne Park a **Emerald House**. Nueva casa: **Onyx House** (Friday Road, Mitcham, Merton), solo mujeres, frame «15 · Onyx House /homes/onyx».
 - Fotos: todas las galerías de casas usan ahora fotos de Pearl. Sapphire, Ruby, Emerald y Onyx salen de las carpetas nuevas; Garnet, del manual en PDF (páginas 5, 6 y 14). Se quitaron las notas «Some photos are illustrative».
@@ -111,7 +111,7 @@ Fotos de Pexels usadas solo como relleno. **No son las personas citadas.** Antes
 - 13/11, en Figma:
   - **Who we support** en Supported Living: seis grupos, sumando experienced care leavers y personas que estuvieron sin hogar, más una nota sobre independent living skills y PBS. Se actualizó el texto en Who we are y la respuesta de las FAQ.
   - **How we recognise progress** en About, después de Charting Your Path: ejemplo ilustrativo de una meta (cocinar con menos apoyo), con un placeholder para reemplazarlo por el caso de Mike.
-  - **Valores** en Who we are: textos de Joel (`idea 2`, p. 17); «Restorative» pasa a «Restorative practice», y se sumó la imagen `assets/Manifesto.png` al lado.
+  - **Valores** en Who we are: textos de Joel (`idea 2`, p. 17); «Restorative» pasa a «Restorative practice», y se sumó la imagen `assets/1-marca/manifesto/Manifesto.png` al lado.
 - 13/11, más cambios en Figma:
   - **Counselling with Chisom** en About, debajo del equipo, a pedido de Joel. Datos de [crystalearcounselling.com](https://crystalearcounselling.com/) (página «Who am I?»): counsellor y psicoterapeuta acreditada por BACP; la bio está redactada con palabras propias. Foto sacada de su sitio (`_assets/media/ff31af…bd.jpg`) y recortada en cuadrado. Servicios resumidos de las páginas Individual sessions, Parent/child y Supervision and training (sin precios). Pendiente: apellido, si lo quiere mostrar, y cómo acceden los residentes (frecuencia y costo).
   - Garnet y Emerald ahora dicen «Adults aged 18+, mixed».
@@ -158,7 +158,7 @@ Fotos de Pexels usadas solo como relleno. **No son las personas citadas.** Antes
 ## 14/11 — Who we are aligned with Figma (code)
 
 - Why we exist: "experienced care leavers and people who have experienced homelessness".
-- Our values: subtitle "The experience we want people to have when they live with Pearl.", Pearl's manifesto artwork on the left (public/images/who-we-are/manifesto-values.webp, from assets/Manifesto.png, not filtered) and the six values in two columns with Joel's wording (Restorative practice renamed). Mobile: heading, subtitle, artwork, then one column.
+- Our values: subtitle "The experience we want people to have when they live with Pearl.", Pearl's manifesto artwork on the left (public/images/who-we-are/manifesto-values.webp, from assets/1-marca/manifesto/Manifesto.png, not filtered) and the six values in two columns with Joel's wording (Restorative practice renamed). Mobile: heading, subtitle, artwork, then one column.
 
 ## 14/11 — Contact aligned with Figma (code)
 

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 // Draft. Text in [square brackets] must be confirmed by Pearl before launch.
-// See assets/website-legal-pages-pendientes.md.
+// See assets/2-actual/web/website-legal-pages-pendientes.md.
 export default function PrivacyNoticePage() {
   return (
     <LegalPage

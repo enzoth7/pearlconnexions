@@ -1,6 +1,6 @@
 # Pearl Connexions · brandbook para el website
 
-Esta guía fija la dirección visual del sitio web. Es una referencia de diseño; no modifica los estilos que están publicados hoy. El manifiesto original (`Manifesto.png` y `new manifesto.docx`) se conserva como material de marca, aunque use otros colores.
+Esta guía fija la dirección visual del sitio web. Es una referencia de diseño; no modifica los estilos que están publicados hoy. El manifiesto original (`manifesto/Manifesto.png` y `manifesto/new manifesto.docx`) se conserva como material de marca, aunque use otros colores.
 
 ## Paleta
 
@@ -34,10 +34,10 @@ Blanco sobre celeste da aproximadamente **2,97:1** y no alcanza para texto corri
 
 ## Logo e isotipo
 
-- Sobre fondos blancos o claros, usar el logo de color optimizado del sitio: `website/public/pearl-logo.webp`. Para edición o nuevas exportaciones, partir del original `assets/LogoTransp.png`.
+- Sobre fondos blancos o claros, usar el logo de color optimizado del sitio: `website/public/pearl-logo.webp`. Para edición o nuevas exportaciones, partir del original `assets/1-marca/logos/LogoTransp.png`.
 - Sobre azul oscuro, usar la versión blanca `website/public/pearl-logo-light.webp`. Evitar ponerla sobre blanco o celeste claro.
 - Mantener proporción, margen libre alrededor y nitidez. No estirar, girar, recortar el apretón de manos ni recolorear la imagen con filtros CSS.
-- Para espacios compactos, usar el isotipo autorizado en el dashboard (`dashboard/public/isotipoByN.png`) solo si la marca es reconocible en ese contexto. El archivo original y variantes anteriores quedan en `assets`.
+- Para espacios compactos, usar el isotipo autorizado en el dashboard (`dashboard/public/isotipoByN.png`) solo si la marca es reconocible en ese contexto. El archivo original está en `assets/1-marca/logos/Isotipo.png` y las variantes anteriores en `assets/1-marca/legacy/`.
 
 ## Componentes del sitio
 

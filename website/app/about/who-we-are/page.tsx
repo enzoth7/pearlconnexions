@@ -17,7 +17,7 @@ const facts = [
   { icon: 'shield-44', w: 48, h: 48, value: 'CQC', label: 'registered for personal care' },
 ];
 
-// Values from Pearl's manifesto artwork (assets/Manifesto.png), worded by Joel.
+// Values from Pearl's manifesto artwork (assets/1-marca/manifesto/Manifesto.png), worded by Joel.
 const values = [
   { icon: 'shield-44', w: 44, h: 44, title: 'Resilience', text: 'Encouragement to build confidence and keep working towards personal goals.' },
   { icon: 'heart', w: 44, h: 40, title: 'Self-care', text: 'Support to develop routines that promote wellbeing.' },

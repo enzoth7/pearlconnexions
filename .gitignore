@@ -39,3 +39,12 @@ Thumbs.db
 
 # TypeScript incremental build
 *.tsbuildinfo
+
+# Finance and personal-data working files (bank details, payroll, invoices): never commit
+assets/**/*.xlsx
+assets/**/*.XLSX
+assets/**/*.xlsm
+
+# Pearl assets: heavy originals and personal financial data stay local
+assets/3-documentos-pearl/casas/handbooks-originales/
+assets/3-documentos-pearl/finanzas/
