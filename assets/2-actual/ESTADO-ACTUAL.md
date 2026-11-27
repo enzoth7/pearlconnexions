@@ -39,7 +39,7 @@ Empezó en mayo de 2026 como un dashboard de QA en Excel pedido por Fiverr. Hoy 
   - **Finanzas** (plan por fases acordado con Joel el 26/11: sensible, solo Joel y Ruben):
     - **Fase 0 (hecha, 26/11):** acceso decidido por la base (`private.can_use_finance()`); solo el director da Finance; auditoría de todo cambio, visible solo para el director.
     - **Fase 1 (hecha, 26/11):** invoices a councils con el formato de Joel (ejemplo PCJAP1126). Councils, colocaciones con líneas estándar, borradores del mes en lote, Draft → Approved → Sent, número PC + iniciales + MMYY, total calculado de las líneas, PDF, .zip y envío en lote (el envío espera el dominio de Resend).
-    - **Fase 2 (pendiente):** resumen mensual a partir de los Excel de gastos y nómina; falta decidir con Joel y Ruben si se sube el Excel o se carga en el sistema.
+    - **Fase 2 (hecha con carga manual, 27/11):** Finance overview por mes y por casa (facturado, costos, nómina, margen indicativo, presupuesto y alertas); en Expenses, "Monthly costs" por casa; en Payroll, checklist por persona (invoice, timesheet, pago y reparto por casa, sin datos bancarios). Botón para copiar costos fijos y staff del mes anterior. Cargada con datos ficticios de septiembre a noviembre. Falta preguntarle a Joel si cargan a mano o si suben el Excel; la importación usaría las mismas tablas.
     - **Fase 3 (a definir):** informes y automatizaciones.
     - Plan completo: `~/.claude/plans/esto-lo-habl-con-iridescent-barto-…md`. Gastos con adjuntos y envío al controlador siguen como estaban.
   - **Settings:** permisos por manager y links compartidos.
